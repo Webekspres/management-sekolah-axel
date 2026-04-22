@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Address;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -69,5 +70,18 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role' => 'kepala_sekolah',
         ]);
+    }
+
+    public function withAddress(): static
+    {
+        return $this->state(function (array $attributes): array {
+            $address = Address::factory()->create();
+
+            return [
+                'address_id' => $address->id,
+                'city_id' => $address->city_id,
+                'place_of_birth' => $address->city?->name ?? $attributes['place_of_birth'],
+            ];
+        });
     }
 }
