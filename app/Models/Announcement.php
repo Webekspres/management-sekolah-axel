@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\HasUlid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Announcement extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUlid;
 
     protected $keyType = 'string';
 

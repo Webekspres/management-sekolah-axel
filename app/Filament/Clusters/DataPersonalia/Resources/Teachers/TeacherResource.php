@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\Teachers;
+namespace App\Filament\Clusters\DataPersonalia\Resources\Teachers;
 
-use App\Filament\Resources\Teachers\Pages\CreateTeacher;
-use App\Filament\Resources\Teachers\Pages\EditTeacher;
-use App\Filament\Resources\Teachers\Pages\ListTeachers;
-use App\Filament\Resources\Teachers\Schemas\TeacherForm;
-use App\Filament\Resources\Teachers\Tables\TeachersTable;
+use App\Filament\Clusters\DataPersonalia\DataPersonaliaCluster;
+use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages\CreateTeacher;
+use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages\EditTeacher;
+use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages\ListTeachers;
+use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Schemas\TeacherForm;
+use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Tables\TeachersTable;
 use App\Models\Teacher;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -18,8 +19,11 @@ class TeacherResource extends Resource
 {
     protected static ?string $model = Teacher::class;
 
-    protected static ?string $label = "Guru";
-    protected static ?string $pluralLabel = "Daftar Guru";
+    protected static ?string $cluster = DataPersonaliaCluster::class;
+
+    protected static ?string $label = 'Guru';
+
+    protected static ?string $pluralLabel = 'Daftar Guru';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 

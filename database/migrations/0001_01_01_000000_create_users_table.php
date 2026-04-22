@@ -18,8 +18,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['super_admin', 'kepala_sekolah', 'guru', 'siswa_ortu']);
-            $table->enum('gender', ['L', 'P']);
-            $table->string('phone_number');
+            $table->enum('gender', ['L', 'P'])->default('L');
+            $table->string('phone_number')->nullable();
             $table->ulid('address_id')->nullable()->index();
             $table->string('place_of_birth')->nullable();
             $table->date('date_of_birth')->nullable();

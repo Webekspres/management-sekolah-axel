@@ -23,6 +23,26 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - phpunit/phpunit (PHPUNIT) - v12
 - tailwindcss (TAILWINDCSS) - v4
 
+## Project Boundaries (Batasan)
+
+- This system is a responsive web platform only (browser on desktop/mobile), not a native mobile app.
+- This project is single-entity for Homeschooling Tunas Karya Bangsa (SD/SMP/SMA) and must not implement Dapodik sync.
+- Student and parent access is a single unified account; do not split into separate dashboards unless explicitly requested.
+- Academic module does not provide built-in video conference; use third-party links/integration points when needed.
+- Critical academic data (RPP submissions and daily KBM reports) must be approval-gated by Kepala Sekolah before parent/student visibility.
+- Finance payments depend on third-party payment gateway policies (methods, disbursement, admin fees).
+
+For full boundaries and module detail, refer to `.github/instructions/context.instructions.md` and keep AGENTS guidance concise.
+
+## Development Scope (Ruang Lingkup)
+
+- Modul Manajemen Data & Pengguna: master data (guru/staf/siswa), kelas & jenjang, role/access management, web profile and announcement settings.
+- Modul Akademik: planning (RPP/curriculum submission), scheduling, attendance, KBM report submission, documentation upload, approval/revision flow.
+- Modul Evaluasi & Layanan Siswa: grades, exam recaps, e-rapor, and unified parent/student portal visibility for approved data.
+- Modul Administrasi & Keuangan: invoicing/tagihan, digital payment tracking, gateway logs, and headmaster dashboard summaries.
+
+When implementing these modules, preserve approval workflow semantics and avoid introducing features outside the stated boundaries.
+
 ## Skills Activation
 
 This project has domain-specific skills available. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
@@ -96,7 +116,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 - Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
-  - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
+    - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
 
 === php rules ===
 

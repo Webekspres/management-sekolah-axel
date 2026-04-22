@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\Teachers\Pages;
+namespace App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages;
 
-use App\Filament\Resources\Teachers\TeacherResource;
+use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 

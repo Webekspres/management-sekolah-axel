@@ -10,6 +10,8 @@ use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
+    protected static ?string $heading = 'Homeschooling Tunas Karya Bangsa';
+
     /**
      * Register any application services.
      */
