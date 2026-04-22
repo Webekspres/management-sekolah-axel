@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('classes', function (Blueprint $table) {
+        Schema::create('attendances', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('name');
-            $table->ulid('level_id')->index();
-            $table->ulid('teacher_id')->index();
-            $table->ulid('academic_year_id')->index();
+            $table->ulid('kbm_id')->index();
+            $table->ulid('student_id')->index();
+            $table->enum('status', ['HADIR', 'SAKIT', 'IZIN', 'ALPA']);
+
+            $table->unique(['kbm_id', 'student_id']);
         });
     }
 
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('classes');
+        Schema::dropIfExists('attendances');
     }
 };

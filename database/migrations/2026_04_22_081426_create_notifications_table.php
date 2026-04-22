@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('classes', function (Blueprint $table) {
+        Schema::create('notifications', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('name');
-            $table->ulid('level_id')->index();
-            $table->ulid('teacher_id')->index();
-            $table->ulid('academic_year_id')->index();
+            $table->foreignUlid('user_id')->constrained('users')->cascadeOnDelete();
+            $table->string('title');
+            $table->text('message');
+            $table->boolean('is_read')->default(false);
+            $table->timestamp('created_at')->useCurrent();
         });
     }
 
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('classes');
+        Schema::dropIfExists('notifications');
     }
 };

@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('classes', function (Blueprint $table) {
+        Schema::create('academic_years', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->string('name');
-            $table->ulid('level_id')->index();
-            $table->ulid('teacher_id')->index();
-            $table->ulid('academic_year_id')->index();
+            $table->string('semester');
+            $table->boolean('is_active')->default(false);
         });
     }
 
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('classes');
+        Schema::dropIfExists('academic_years');
     }
 };

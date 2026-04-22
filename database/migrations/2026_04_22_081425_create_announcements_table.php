@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('classes', function (Blueprint $table) {
+        Schema::create('announcements', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('name');
-            $table->ulid('level_id')->index();
-            $table->ulid('teacher_id')->index();
-            $table->ulid('academic_year_id')->index();
+            $table->string('title');
+            $table->text('content');
+            $table->enum('target_role', ['super_admin', 'kepala_sekolah', 'guru', 'siswa_ortu']);
+            $table->timestamp('created_at')->useCurrent();
         });
     }
 
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('classes');
+        Schema::dropIfExists('announcements');
     }
 };

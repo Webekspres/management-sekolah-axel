@@ -1,0 +1,419 @@
+// ==================================================================
+// PRISMA SCHEMA - SISTEM INFORMASI SEKOLAH (HOMESCHOOLING)
+// ==================================================================
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------------------
+enum RoleType {
+    super_admin
+    kepala_sekolah
+    guru
+    siswa_ortu
+}
+
+enum GenderType {
+    L
+    P
+}
+
+enum ApprovalStatus {
+    DRAFT
+    PENDING
+    REVISED
+    APPROVED
+}
+
+enum AttendanceStatus {
+    HADIR
+    SAKIT
+    IZIN
+    ALPA
+}
+
+enum PaymentStatus {
+    UNPAID
+    PENDING
+    PAID
+    FAILED
+}
+
+// ------------------------------------------------------------------
+// 1. CORE, AUTHENTICATION & AUDIT TRAIL
+// ------------------------------------------------------------------
+
+model User {
+    id             String     @id @default(ulid())
+    name           String
+    email          String     @unique
+    password       String
+    role           RoleType
+    gender         GenderType
+    phone_number   String /// Digunakan untuk notifikasi WA (jika tidak ada nomor spesifik di profil)
+    address_id     String? /// Relasi ke tabel Address untuk data alamat lengkap
+    place_of_birth String?
+    date_of_birth  DateTime?
+    is_active      Boolean    @default(true)
+    created_at     DateTime   @default(now())
+    updated_at     DateTime   @updatedAt
+
+    teacher       Teacher?
+    student       Student?
+    activity_logs ActivityLog[] /// Relasi siapa yang melakukan aksi di sistem
+    notifications Notification[]
+    address       Address?       @relation(fields: [address_id], references: [id], onDelete: SetNull)
+    city          City?          @relation(fields: [cityId], references: [id])
+    cityId        String?
+}
+
+/// Mewakili "Log Sistem", "Riwayat Log RPP", dan "Riwayat Log KBM" pada sitemap
+model ActivityLog {
+    id          String   @id @default(ulid())
+    user_id     String
+    action      String /// Contoh: 'APPROVED_RPP', 'CREATED_INVOICE', 'LOGIN'
+    entity_type String /// Nama tabel yang terdampak (Contoh: 'LessonPlan', 'Kbm')
+    entity_id   Int? /// ID baris data yang terdampak
+    description String   @db.Text
+    created_at  DateTime @default(now())
+
+    user User @relation(fields: [user_id], references: [id])
+}
+
+// ------------------------------------------------------------------
+// 2. MASTER DATA PERSONALIA
+// ------------------------------------------------------------------
+
+model Teacher {
+    id                String  @id @default(ulid())
+    user_id           String  @unique
+    nip               String?
+    employment_status String?
+
+    user            User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    classes_handled Class[]
+    schedules       Schedule[]
+    lesson_plans    LessonPlan[]
+}
+
+model Student {
+    id       String @id @default(ulid())
+    user_id  Int    @unique
+    class_id String /// Titik kontrol "Kenaikan Kelas" (Tinggal update ID ini)
+
+    // Identitas Kependudukan & Sekolah
+    nipd              String  @unique
+    nisn              String  @unique
+    nik               String  @unique
+    kk_number         String?
+    birth_cert_number String?
+    religion          String?
+    school_code       String? /// Kode Sekolah Internal/Nasional
+
+    // Data Pribadi Lengkap
+
+    student_phone String?
+    special_needs String? /// Kebutuhan Khusus
+
+    // Alamat Spesifik
+    house_number String?
+    rt           String?
+    rw           String?
+    village      String? /// Kelurahan
+    district     String? /// Kecamatan
+    city         String? /// Kota/Kabupaten
+
+    // Data Orang Tua
+    father_name  String?
+    father_phone String?
+    mother_name  String?
+    mother_phone String?
+
+    // Riwayat Pendidikan
+    admission_date DateTime? @db.Date
+    origin_school  String?
+    diploma_date   DateTime? @db.Date
+    diploma_number String?
+
+    // Custom Override
+    custom_spp Decimal? @db.Decimal(10, 2) /// Jika null, tagihan ambil dari default_spp di Level
+
+    user        User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    class       Class        @relation(fields: [class_id], references: [id])
+    attendances Attendance[]
+    grades      Grade[]
+    rapors      Rapor[]
+    invoices    Invoice[]
+}
+
+// ------------------------------------------------------------------
+// 3. MASTER DATA AKADEMIK
+// ------------------------------------------------------------------
+
+model AcademicYear {
+    id        String  @id @default(ulid())
+    name      String /// Contoh: "2025/2026"
+    semester  String
+    is_active Boolean @default(false)
+
+    classes  Class[]
+    grades   Grade[]
+    rapors   Rapor[]
+    invoices Invoice[]
+}
+
+model Level {
+    id          String  @id @default(ulid())
+    name        String /// SD, SMP, SMA
+    default_spp Decimal @db.Decimal(10, 2) /// Tarif dasar SPP per jenjang
+
+    classes  Class[]
+    subjects Subject[]
+}
+
+model Class {
+    id               String @id @default(ulid())
+    name             String
+    level_id         String
+    teacher_id       String /// Wali Kelas
+    academic_year_id String
+
+    level            Level        @relation(fields: [level_id], references: [id])
+    homeroom_teacher Teacher      @relation(fields: [teacher_id], references: [id])
+    academic_year    AcademicYear @relation(fields: [academic_year_id], references: [id])
+    students         Student[]
+    schedules        Schedule[]
+}
+
+model Subject {
+    id       String @id @default(ulid())
+    name     String
+    level_id String
+
+    level        Level        @relation(fields: [level_id], references: [id])
+    schedules    Schedule[]
+    lesson_plans LessonPlan[]
+    grades       Grade[]
+}
+
+// ------------------------------------------------------------------
+// 4. MODUL AKADEMIK & KBM
+// ------------------------------------------------------------------
+
+model Schedule {
+    id          String   @id @default(ulid())
+    class_id    String
+    subject_id  String
+    teacher_id  String
+    day_of_week Int
+    start_time  DateTime @db.Time
+    end_time    DateTime @db.Time
+
+    class    Class   @relation(fields: [class_id], references: [id])
+    subject  Subject @relation(fields: [subject_id], references: [id])
+    teacher  Teacher @relation(fields: [teacher_id], references: [id])
+    kbm_logs Kbm[]
+}
+
+model LessonPlan {
+    id            String         @id @default(ulid())
+    teacher_id    String
+    subject_id    String
+    topic         String
+    file_path     String
+    status        ApprovalStatus @default(DRAFT)
+    revision_note String?        @db.Text
+
+    teacher  Teacher @relation(fields: [teacher_id], references: [id])
+    subject  Subject @relation(fields: [subject_id], references: [id])
+    kbm_logs Kbm[]
+}
+
+model Kbm {
+    id                 String         @id @default(ulid())
+    schedule_id        String
+    lesson_plan_id     String
+    date               DateTime       @db.Date
+    process_note       String         @db.Text
+    problem_note       String?        @db.Text
+    solution_note      String?        @db.Text
+    documentation_path String?
+    status             ApprovalStatus @default(PENDING)
+    revision_note      String?        @db.Text
+
+    schedule    Schedule     @relation(fields: [schedule_id], references: [id])
+    lesson_plan LessonPlan   @relation(fields: [lesson_plan_id], references: [id])
+    attendances Attendance[]
+}
+
+model Attendance {
+    id         String           @id @default(ulid())
+    kbm_id     String
+    student_id String
+    status     AttendanceStatus
+
+    kbm     Kbm     @relation(fields: [kbm_id], references: [id], onDelete: Cascade)
+    student Student @relation(fields: [student_id], references: [id])
+}
+
+// ------------------------------------------------------------------
+// 5. MODUL EVALUASI & HASIL STUDI
+// ------------------------------------------------------------------
+
+model Grade {
+    id               String  @id @default(ulid())
+    student_id       String
+    subject_id       String
+    academic_year_id String
+    grade_type       String /// Tugas, UTS, UAS
+    score            Decimal @db.Decimal(5, 2)
+
+    student       Student      @relation(fields: [student_id], references: [id])
+    subject       Subject      @relation(fields: [subject_id], references: [id])
+    academic_year AcademicYear @relation(fields: [academic_year_id], references: [id])
+}
+
+model Rapor {
+    id               String @id @default(ulid())
+    student_id       String
+    academic_year_id String
+    file_path        String
+
+    student       Student      @relation(fields: [student_id], references: [id])
+    academic_year AcademicYear @relation(fields: [academic_year_id], references: [id])
+}
+
+// ------------------------------------------------------------------
+// 6. MODUL ADMINISTRASI & KEUANGAN
+// ------------------------------------------------------------------
+
+model Invoice {
+    id               String        @id @default(ulid())
+    invoice_number   String        @unique
+    student_id       String
+    academic_year_id String
+    amount           Decimal       @db.Decimal(10, 2) /// Diisi otomatis dari (student.custom_spp ?? level.default_spp)
+    description      String /// Contoh: "SPP Bulan Agustus"
+    status           PaymentStatus @default(UNPAID)
+    due_date         DateTime      @db.Date
+    created_at       DateTime      @default(now())
+
+    student       Student      @relation(fields: [student_id], references: [id])
+    academic_year AcademicYear @relation(fields: [academic_year_id], references: [id])
+    payments      Payment[]
+}
+
+/// Menyimpan Riwayat Log Pembayaran sesuai Sitemap
+model Payment {
+    id                String        @id @default(ulid())
+    invoice_id        String
+    amount_paid       Decimal       @db.Decimal(10, 2)
+    payment_method    String?
+    pg_transaction_id String?       @unique
+    status            PaymentStatus @default(PENDING)
+    paid_at           DateTime?
+    created_at        DateTime      @default(now())
+
+    invoice Invoice @relation(fields: [invoice_id], references: [id])
+}
+
+// ------------------------------------------------------------------
+// 7. UTILITIES & CONFIGURATIONS
+// ------------------------------------------------------------------
+
+model Announcement {
+    id          String   @id @default(ulid())
+    title       String
+    content     String   @db.Text
+    target_role RoleType
+    created_at  DateTime @default(now())
+}
+
+model Setting {
+    id    String @id @default(ulid())
+    key   String @unique
+    value String @db.Text
+}
+
+model Notification {
+    id         String   @id @default(ulid())
+    user_id    String
+    title      String
+    message    String   @db.Text
+    is_read    Boolean  @default(false)
+    created_at DateTime @default(now())
+
+    user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Address {
+    id             String   @id @default(ulid())
+    province_id    String
+    city_id        String
+    subDistrict_id String
+    village_id     String
+    street         String
+    postalCode     String
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+
+    province    Province    @relation(fields: [province_id], references: [id], onDelete: Cascade)
+    city        City        @relation(fields: [city_id], references: [id], onDelete: Cascade)
+    subDistrict SubDistrict @relation(fields: [subDistrict_id], references: [id], onDelete: Cascade)
+    village     Village     @relation(fields: [village_id], references: [id], onDelete: Cascade)
+    users       User[]
+}
+
+model Province {
+    id        String   @id @default(ulid())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    cities    City[]
+    addresses Address[]
+}
+
+model City {
+    id         String   @id @default(ulid())
+    provinceId String
+    name       String
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    province     Province      @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+    subDistricts SubDistrict[]
+    addresses    Address[]
+    users        User[]
+}
+
+model SubDistrict {
+    id        String   @id @default(ulid())
+    cityId    String
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    city      City      @relation(fields: [cityId], references: [id], onDelete: Cascade)
+    villages  Village[]
+    addresses Address[]
+}
+
+model Village {
+    id            String   @id @default(ulid())
+    subDistrictId String
+    name          String
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    subDistrict SubDistrict @relation(fields: [subDistrictId], references: [id], onDelete: Cascade)
+    addresses   Address[]
+}

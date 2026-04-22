@@ -21,11 +21,7 @@ class TeacherFactory extends Factory
         return [
             'user_id' => User::factory(),
             'nip' => fake()->unique()->numerify('##########'),
-            'name' => fake()->name(),
-            'place_of_birth' => fake()->city(),
-            'date_of_birth' => fake()->dateTimeBetween('-50 years', '-25 years'),
-            'address' => fake()->address(),
-            'employment_status' => true,
+            'employment_status' => fake()->randomElement(['tetap', 'kontrak', 'honorer']),
         ];
     }
 }

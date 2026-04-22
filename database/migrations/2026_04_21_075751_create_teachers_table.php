@@ -12,15 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('teachers', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->references('id');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('user_id')->unique()->constrained('users')->cascadeOnDelete();
             $table->string('nip')->nullable();
-            $table->string('name');
-            $table->string('place_of_birth');
-            $table->dateTime('date_of_birth');
-            $table->string('address');
-            $table->boolean('employment_status')->default(true); #ask: defined enum atau bisa di CRUD?
-            $table->timestamps();
+            $table->string('employment_status')->nullable();
         });
     }
 

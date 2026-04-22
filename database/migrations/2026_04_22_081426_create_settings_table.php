@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('classes', function (Blueprint $table) {
+        Schema::create('settings', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('name');
-            $table->ulid('level_id')->index();
-            $table->ulid('teacher_id')->index();
-            $table->ulid('academic_year_id')->index();
+            $table->string('key')->unique();
+            $table->text('value');
         });
     }
 
@@ -25,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('classes');
+        Schema::dropIfExists('settings');
     }
 };

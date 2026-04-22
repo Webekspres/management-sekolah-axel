@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Teacher extends Model
+class Subject extends Model
 {
     use HasFactory;
 
@@ -17,16 +17,11 @@ class Teacher extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['user_id', 'nip', 'employment_status'];
+    protected $fillable = ['name', 'level_id'];
 
-    public function user(): BelongsTo
+    public function level(): BelongsTo
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function classesHandled(): HasMany
-    {
-        return $this->hasMany(SchoolClass::class, 'teacher_id');
+        return $this->belongsTo(Level::class);
     }
 
     public function schedules(): HasMany
@@ -37,5 +32,10 @@ class Teacher extends Model
     public function lessonPlans(): HasMany
     {
         return $this->hasMany(LessonPlan::class);
+    }
+
+    public function grades(): HasMany
+    {
+        return $this->hasMany(Grade::class);
     }
 }

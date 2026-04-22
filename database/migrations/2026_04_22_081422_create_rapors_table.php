@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('classes', function (Blueprint $table) {
+        Schema::create('rapors', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('name');
-            $table->ulid('level_id')->index();
-            $table->ulid('teacher_id')->index();
-            $table->ulid('academic_year_id')->index();
+            $table->foreignUlid('student_id')->constrained('students');
+            $table->foreignUlid('academic_year_id')->constrained('academic_years');
+            $table->string('file_path');
         });
     }
 
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('classes');
+        Schema::dropIfExists('rapors');
     }
 };
