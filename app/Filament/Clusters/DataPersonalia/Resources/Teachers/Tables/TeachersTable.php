@@ -8,6 +8,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -52,39 +53,54 @@ class TeachersTable
                     ->placeholder('-'),
             ])
             ->filters([
-                Filter::make('employment_status')
+                SelectFilter::make('employment_status')
                     ->label('Status')
-                    ->schema([
-                        Select::make('employment_status')
-                            ->label('Status Kepegawaian')
-                            ->options([
-                                'staff_tu' => 'Staff TU',
-                                'non_staff_tu' => 'Guru Kelas',
-                                'other' => 'Lainnya',
-                            ]),
+                    ->options([
+                        'staff_tu' => 'Staff TU',
+                        'non_staff_tu' => 'Guru Kelas',
+                        'other' => 'Lainnya',
                     ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query->when(
-                            $data['employment_status'] ?? null,
-                            fn (Builder $query, string $status): Builder => $query->where('employment_status', $status),
-                        );
-                    }),
+                    ->multiple(),
                 Filter::make('gender')
                     ->label('Gender')
-                    ->schema([
+                    ->form([
                         Select::make('gender')
                             ->label('Jenis Kelamin')
                             ->options([
                                 'L' => 'Laki-laki',
                                 'P' => 'Perempuan',
-                            ]),
+                            ])
+                            ->multiple(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
-                            $data['gender'] ?? null,
-                            fn (Builder $query, string $gender): Builder => $query->whereHas(
+                            filled($data['gender'] ?? null),
+                            fn (Builder $query): Builder => $query->whereHas(
                                 'user',
-                                fn (Builder $userQuery): Builder => $userQuery->where('gender', $gender),
+                                fn (Builder $userQuery): Builder => $userQuery->whereIn('gender', $data['gender']),
+                            ),
+                        );
+                    }),
+                Filter::make('is_active')
+                    ->label('Status Akun')
+                    ->form([
+                        Select::make('is_active')
+                            ->label('Status Akun')
+                            ->options([
+                                '1' => 'Aktif',
+                                '0' => 'Nonaktif',
+                            ])
+                            ->multiple(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            filled($data['is_active'] ?? null),
+                            fn (Builder $query): Builder => $query->whereHas(
+                                'user',
+                                fn (Builder $userQuery): Builder => $userQuery->whereIn(
+                                    'is_active',
+                                    array_map(static fn (string $value): int => (int) $value, $data['is_active'])
+                                ),
                             ),
                         );
                     }),
