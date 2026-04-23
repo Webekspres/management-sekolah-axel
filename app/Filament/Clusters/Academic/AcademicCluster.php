@@ -12,4 +12,6 @@ class AcademicCluster extends Cluster
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
     protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
+
+    protected static ?string $title = 'Akademik';
 }

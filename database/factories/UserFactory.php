@@ -26,6 +26,7 @@ class UserFactory extends Factory
             'date_of_birth' => fake()->dateTimeBetween('-50 years', '-15 years')->format('Y-m-d'),
             'is_active' => true,
             'city_id' => null,
+            'address_detail' => fake()->boolean(40) ? fake()->sentence() : null,
             'remember_token' => Str::random(10),
         ];
     }

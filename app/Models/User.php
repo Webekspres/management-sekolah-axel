@@ -28,6 +28,7 @@ use Illuminate\Support\Str;
     'date_of_birth',
     'is_active',
     'city_id',
+    'address_detail',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser

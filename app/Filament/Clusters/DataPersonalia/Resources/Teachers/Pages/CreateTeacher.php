@@ -24,6 +24,7 @@ class CreateTeacher extends CreateRecord
             'phone_number' => $userData['phone_number'] ?? null,
             'date_of_birth' => $userData['date_of_birth'] ?? null,
             'place_of_birth' => $userData['place_of_birth'] ?? null,
+            'address_detail' => $userData['address_detail'] ?? null,
             'role' => 'guru',
         ]);
 

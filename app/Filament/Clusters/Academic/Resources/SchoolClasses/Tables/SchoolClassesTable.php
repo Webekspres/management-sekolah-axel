@@ -58,7 +58,12 @@ class SchoolClassesTable
                     ->multiple(),
                 SelectFilter::make('teacher_id')
                     ->label('Wali Kelas')
-                    ->relationship('homeroomTeacher', 'nip')
+                    ->relationship(
+                        name: 'homeroomTeacher',
+                        titleAttribute: 'nip',
+                        modifyQueryUsing: fn (Builder $query) => $query->with('user')
+                    )
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?? $record->nip)
                     ->searchable()
                     ->preload()
                     ->multiple(),

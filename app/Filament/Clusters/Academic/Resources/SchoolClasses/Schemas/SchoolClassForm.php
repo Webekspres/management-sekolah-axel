@@ -18,7 +18,9 @@ class SchoolClassForm
             ->components([
                 TextInput::make('name')
                     ->label('Nama Kelas')
-                    ->required()
+                    ->required(false)
+                    ->rules(['required'])
+                    ->markAsRequired()
                     ->maxLength(255)
                     ->unique(
                         table: 'classes',
@@ -34,14 +36,18 @@ class SchoolClassForm
                     ->relationship('academicYear', 'name')
                     ->searchable()
                     ->preload()
-                    ->required()
+                    ->required(false)
+                    ->rules(['required'])
+                    ->markAsRequired()
                     ->live(),
                 Select::make('level_id')
                     ->label('Jenjang')
                     ->relationship('level', 'name')
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required(false)
+                    ->rules(['required'])
+                    ->markAsRequired(),
                 Select::make('teacher_id')
                     ->label('Wali Kelas')
                     ->relationship(
@@ -56,7 +62,9 @@ class SchoolClassForm
                     )
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required(false)
+                    ->rules(['required'])
+                    ->markAsRequired(),
             ]);
     }
 }

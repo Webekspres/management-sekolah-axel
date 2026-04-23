@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages;
 
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Schemas\TeacherForm;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
+use App\Models\City;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Resources\Pages\EditRecord;
@@ -41,6 +42,13 @@ class EditTeacher extends EditRecord
     {
         $user = $this->record->user;
 
+        // Resolve birth province from place_of_birth city name
+        $birthProvinceId = null;
+        if ($user->place_of_birth) {
+            $birthCity = City::where('name', $user->place_of_birth)->first();
+            $birthProvinceId = $birthCity?->province_id;
+        }
+
         $data['user'] = [
             'name' => $user->name,
             'email' => $user->email,
@@ -48,6 +56,8 @@ class EditTeacher extends EditRecord
             'phone_number' => $user->phone_number,
             'date_of_birth' => $user->date_of_birth,
             'place_of_birth' => $user->place_of_birth,
+            'address_detail' => $user->address_detail,
+            'birth_province_id' => $birthProvinceId,
         ];
 
         return $data;
@@ -64,6 +74,7 @@ class EditTeacher extends EditRecord
             'phone_number' => $userData['phone_number'] ?? null,
             'date_of_birth' => $userData['date_of_birth'] ?? null,
             'place_of_birth' => $userData['place_of_birth'] ?? null,
+            'address_detail' => $userData['address_detail'] ?? null,
         ];
 
         if (! empty($userData['password'])) {

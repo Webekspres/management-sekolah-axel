@@ -24,10 +24,17 @@ class CreateStudent extends CreateRecord
             'phone_number' => $userData['phone_number'] ?? null,
             'date_of_birth' => $userData['date_of_birth'] ?? null,
             'place_of_birth' => $userData['place_of_birth'] ?? null,
+            'address_detail' => $userData['address_detail'] ?? null,
             'role' => 'siswa_ortu',
         ]);
 
-        unset($data['user']);
+        unset(
+            $data['user'],
+            $data['address_province_id'],
+            $data['address_city_id'],
+            $data['address_sub_district_id'],
+            $data['address_village_id'],
+        );
 
         return $user->student()->create($data);
     }
