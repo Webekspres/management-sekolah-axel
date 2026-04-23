@@ -10,6 +10,11 @@ class EditAcademicYear extends EditRecord
 {
     protected static string $resource = AcademicYearResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Ubah Tahun Ajaran';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

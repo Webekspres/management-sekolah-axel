@@ -15,7 +15,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('user_id')->unique()->constrained('users')->cascadeOnDelete();
             $table->string('nip')->nullable();
-            $table->enum('employment_status', ['staff_tu', 'non_staff_tu', 'other'])->nullable();
+            $table->enum('employment_status', ['staff_tu', 'guru_kelas', 'other'])->nullable();
         });
     }
 

@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages;
 
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Schemas\TeacherForm;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
+use App\Models\Address;
 use App\Models\City;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Placeholder;
@@ -16,6 +17,11 @@ use Illuminate\Support\Facades\Hash;
 class EditTeacher extends EditRecord
 {
     protected static string $resource = TeacherResource::class;
+
+    public function getTitle(): string
+    {
+        return 'Ubah Guru';
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -60,6 +66,17 @@ class EditTeacher extends EditRecord
             'birth_province_id' => $birthProvinceId,
         ];
 
+        // Resolve address cascading fields
+        $address = $user->address;
+        if ($address) {
+            $data['address_province_id'] = $address->province_id;
+            $data['address_city_id'] = $address->city_id;
+            $data['address_sub_district_id'] = $address->sub_district_id;
+            $data['address_village_id'] = $address->village_id;
+            $data['address_street'] = $address->street;
+            $data['address_postal_code'] = $address->postal_code;
+        }
+
         return $data;
     }
 
@@ -67,7 +84,7 @@ class EditTeacher extends EditRecord
     {
         $userData = $data['user'] ?? [];
 
-        $updatePayload = [
+        $userPayload = [
             'name' => $userData['name'],
             'email' => $userData['email'],
             'gender' => $userData['gender'] ?? 'L',
@@ -78,12 +95,41 @@ class EditTeacher extends EditRecord
         ];
 
         if (! empty($userData['password'])) {
-            $updatePayload['password'] = Hash::make($userData['password']);
+            $userPayload['password'] = Hash::make($userData['password']);
         }
 
-        $record->user->update($updatePayload);
+        // Handle address
+        $addressData = array_filter([
+            'province_id' => $data['address_province_id'] ?? null,
+            'city_id' => $data['address_city_id'] ?? null,
+            'sub_district_id' => $data['address_sub_district_id'] ?? null,
+            'village_id' => $data['address_village_id'] ?? null,
+            'street' => $data['address_street'] ?? null,
+            'postal_code' => $data['address_postal_code'] ?? null,
+        ], fn ($v) => $v !== null);
 
-        unset($data['user']);
+        if (! empty($addressData)) {
+            if ($record->user->address_id) {
+                $record->user->address->update($addressData);
+            } else {
+                $address = Address::create($addressData);
+                $userPayload['address_id'] = $address->id;
+                $userPayload['city_id'] = $addressData['city_id'] ?? null;
+            }
+        }
+
+        $record->user->update($userPayload);
+
+        // Strip virtual fields before saving teacher record
+        unset(
+            $data['user'],
+            $data['address_province_id'],
+            $data['address_city_id'],
+            $data['address_sub_district_id'],
+            $data['address_village_id'],
+            $data['address_street'],
+            $data['address_postal_code'],
+        );
 
         $record->update($data);
 

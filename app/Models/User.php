@@ -91,7 +91,10 @@ class User extends Authenticatable implements FilamentUser
         }
 
         return match ($panel->getId()) {
-            'admin' => in_array($this->role, ['super_admin', 'kepala_sekolah', 'guru'], true),
+            'auth' => true,
+            'admin' => $this->role === 'super_admin',
+            'kepsek' => $this->role === 'kepala_sekolah',
+            'guru' => $this->role === 'guru',
             'student' => $this->role === 'siswa_ortu',
             default => false,
         };

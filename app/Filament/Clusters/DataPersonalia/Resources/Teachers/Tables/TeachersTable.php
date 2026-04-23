@@ -27,7 +27,7 @@ class TeachersTable
                     ->searchable()
                     ->placeholder('-'),
                 TextColumn::make('user.gender')
-                    ->label('Gender')
+                    ->label('Jenis Kelamin')
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'L' => 'Laki-laki',
                         'P' => 'Perempuan',
@@ -40,14 +40,14 @@ class TeachersTable
                     ->label('Status')
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'staff_tu' => 'Staff TU',
-                        'non_staff_tu' => 'Guru Kelas',
+                        'guru_kelas' => 'Non-Staff TU',
                         'other' => 'Lainnya',
                         default => '-',
                     })
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'staff_tu' => 'warning',
-                        'non_staff_tu' => 'success',
+                        'guru_kelas' => 'success',
                         'other' => 'gray',
                     })
                     ->placeholder('-'),
@@ -57,12 +57,12 @@ class TeachersTable
                     ->label('Status')
                     ->options([
                         'staff_tu' => 'Staff TU',
-                        'non_staff_tu' => 'Guru Kelas',
+                        'guru_kelas' => 'Guru Kelas',
                         'other' => 'Lainnya',
                     ])
                     ->multiple(),
                 Filter::make('gender')
-                    ->label('Gender')
+                    ->label('Jenis Kelamin')
                     ->form([
                         Select::make('gender')
                             ->label('Jenis Kelamin')

@@ -27,7 +27,7 @@ class TeacherResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $recordTitleAttribute = 'teacher';
+    protected static ?string $recordTitleAttribute = 'nip';
 
     public static function form(Schema $schema): Schema
     {

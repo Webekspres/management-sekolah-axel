@@ -10,6 +10,11 @@ class EditSchedule extends EditRecord
 {
     protected static string $resource = ScheduleResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Ubah Jadwal';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

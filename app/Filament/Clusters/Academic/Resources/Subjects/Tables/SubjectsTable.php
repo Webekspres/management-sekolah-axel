@@ -6,6 +6,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class SubjectsTable
@@ -24,7 +25,12 @@ class SubjectsTable
                     ->sortable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('level_id')
+                    ->label('Jenjang')
+                    ->relationship('level', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->multiple(),
             ])
             ->recordActions([
                 EditAction::make(),

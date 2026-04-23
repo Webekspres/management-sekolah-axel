@@ -25,7 +25,9 @@ class AcademicYearResource extends Resource
 
     protected static ?string $label = 'Tahun Ajaran';
 
-    protected static ?string $recordTitleAttribute = 'Tahun Ajaran';
+    protected static ?string $pluralLabel = 'Daftar Tahun Ajaran';
+
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
     {

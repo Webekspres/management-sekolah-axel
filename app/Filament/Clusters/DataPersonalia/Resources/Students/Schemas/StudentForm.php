@@ -24,8 +24,8 @@ class StudentForm
         return $schema
             ->components([
 
-                Section::make('Akun')
-                    ->description('Data login siswa')
+                Section::make('Data Akun')
+                    ->description('Informasi login dan identitas dasar')
                     ->columns(2)
                     ->schema([
                         TextInput::make('user.name')
@@ -162,8 +162,8 @@ class StudentForm
                             ->tel(),
                     ]),
 
-                Section::make('Alamat')
-                    ->description('Tempat tinggal siswa saat ini')
+                Section::make('Alamat Domisili')
+                    ->description('Pilih lokasi alamat tinggal dari data wilayah')
                     ->columns(2)
                     ->schema([
                         Select::make('address_province_id')

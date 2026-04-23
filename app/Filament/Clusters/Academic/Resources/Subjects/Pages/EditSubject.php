@@ -10,6 +10,11 @@ class EditSubject extends EditRecord
 {
     protected static string $resource = SubjectResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Ubah Mata Pelajaran';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

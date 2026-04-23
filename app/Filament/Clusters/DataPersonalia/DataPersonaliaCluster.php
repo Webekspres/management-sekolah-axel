@@ -12,4 +12,6 @@ class DataPersonaliaCluster extends Cluster
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
     protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
+
+    protected static ?string $title = 'Data Personalia';
 }

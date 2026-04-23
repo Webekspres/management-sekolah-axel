@@ -7,6 +7,8 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class AcademicYearsTable
@@ -16,14 +18,34 @@ class AcademicYearsTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->label('Tahun Ajaran')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('semester')
+                    ->label('Semester')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Ganjil' => 'info',
+                        'Genap' => 'success',
+                        default => 'gray',
+                    })
                     ->searchable(),
                 IconColumn::make('is_active')
+                    ->label('Status')
                     ->boolean(),
             ])
             ->filters([
-                //
+                SelectFilter::make('semester')
+                    ->label('Semester')
+                    ->options([
+                        'Ganjil' => 'Ganjil',
+                        'Genap' => 'Genap',
+                    ]),
+                TernaryFilter::make('is_active')
+                    ->label('Status')
+                    ->trueLabel('Aktif')
+                    ->falseLabel('Nonaktif')
+                    ->placeholder('Semua'),
             ])
             ->recordActions([
                 EditAction::make(),

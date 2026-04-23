@@ -27,7 +27,7 @@ class StudentResource extends Resource
 
     protected static ?string $cluster = DataPersonaliaCluster::class;
 
-    protected static ?string $recordTitleAttribute = 'Daftar Siswa';
+    protected static ?string $recordTitleAttribute = 'nipd';
 
     public static function form(Schema $schema): Schema
     {

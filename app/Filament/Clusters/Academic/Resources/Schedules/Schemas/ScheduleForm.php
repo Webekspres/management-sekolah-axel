@@ -6,8 +6,8 @@ use App\Models\Schedule;
 use App\Models\Teacher;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Get;
-use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -17,7 +17,9 @@ class ScheduleForm
     {
         return $schema
             ->components([
-                Grid::make(2)
+                Section::make('Jadwal Pelajaran')
+                    ->description('Atur kelas, mata pelajaran, guru, dan waktu')
+                    ->columns(2)
                     ->schema([
                         Select::make('class_id')
                             ->label('Kelas')

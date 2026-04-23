@@ -12,7 +12,7 @@ class TeacherFactory extends Factory
         return [
             'user_id' => User::factory()->asGuru(),
             'nip' => fake()->numerify('##################'),
-            'employment_status' => fake()->randomElement(['staff_tu', 'non_staff_tu', 'other']),
+            'employment_status' => fake()->randomElement(['staff_tu', 'guru_kelas', 'other']),
         ];
     }
 }

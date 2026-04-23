@@ -10,6 +10,11 @@ class EditSchoolClass extends EditRecord
 {
     protected static string $resource = SchoolClassResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Ubah Kelas';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -25,6 +25,8 @@ class SubjectResource extends Resource
 
     protected static ?string $label = 'Mata Pelajaran';
 
+    protected static ?string $pluralLabel = 'Daftar Mata Pelajaran';
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
