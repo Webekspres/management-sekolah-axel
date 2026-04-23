@@ -15,13 +15,15 @@ class SchoolClassesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(
-                fn (Builder $query): Builder => $query->with([
+            ->modifyQueryUsing(function (Builder $query): Builder {
+                $query->with([
                     'level',
                     'academicYear',
                     'homeroomTeacher.user',
-                ])
-            )
+                ]);
+
+                return $query;
+            })
             ->columns([
                 TextColumn::make('name')
                     ->label('Kelas')

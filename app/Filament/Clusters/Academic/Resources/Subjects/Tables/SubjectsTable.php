@@ -14,6 +14,7 @@ class SubjectsTable
     public static function configure(Table $table): Table
     {
         return $table
+
             ->columns([
                 TextColumn::make('name')
                     ->label('Mata Pelajaran')

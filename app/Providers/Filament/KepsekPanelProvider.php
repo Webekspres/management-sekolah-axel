@@ -30,6 +30,7 @@ class KepsekPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->discoverResources(in: app_path('Filament/Kepsek/Resources'), for: 'App\Filament\Kepsek\Resources')
+            ->discoverClusters(in: app_path('Filament/Kepsek/Clusters'), for: 'App\Filament\Kepsek\Clusters')
             ->discoverPages(in: app_path('Filament/Kepsek/Pages'), for: 'App\Filament\Kepsek\Pages')
             ->pages([
                 Dashboard::class,

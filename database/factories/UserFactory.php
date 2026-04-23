@@ -13,13 +13,15 @@ class UserFactory extends Factory
 
     public function definition(): array
     {
+        $gender = fake()->randomElement(['L', 'P']);
+
         return [
-            'name' => fake()->name(),
+            'name' => fake()->name($gender === 'L' ? 'male' : 'female'),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => fake()->randomElement(['super_admin', 'kepala_sekolah', 'guru', 'siswa_ortu']),
-            'gender' => fake()->randomElement(['L', 'P']),
+            'gender' => $gender,
             'phone_number' => fake()->numerify('08##########'),
             'address_id' => null,
             'place_of_birth' => fake()->city(),

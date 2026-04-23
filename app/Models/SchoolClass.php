@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\HasUlid;
+use App\Models\Traits\BelongsToAcademicLevel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SchoolClass extends Model
 {
-    use HasFactory, HasUlid;
+    use BelongsToAcademicLevel, HasFactory, HasUlid;
 
     protected $table = 'classes';
 

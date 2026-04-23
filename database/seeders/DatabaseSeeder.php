@@ -102,8 +102,8 @@ class DatabaseSeeder extends Seeder
         // --- 5. Kelas ---
         $classes = $teachers->map(
             fn (Teacher $teacher) => SchoolClass::factory()->create([
-                'teacher_id'       => $teacher->id,
-                'level_id'         => $levels->random()->id,
+                'teacher_id' => $teacher->id,
+                'level_id' => $levels->random()->id,
                 'academic_year_id' => $academicYear->id,
             ])
         );
@@ -111,7 +111,7 @@ class DatabaseSeeder extends Seeder
         // --- 6. Jadwal per kelas ---
         $schedules = $classes->flatMap(
             fn (SchoolClass $class) => Schedule::factory(5)->create([
-                'class_id'   => $class->id,
+                'class_id' => $class->id,
                 'teacher_id' => $class->teacher_id,
                 'subject_id' => $subjects->random()->id,
             ])
@@ -128,7 +128,7 @@ class DatabaseSeeder extends Seeder
         // --- 8. KBM per jadwal ---
         $kbms = $schedules->flatMap(
             fn (Schedule $schedule) => Kbm::factory(3)->approved()->create([
-                'schedule_id'    => $schedule->id,
+                'schedule_id' => $schedule->id,
                 'lesson_plan_id' => $lessonPlans->random()->id,
             ])
         );
@@ -139,7 +139,7 @@ class DatabaseSeeder extends Seeder
 
             return $siswaUsers->map(
                 fn (User $user) => Student::factory()->create([
-                    'user_id'  => $user->id,
+                    'user_id' => $user->id,
                     'class_id' => $class->id,
                 ])
             );
@@ -150,7 +150,7 @@ class DatabaseSeeder extends Seeder
             $sample = $allStudents->random(min(10, $allStudents->count()));
             $sample->each(
                 fn (Student $student) => Attendance::factory()->create([
-                    'kbm_id'     => $kbm->id,
+                    'kbm_id' => $kbm->id,
                     'student_id' => $student->id,
                 ])
             );
@@ -159,8 +159,8 @@ class DatabaseSeeder extends Seeder
         // --- 11. Nilai per siswa ---
         $allStudents->each(function (Student $student) use ($subjects, $academicYear) {
             Grade::factory(5)->create([
-                'student_id'       => $student->id,
-                'subject_id'       => $subjects->random()->id,
+                'student_id' => $student->id,
+                'subject_id' => $subjects->random()->id,
                 'academic_year_id' => $academicYear->id,
             ]);
         });
@@ -168,7 +168,7 @@ class DatabaseSeeder extends Seeder
         // --- 12. Invoice + Payment per siswa ---
         $allStudents->each(function (Student $student) use ($academicYear) {
             $invoice = Invoice::factory()->create([
-                'student_id'       => $student->id,
+                'student_id' => $student->id,
                 'academic_year_id' => $academicYear->id,
             ]);
 
@@ -177,7 +177,7 @@ class DatabaseSeeder extends Seeder
             // Sebagian siswa punya invoice menunggak
             if (fake()->boolean(30)) {
                 $overdueInvoice = Invoice::factory()->overdue()->create([
-                    'student_id'       => $student->id,
+                    'student_id' => $student->id,
                     'academic_year_id' => $academicYear->id,
                 ]);
 
@@ -188,7 +188,7 @@ class DatabaseSeeder extends Seeder
         // --- 13. Rapor per siswa ---
         $allStudents->each(
             fn (Student $student) => Rapor::factory()->create([
-                'student_id'       => $student->id,
+                'student_id' => $student->id,
                 'academic_year_id' => $academicYear->id,
             ])
         );

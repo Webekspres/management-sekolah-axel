@@ -29,8 +29,8 @@ class StudentFactory extends Factory
             'student_phone' => fake()->numerify('08##########'),
             'special_needs' => null,
             'house_number' => fake()->buildingNumber(),
-            'rt' => fake()->numerify('###'),
-            'rw' => fake()->numerify('###'),
+            'rt' => str_pad((string) fake()->numberBetween(1, 15), 3, '0', STR_PAD_LEFT),
+            'rw' => str_pad((string) fake()->numberBetween(1, 15), 3, '0', STR_PAD_LEFT),
             'village' => $regionData['village'],
             'district' => $regionData['district'],
             'city' => $regionData['city'],
@@ -39,7 +39,23 @@ class StudentFactory extends Factory
             'mother_name' => fake()->name('female'),
             'mother_phone' => fake()->numerify('08##########'),
             'admission_date' => fake()->dateTimeBetween('-5 years', 'now')->format('Y-m-d'),
-            'origin_school' => 'SD '.fake()->company(),
+            'origin_school' => function (array $attributes) {
+                if (empty($attributes['class_id']) || is_object($attributes['class_id'])) {
+                    return 'SD '.fake()->company();
+                }
+
+                $class = SchoolClass::with('level')->find($attributes['class_id']);
+                if (! $class || ! $class->level) {
+                    return 'SD '.fake()->company();
+                }
+
+                return match ($class->level->name) {
+                    'SMA' => 'SMP '.fake()->company(),
+                    'SMP' => 'SD '.fake()->company(),
+                    'SD' => 'TK '.fake()->company(),
+                    default => 'SD '.fake()->company(),
+                };
+            },
             'diploma_date' => null,
             'diploma_number' => null,
             'custom_spp' => null,

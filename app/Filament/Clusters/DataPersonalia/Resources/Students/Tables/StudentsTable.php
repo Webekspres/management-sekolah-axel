@@ -19,6 +19,7 @@ class StudentsTable
     public static function configure(Table $table): Table
     {
         return $table
+
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Nama Siswa')

@@ -30,6 +30,7 @@ class GuruPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->discoverResources(in: app_path('Filament/Guru/Resources'), for: 'App\Filament\Guru\Resources')
+            ->discoverClusters(in: app_path('Filament/Guru/Clusters'), for: 'App\Filament\Guru\Clusters')
             ->discoverPages(in: app_path('Filament/Guru/Pages'), for: 'App\Filament\Guru\Pages')
             ->pages([
                 Dashboard::class,

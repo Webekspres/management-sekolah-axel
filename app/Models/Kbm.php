@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\HasUlid;
+use DomainException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +31,60 @@ class Kbm extends Model
         'revision_note',
     ];
 
+    public function submitForApproval(User $actor): void
+    {
+        if (! in_array($this->status, ['DRAFT', 'REVISED'], true)) {
+            throw new DomainException('Laporan KBM hanya bisa diajukan dari status DRAFT atau REVISED.');
+        }
+
+        $this->update([
+            'status' => 'PENDING',
+            'revision_note' => null,
+        ]);
+
+        $this->recordActivity(
+            actor: $actor,
+            action: 'kbm_submitted',
+            description: 'Guru mengajukan laporan KBM untuk approval kepala sekolah.'
+        );
+    }
+
+    public function markAsRevised(User $actor, string $revisionNote): void
+    {
+        if ($this->status !== 'PENDING') {
+            throw new DomainException('Laporan KBM hanya bisa direvisi dari status PENDING.');
+        }
+
+        $this->update([
+            'status' => 'REVISED',
+            'revision_note' => $revisionNote,
+        ]);
+
+        $this->recordActivity(
+            actor: $actor,
+            action: 'kbm_revised',
+            description: 'Kepala sekolah meminta revisi laporan KBM: '.$revisionNote
+        );
+    }
+
+    public function approve(User $actor): void
+    {
+        if ($this->status !== 'PENDING') {
+            throw new DomainException('Laporan KBM hanya bisa disetujui dari status PENDING.');
+        }
+
+        $this->update([
+            'status' => 'APPROVED',
+            'revision_note' => null,
+        ]);
+
+        $this->recordActivity(
+            actor: $actor,
+            action: 'kbm_approved',
+            description: 'Kepala sekolah menyetujui laporan KBM.'
+        );
+    }
+
     protected function casts(): array
     {
         return ['date' => 'date'];
@@ -37,7 +92,8 @@ class Kbm extends Model
 
     public function schedule(): BelongsTo
     {
-        return $this->belongsTo(Schedule::class);
+        return $this->belongsTo(Schedule::class)
+            ->withoutGlobalScope('academic_level');
     }
 
     public function lessonPlan(): BelongsTo
@@ -48,5 +104,16 @@ class Kbm extends Model
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    private function recordActivity(User $actor, string $action, string $description): void
+    {
+        ActivityLog::query()->create([
+            'user_id' => $actor->id,
+            'action' => $action,
+            'entity_type' => self::class,
+            'entity_id' => $this->id,
+            'description' => $description,
+        ]);
     }
 }

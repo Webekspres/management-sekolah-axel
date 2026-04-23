@@ -15,13 +15,15 @@ class SchedulesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(
-                fn (Builder $query): Builder => $query->with([
+            ->modifyQueryUsing(function (Builder $query): Builder {
+                $query->with([
                     'schoolClass',
                     'subject',
                     'teacher.user',
-                ])
-            )
+                ]);
+
+                return $query;
+            })
             ->columns([
                 TextColumn::make('schoolClass.name')
                     ->label('Kelas')
@@ -57,7 +59,7 @@ class SchedulesTable
                     ->searchable()
                     ->sortable(),
             ])
-            ->defaultSort('day_of_week', 'asc')
+            ->defaultSort('schoolClass.name', 'asc')
             ->filters([
                 SelectFilter::make('class_id')
                     ->label('Kelas')

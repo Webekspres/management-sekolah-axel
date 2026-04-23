@@ -44,7 +44,7 @@ class IndonesianRegionSeeder extends Seeder
         if (! file_exists($sqlPath)) {
             throw new RuntimeException(
                 'File `'.self::SQL_PATH.'` tidak ditemukan di `'.database_path().'`. '
-                . 'Download dari alamat.thecloudalert.com lalu taruh di sana.'
+                .'Download dari alamat.thecloudalert.com lalu taruh di sana.'
             );
         }
 

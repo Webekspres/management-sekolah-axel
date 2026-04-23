@@ -40,7 +40,7 @@ class TeachersTable
                     ->label('Status')
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'staff_tu' => 'Staff TU',
-                        'guru_kelas' => 'Non-Staff TU',
+                        'guru_kelas' => 'Guru Kelas',
                         'other' => 'Lainnya',
                         default => '-',
                     })
