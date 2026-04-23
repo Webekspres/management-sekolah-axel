@@ -24,46 +24,32 @@ class KbmForm
                     ->schema([
                         Select::make('schedule_id')
                             ->label('Jadwal')
-                            ->options(function (): array {
-                                $teacherId = auth()->user()?->teacher?->id;
-
-                                if (! $teacherId) {
-                                    return [];
-                                }
-
-                                return Schedule::query()
+                            ->relationship(
+                                name: 'schedule',
+                                titleAttribute: 'id',
+                                modifyQueryUsing: fn ($query) => $query
+                                    ->where('teacher_id', auth()->user()?->teacher?->id)
                                     ->with(['schoolClass', 'subject'])
-                                    ->where('teacher_id', $teacherId)
                                     ->orderBy('day_of_week')
-                                    ->get()
-                                    ->mapWithKeys(fn (Schedule $schedule) => [
-                                        $schedule->id => "{$schedule->schoolClass?->name} - {$schedule->subject?->name} ({$schedule->start_time}-{$schedule->end_time})",
-                                    ])
-                                    ->all();
-                            })
+                                    ->orderBy('start_time'),
+                            )
+                            ->getOptionLabelFromRecordUsing(fn (Schedule $record) => "{$record->schoolClass?->name} - {$record->subject?->name} ({$record->start_time}-{$record->end_time})")
                             ->required(false)
                             ->rules(['required'])
                             ->markAsRequired()
                             ->searchable(),
                         Select::make('lesson_plan_id')
                             ->label('RPP Approved')
-                            ->options(function (): array {
-                                $teacherId = auth()->user()?->teacher?->id;
-
-                                if (! $teacherId) {
-                                    return [];
-                                }
-
-                                return LessonPlan::query()
-                                    ->where('teacher_id', $teacherId)
+                            ->relationship(
+                                name: 'lessonPlan',
+                                titleAttribute: 'id',
+                                modifyQueryUsing: fn ($query) => $query
+                                    ->where('teacher_id', auth()->user()?->teacher?->id)
                                     ->where('status', 'APPROVED')
-                                    ->orderByDesc('id')
-                                    ->get()
-                                    ->mapWithKeys(fn (LessonPlan $lessonPlan) => [
-                                        $lessonPlan->id => "{$lessonPlan->topic} ({$lessonPlan->subject?->name})",
-                                    ])
-                                    ->all();
-                            })
+                                    ->with('subject')
+                                    ->orderByDesc('id'),
+                            )
+                            ->getOptionLabelFromRecordUsing(fn (LessonPlan $record) => "{$record->topic} ({$record->subject?->name})")
                             ->required(false)
                             ->rules(['required'])
                             ->markAsRequired()

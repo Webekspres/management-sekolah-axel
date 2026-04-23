@@ -5,6 +5,7 @@ namespace App\Filament\Kepsek\Resources\LessonPlans\Tables;
 use App\Models\LessonPlan;
 use DomainException;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
@@ -67,9 +68,32 @@ class LessonPlansTable
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->modalHeading('Detail Pengajuan RPP')
-                    ->modalContent(fn (LessonPlan $record) => view('filament.modals.lesson-plan-detail', [
-                        'lessonPlan' => $record->loadMissing(['teacher.user', 'subject']),
-                    ])),
+                    ->form(fn (LessonPlan $record): array => [
+                        Placeholder::make('teacher_name')
+                            ->label('Guru')
+                            ->content(fn (): string => $record->teacher?->user?->name ?? '-'),
+                        Placeholder::make('subject_name')
+                            ->label('Mata Pelajaran')
+                            ->content(fn (): string => $record->subject?->name ?? '-'),
+                        Placeholder::make('topic')
+                            ->label('Topik')
+                            ->content(fn (): string => $record->topic ?? '-'),
+                        Placeholder::make('file_path')
+                            ->label('File')
+                            ->content(function (): string {
+                                if (filled($record->file_path)) {
+                                    return '<a href="' . Storage::url($record->file_path) . '" target="_blank" class="text-blue-600 hover:underline">' . basename($record->file_path) . '</a>';
+                                }
+                                return '-';
+                            })
+                            ->html(),
+                        Placeholder::make('status')
+                            ->label('Status')
+                            ->content(fn (): string => $record->status ?? '-'),
+                        Placeholder::make('revision_note')
+                            ->label('Catatan Revisi')
+                            ->content(fn (): string => $record->revision_note ?? '-'),
+                    ]),
                 Action::make('approve')
                     ->label('Setujui')
                     ->icon('heroicon-o-check-circle')
