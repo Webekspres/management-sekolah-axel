@@ -17,6 +17,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Carbon;
@@ -40,7 +41,7 @@ class TemporaryAccessManagement extends Page implements HasForms
     /**
      * @var array{
      *     user_ids: array<int, string>,
-     *     policy_ids: array<int, string>,
+     *     policy_abilities: array<string, array<int, string>>,
      *     temporary_role: string|null,
      *     duration: string,
      *     custom_expires_at: string|null
@@ -58,13 +59,7 @@ class TemporaryAccessManagement extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->form->fill([
-            'user_ids' => [],
-            'policy_ids' => [],
-            'temporary_role' => null,
-            'duration' => '1_week',
-            'custom_expires_at' => null,
-        ]);
+        $this->resetForm();
     }
 
     public function form(Schema $schema): Schema
@@ -73,7 +68,7 @@ class TemporaryAccessManagement extends Page implements HasForms
             ->statePath('data')
             ->schema([
                 Section::make('Pemberian Akses')
-                    ->description('Pilih user, policy, dan durasi akses sementara. Opsi role level bersifat tambahan.')
+                    ->description('Pilih user dan assign abilities granular untuk setiap policy. Abilities yang inherited dari role ditampilkan disabled.')
                     ->schema([
                         Select::make('user_ids')
                             ->label('Pilih User')
@@ -81,15 +76,12 @@ class TemporaryAccessManagement extends Page implements HasForms
                             ->searchable()
                             ->preload()
                             ->required()
+                            ->live()
                             ->options($this->getUserOptions()),
-                        CheckboxList::make('policy_ids')
-                            ->label('Pilih Policies')
-                            ->required()
-                            ->options($this->getPolicyOptions())
-                            ->descriptions($this->getPolicyDescriptions())
-                            ->columns(1),
+                        $this->buildPolicyAbilitiesSection(),
                         Select::make('temporary_role')
                             ->label('Temporary Role Elevation (Opsional)')
+                            ->live()
                             ->options([
                                 'guru' => 'Guru',
                                 'kepala_sekolah' => 'Kepala Sekolah',
@@ -118,88 +110,222 @@ class TemporaryAccessManagement extends Page implements HasForms
             ]);
     }
 
+    private function buildPolicyAbilitiesSection(): Section
+    {
+        return Section::make('Policies & Abilities')
+            ->description('Centang abilities yang ingin diberikan. Abilities yang di-disable adalah inherited dari role.')
+            ->schema(fn (Get $get): array => $this->getPolicyAbilitiesSchema($get('user_ids') ?? []))
+            ->collapsible();
+    }
+
+    /**
+     * @param  array<int, string>  $selectedUserIds
+     * @return array<int, mixed>
+     */
+    private function getPolicyAbilitiesSchema(array $selectedUserIds = []): array
+    {
+        if (empty($selectedUserIds)) {
+            return [];
+        }
+
+        $policies = AccessPolicy::query()->active()->orderBy('name')->get();
+        $schema = [];
+
+        foreach ($policies as $policy) {
+            $abilities = $policy->getAllAbilities();
+
+            if (empty($abilities)) {
+                continue;
+            }
+
+            $schema[] = CheckboxList::make("policy_abilities.{$policy->id}")
+                ->label($policy->name)
+                ->helperText($policy->description)
+                ->options($this->buildAbilityOptions($selectedUserIds, $policy, $abilities))
+                ->disableOptionWhen(fn (string $value): bool => $this->isAbilityInherited($selectedUserIds, $policy->id, $value))
+                ->live()
+                ->columns(2);
+        }
+
+        return $schema;
+    }
+
+    /**
+     * @param  array<int, string>  $userIds
+     * @param  array<int, string>  $abilities
+     * @return array<string, string>
+     */
+    private function buildAbilityOptions(array $userIds, AccessPolicy $policy, array $abilities): array
+    {
+        $abilityLabels = [
+            'viewAny' => 'Lihat Semua',
+            'view' => 'Lihat Detail',
+            'create' => 'Buat',
+            'update' => 'Edit',
+            'delete' => 'Hapus',
+        ];
+
+        $options = [];
+        foreach ($abilities as $ability) {
+            $label = $abilityLabels[$ability] ?? ucfirst($ability);
+            $options[$ability] = $label;
+        }
+
+        return $options;
+    }
+
+    private function isAbilityInherited(array $userIds, string $policyId, string $ability): bool
+    {
+        if (empty($userIds)) {
+            return false;
+        }
+
+        // Check if any of the users has this ability inherited from role
+        $policy = AccessPolicy::find($policyId);
+
+        if (! $policy) {
+            return false;
+        }
+
+        $users = User::whereIn('id', $userIds)->get();
+
+        foreach ($users as $user) {
+            if ($policy->isAbilityInherited($user, $ability)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function submit(): void
     {
         $this->validate([
             'data.user_ids' => ['required', 'array', 'min:1'],
-            'data.policy_ids' => ['required', 'array', 'min:1'],
             'data.duration' => ['required', 'string'],
-            'data.custom_expires_at' => ['nullable', 'date', 'required_if:data.duration,custom'],
+            'data.custom_expires_at' => ['nullable', 'date_format:Y-m-d H:i', 'required_if:data.duration,custom'],
             'data.temporary_role' => ['nullable', 'in:guru,kepala_sekolah,super_admin'],
         ]);
 
-        $expiresAt = $this->resolveExpiresAt();
+        $policyAbilities = $this->data['policy_abilities'] ?? [];
+
+        // Validate that at least one ability is selected if policies are present
+        $hasAbilities = false;
+        foreach ($policyAbilities as $abilities) {
+            if (! empty($abilities)) {
+                $hasAbilities = true;
+                break;
+            }
+        }
+
+        $hasTemporaryRole = filled($this->data['temporary_role'] ?? null);
+
+        if (! $hasAbilities && ! $hasTemporaryRole) {
+            Notification::make()
+                ->title('Validasi Gagal')
+                ->body('Silakan pilih minimal satu ability atau temporary role.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         $grantedByUserId = auth()->id();
         $temporaryAccessManager = app(TemporaryAccessManager::class);
 
         $users = User::query()->whereIn('id', $this->data['user_ids'])->get();
-        $policies = AccessPolicy::query()
-            ->active()
-            ->whereIn('id', $this->data['policy_ids'])
-            ->get()
-            ->keyBy('id');
 
-        $createdPolicyGrantCount = 0;
+        $createdAbilityCount = 0;
+        $inheritedAbilityCount = 0;
         $createdRoleElevationCount = 0;
-        $skippedPermanent = [];
+        $errors = [];
 
         foreach ($users as $user) {
-            foreach ($policies as $policy) {
-                if ($temporaryAccessManager->isPermanentlyAllowedByRole($user, $policy)) {
-                    $skippedPermanent[] = "{$user->name} - {$policy->name}";
+            foreach ($policyAbilities as $policyId => $abilities) {
+                $policy = AccessPolicy::query()->active()->find($policyId);
 
+                if (! $policy) {
                     continue;
                 }
 
-                $alreadyGranted = TemporaryPolicyGrant::query()
-                    ->where('user_id', $user->id)
-                    ->where('access_policy_id', $policy->id)
-                    ->where('expires_at', '>', now())
-                    ->exists();
+                foreach ($abilities as $ability) {
+                    // Skip if ability is inherited from role
+                    if ($policy->isAbilityInherited($user, $ability)) {
+                        $inheritedAbilityCount++;
 
-                if ($alreadyGranted) {
-                    continue;
+                        continue;
+                    }
+
+                    // Assign ability if not already assigned
+                    try {
+                        if ($temporaryAccessManager->assignAbility($user, $policy, $ability, auth()->user())) {
+                            $createdAbilityCount++;
+                        }
+                    } catch (\Exception $e) {
+                        $errors[] = "{$user->name} - {$policy->name}:{$ability} - {$e->getMessage()}";
+                    }
                 }
-
-                TemporaryPolicyGrant::query()->create([
-                    'user_id' => $user->id,
-                    'access_policy_id' => $policy->id,
-                    'granted_by_user_id' => $grantedByUserId,
-                    'expires_at' => $expiresAt,
-                ]);
-
-                $createdPolicyGrantCount++;
             }
 
+            // Handle temporary role elevation
             if (filled($this->data['temporary_role'])) {
-                TemporaryRoleElevation::query()->create([
-                    'user_id' => $user->id,
-                    'elevated_role' => $this->data['temporary_role'],
-                    'granted_by_user_id' => $grantedByUserId,
-                    'expires_at' => $expiresAt,
-                ]);
+                try {
+                    TemporaryRoleElevation::query()->create([
+                        'user_id' => $user->id,
+                        'elevated_role' => $this->data['temporary_role'],
+                        'granted_by_user_id' => $grantedByUserId,
+                        'expires_at' => $this->resolveExpiresAt(),
+                    ]);
 
-                $createdRoleElevationCount++;
+                    $createdRoleElevationCount++;
+                } catch (\Exception $e) {
+                    $errors[] = "Role elevation untuk {$user->name} gagal: {$e->getMessage()}";
+                }
             }
         }
 
-        if (! empty($skippedPermanent)) {
+        if (! empty($errors)) {
             Notification::make()
-                ->title('Sebagian policy dilewati karena sudah menjadi akses permanen.')
-                ->body(implode(PHP_EOL, array_slice($skippedPermanent, 0, 5)))
+                ->title('Beberapa akses mengalami error')
+                ->body(implode(PHP_EOL, array_slice($errors, 0, 5)))
                 ->warning()
                 ->send();
         }
 
+        if ($createdAbilityCount === 0 && $createdRoleElevationCount === 0) {
+            Notification::make()
+                ->title('Tidak ada perubahan tersimpan')
+                ->body('Data tidak berubah atau gagal tersimpan. Silakan cek notifikasi warning/error di atas.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $message = "Akses disimpan: {$createdAbilityCount} abilities baru, {$inheritedAbilityCount} abilities inherited (tidak ditambah), role elevation: {$createdRoleElevationCount}";
+
         Notification::make()
-            ->title('Akses sementara berhasil disimpan.')
-            ->body("Grant policy: {$createdPolicyGrantCount}, elevasi role: {$createdRoleElevationCount}")
+            ->title('Akses berhasil disimpan')
+            ->body($message)
             ->success()
             ->send();
 
+        $this->resetForm();
+    }
+
+    private function resetForm(): void
+    {
+        // Initialize policy_abilities with proper nested structure
+        $policyAbilities = [];
+        $policies = AccessPolicy::query()->active()->get();
+
+        foreach ($policies as $policy) {
+            $policyAbilities[$policy->id] = [];
+        }
+
         $this->form->fill([
             'user_ids' => [],
-            'policy_ids' => [],
+            'policy_abilities' => $policyAbilities,
             'temporary_role' => null,
             'duration' => '1_week',
             'custom_expires_at' => null,
@@ -211,10 +337,6 @@ class TemporaryAccessManagement extends Page implements HasForms
         $data = $this->data ?? [];
 
         if (blank($data['user_ids'] ?? [])) {
-            return true;
-        }
-
-        if (blank($data['policy_ids'] ?? [])) {
             return true;
         }
 
@@ -238,30 +360,6 @@ class TemporaryAccessManagement extends Page implements HasForms
             ->orderBy('name')
             ->get()
             ->mapWithKeys(fn (User $user): array => [$user->id => "{$user->name} ({$user->email})"])
-            ->all();
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function getPolicyOptions(): array
-    {
-        return AccessPolicy::query()
-            ->active()
-            ->orderBy('name')
-            ->pluck('name', 'id')
-            ->all();
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function getPolicyDescriptions(): array
-    {
-        return AccessPolicy::query()
-            ->active()
-            ->orderBy('name')
-            ->pluck('description', 'id')
             ->all();
     }
 

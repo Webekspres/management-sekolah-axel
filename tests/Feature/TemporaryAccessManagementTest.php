@@ -85,3 +85,23 @@ test('temporary access page skips permanent policy grants', function () {
         ->where('access_policy_id', $policy->id)
         ->count())->toBe(0);
 });
+
+test('temporary access page can assign temporary role without selecting abilities', function () {
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+    $admin = User::factory()->asAdmin()->create();
+    $targetUser = User::factory()->asSiswa()->create();
+
+    $this->actingAs($admin);
+
+    Livewire::test(TemporaryAccessManagement::class)
+        ->set('data.user_ids', [$targetUser->id])
+        ->set('data.temporary_role', 'guru')
+        ->set('data.duration', '1_week')
+        ->call('submit');
+
+    expect(TemporaryRoleElevation::query()
+        ->where('user_id', $targetUser->id)
+        ->where('elevated_role', 'guru')
+        ->count())->toBe(1);
+});

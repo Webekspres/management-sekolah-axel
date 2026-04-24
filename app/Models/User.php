@@ -85,6 +85,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(TemporaryRoleElevation::class);
     }
 
+    public function policyAbilities(): HasMany
+    {
+        return $this->hasMany(UserPolicyAbility::class);
+    }
+
     public function address(): BelongsTo
     {
         return $this->belongsTo(Address::class);
