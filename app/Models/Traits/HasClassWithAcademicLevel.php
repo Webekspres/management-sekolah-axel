@@ -9,7 +9,7 @@ trait HasClassWithAcademicLevel
     protected static function bootHasClassWithAcademicLevel(): void
     {
         static::addGlobalScope('academic_level', function (Builder $builder) {
-            if (app()->runningInConsole() || ! request()->hasSession()) {
+            if (! request()->hasSession()) {
                 return;
             }
             if ($levelId = session('active_academic_level_id')) {

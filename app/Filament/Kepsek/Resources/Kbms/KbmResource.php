@@ -3,7 +3,9 @@
 namespace App\Filament\Kepsek\Resources\Kbms;
 
 use App\Filament\Kepsek\Clusters\AcademicCluster;
+use App\Filament\Kepsek\Resources\Kbms\Pages\EditKbm;
 use App\Filament\Kepsek\Resources\Kbms\Pages\ListKbms;
+use App\Filament\Kepsek\Resources\Kbms\Schemas\KbmForm;
 use App\Filament\Kepsek\Resources\Kbms\Tables\KbmsTable;
 use App\Models\Kbm;
 use BackedEnum;
@@ -11,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class KbmResource extends Resource
 {
@@ -26,7 +29,7 @@ class KbmResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema;
+        return KbmForm::configure($schema);
     }
 
     public static function table(Table $table): Table
@@ -38,6 +41,18 @@ class KbmResource extends Resource
     {
         return [
             'index' => ListKbms::route('/'),
+            'edit' => EditKbm::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with([
+                'schedule.teacher.user',
+                'schedule.schoolClass',
+                'schedule.subjectForDisplay',
+                'lessonPlan.subjectForDisplay',
+            ]);
     }
 }

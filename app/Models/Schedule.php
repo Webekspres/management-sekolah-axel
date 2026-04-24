@@ -33,8 +33,13 @@ class Schedule extends Model
 
     public function subject(): BelongsTo
     {
-        return $this->belongsTo(Subject::class)
-            ->withoutGlobalScope('academic_level');
+        return $this->belongsTo(Subject::class);
+    }
+
+    public function subjectForDisplay(): BelongsTo
+    {
+        return $this->belongsTo(Subject::class, 'subject_id')
+            ->withoutGlobalScopes();
     }
 
     public function teacher(): BelongsTo

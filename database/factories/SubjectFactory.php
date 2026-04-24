@@ -18,7 +18,7 @@ class SubjectFactory extends Factory
 
         return [
             'name' => fake()->randomElement($subjects),
-            'level_id' => Level::factory(),
+            'level_id' => Level::query()->inRandomOrder()->value('id') ?? Level::factory(),
         ];
     }
 }

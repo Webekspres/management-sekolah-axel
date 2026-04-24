@@ -31,16 +31,21 @@ class StudentForm
                         TextInput::make('user.name')
                             ->label('Nama Lengkap')
                             ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
                             ->columnSpanFull(),
                         TextInput::make('user.email')
                             ->label('Email')
                             ->email()
-                            ->required(),
+                            ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true),
                         TextInput::make('user.password')
                             ->label('Password')
                             ->password()
                             ->revealable()
                             ->dehydrated(fn ($state) => filled($state))
+                            ->minLength(8)
                             ->required(fn (string $operation): bool => $operation === 'create'),
                         Radio::make('user.gender')
                             ->label('Jenis Kelamin')
@@ -84,10 +89,9 @@ class StudentForm
                                     ->toArray();
                             })
                             ->searchable()
+                            ->live()
                             ->disabled(fn (Get $get): bool => ! $get('user.birth_province_id'))
-                            ->required(false)
-                            ->rules(['required'])
-                            ->markAsRequired(),
+                            ->required(fn (Get $get): bool => filled($get('user.birth_province_id'))),
                         DatePicker::make('user.date_of_birth')
                             ->label('Tanggal Lahir')
                             ->native(false)
@@ -100,14 +104,9 @@ class StudentForm
                     ->schema([
                         Select::make('class_id')
                             ->label('Kelas')
-                            ->options(
-                                SchoolClass::query()
-                                    ->get()
-                                    ->mapWithKeys(fn (SchoolClass $class) => [
-                                        $class->id => $class->name,
-                                    ])
-                            )
+                            ->options(fn (): array => SchoolClass::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable()
+                            ->preload()
                             ->required(),
                         TextInput::make('nipd')
                             ->label('NIPD')
@@ -127,6 +126,7 @@ class StudentForm
                         TextInput::make('custom_spp')
                             ->label('SPP Khusus')
                             ->numeric()
+                            ->minValue(0)
                             ->prefix('Rp'),
                     ]),
 

@@ -33,7 +33,7 @@ class KbmDetailInfolist
                             ->label('Guru'),
                         TextEntry::make('schedule.schoolClass.name')
                             ->label('Kelas'),
-                        TextEntry::make('schedule.subject.name')
+                        TextEntry::make('schedule.subjectForDisplay.name')
                             ->label('Mata Pelajaran'),
                         TextEntry::make('lessonPlan.topic')
                             ->label('RPP'),

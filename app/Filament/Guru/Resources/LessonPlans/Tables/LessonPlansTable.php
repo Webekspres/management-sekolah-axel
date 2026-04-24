@@ -3,10 +3,12 @@
 namespace App\Filament\Guru\Resources\LessonPlans\Tables;
 
 use App\Models\LessonPlan;
+use App\Support\RichText;
 use DomainException;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Placeholder;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -20,16 +22,24 @@ class LessonPlansTable
     {
         return $table
             ->modifyQueryUsing(function (Builder $query): Builder {
-                return $query->with(['subject', 'teacher.user']);
+                return $query->with(['schoolClass', 'subjectForDisplay', 'teacher.user']);
             })
             ->columns([
-                TextColumn::make('subject.name')
+                TextColumn::make('subjectForDisplay.name')
                     ->label('Mata Pelajaran')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('topic')
                     ->label('Topik')
                     ->searchable()
+                    ->sortable(),
+                TextColumn::make('schoolClass.name')
+                    ->label('Kelas')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('implementation_date')
+                    ->label('Tanggal Pelaksanaan')
+                    ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('status')
                     ->label('Status')
@@ -43,6 +53,7 @@ class LessonPlansTable
                     }),
                 TextColumn::make('revision_note')
                     ->label('Catatan Revisi')
+                    ->formatStateUsing(fn (?string $state): string => RichText::display($state))
                     ->limit(50)
                     ->toggleable(),
                 TextColumn::make('file_path')
@@ -78,10 +89,38 @@ class LessonPlansTable
                         }
                     })
                     ->successNotificationTitle('RPP berhasil diajukan ke kepala sekolah.'),
+                Action::make('detail')
+                    ->label('Detail')
+                    ->icon('heroicon-o-eye')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->form(fn (LessonPlan $record): array => [
+                        Placeholder::make('subject')
+                            ->label('Mata Pelajaran')
+                            ->content($record->subjectForDisplay?->name ?? '-'),
+                        Placeholder::make('class')
+                            ->label('Kelas')
+                            ->content($record->schoolClass?->name ?? '-'),
+                        Placeholder::make('topic')
+                            ->label('Topik')
+                            ->content($record->topic ?? '-'),
+                        Placeholder::make('implementation_date')
+                            ->label('Tanggal Pelaksanaan')
+                            ->content($record->implementation_date?->format('d M Y') ?? '-'),
+                        Placeholder::make('status')
+                            ->label('Status')
+                            ->content($record->status),
+                        Placeholder::make('revision_note')
+                            ->label('Catatan Revisi')
+                            ->content(RichText::display($record->revision_note)),
+                        Placeholder::make('file')
+                            ->label('Dokumen')
+                            ->content(filled($record->file_path) ? basename($record->file_path) : '-'),
+                    ]),
                 EditAction::make()
-                    ->visible(fn (LessonPlan $record): bool => in_array($record->status, ['DRAFT', 'REVISED'], true)),
+                    ->label('Detail / Edit'),
                 DeleteAction::make()
-                    ->visible(fn (LessonPlan $record): bool => $record->status === 'DRAFT'),
+                    ->visible(fn (LessonPlan $record): bool => $record->status !== 'APPROVED'),
             ]);
     }
 }

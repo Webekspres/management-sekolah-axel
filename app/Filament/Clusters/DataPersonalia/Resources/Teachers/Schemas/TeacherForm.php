@@ -30,16 +30,21 @@ class TeacherForm
                         TextInput::make('user.name')
                             ->label('Nama Lengkap')
                             ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
                             ->columnSpanFull(),
                         TextInput::make('user.email')
                             ->label('Email')
                             ->email()
-                            ->required(),
+                            ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true),
                         TextInput::make('user.password')
                             ->label('Password')
                             ->password()
                             ->revealable()
                             ->dehydrated(fn ($state) => filled($state))
+                            ->minLength(8)
                             ->required(fn (string $operation): bool => $operation === 'create'),
                         Radio::make('user.gender')
                             ->label('Jenis Kelamin')
@@ -84,10 +89,9 @@ class TeacherForm
                                     ->toArray();
                             })
                             ->searchable()
+                            ->live()
                             ->disabled(fn (Get $get): bool => ! $get('user.birth_province_id'))
-                            ->required(false)
-                            ->rules(['required'])
-                            ->markAsRequired(),
+                            ->required(fn (Get $get): bool => filled($get('user.birth_province_id'))),
                         DatePicker::make('user.date_of_birth')
                             ->label('Tanggal Lahir')
                             ->native(false)

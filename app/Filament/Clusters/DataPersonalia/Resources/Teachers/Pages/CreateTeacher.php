@@ -4,10 +4,12 @@ namespace App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages;
 
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
 use App\Models\Address;
+use App\Models\City;
 use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CreateTeacher extends CreateRecord
 {
@@ -17,17 +19,15 @@ class CreateTeacher extends CreateRecord
     {
         $userData = $data['user'] ?? [];
 
-        $userPayload = [
-            'name' => $userData['name'],
-            'email' => $userData['email'],
-            'password' => Hash::make($userData['password']),
-            'gender' => $userData['gender'] ?? 'L',
-            'phone_number' => $userData['phone_number'] ?? null,
-            'date_of_birth' => $userData['date_of_birth'] ?? null,
-            'place_of_birth' => $userData['place_of_birth'] ?? null,
-            'address_detail' => $userData['address_detail'] ?? null,
-            'role' => 'guru',
-        ];
+        if (User::query()->where('email', $userData['email'] ?? null)->exists()) {
+            throw ValidationException::withMessages([
+                'user.email' => 'Email sudah digunakan.',
+            ]);
+        }
+
+        $birthCity = filled($userData['place_of_birth'] ?? null)
+            ? City::query()->where('name', $userData['place_of_birth'])->first()
+            : null;
 
         // Handle address
         $addressData = array_filter([
@@ -38,14 +38,6 @@ class CreateTeacher extends CreateRecord
             'street' => $data['address_street'] ?? null,
             'postal_code' => $data['address_postal_code'] ?? null,
         ], fn ($v) => $v !== null);
-
-        if (! empty($addressData)) {
-            $address = Address::create($addressData);
-            $userPayload['address_id'] = $address->id;
-            $userPayload['city_id'] = $addressData['city_id'] ?? null;
-        }
-
-        $user = User::create($userPayload);
 
         // Strip virtual fields
         unset(
@@ -58,6 +50,29 @@ class CreateTeacher extends CreateRecord
             $data['address_postal_code'],
         );
 
-        return $user->teacher()->create($data);
+        return DB::transaction(function () use ($addressData, $birthCity, $data, $userData): Model {
+            $userPayload = [
+                'name' => $userData['name'],
+                'email' => $userData['email'],
+                'password' => $userData['password'],
+                'gender' => $userData['gender'] ?? 'L',
+                'phone_number' => $userData['phone_number'] ?? null,
+                'date_of_birth' => $userData['date_of_birth'] ?? null,
+                'place_of_birth' => $userData['place_of_birth'] ?? null,
+                'address_detail' => $userData['address_detail'] ?? null,
+                'city_id' => $birthCity?->id,
+                'role' => 'guru',
+            ];
+
+            if (! empty($addressData)) {
+                $address = Address::query()->create($addressData);
+                $userPayload['address_id'] = $address->id;
+                $userPayload['city_id'] = $addressData['city_id'] ?? $userPayload['city_id'];
+            }
+
+            $user = User::query()->create($userPayload);
+
+            return $user->teacher()->create($data);
+        });
     }
 }

@@ -3,11 +3,10 @@
 namespace App\Filament\Kepsek\Resources\LessonPlans\Tables;
 
 use App\Models\LessonPlan;
-use DomainException;
+use App\Support\RichText;
 use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Textarea;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -19,13 +18,13 @@ class LessonPlansTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['subject', 'teacher.user']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['subjectForDisplay', 'teacher.user']))
             ->columns([
                 TextColumn::make('teacher.user.name')
                     ->label('Guru')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('subject.name')
+                TextColumn::make('subjectForDisplay.name')
                     ->label('Mata Pelajaran')
                     ->searchable()
                     ->sortable(),
@@ -44,6 +43,7 @@ class LessonPlansTable
                     }),
                 TextColumn::make('revision_note')
                     ->label('Catatan Revisi')
+                    ->formatStateUsing(fn (?string $state): string => RichText::display($state))
                     ->toggleable()
                     ->limit(60),
                 TextColumn::make('file_path')
@@ -74,16 +74,17 @@ class LessonPlansTable
                             ->content(fn (): string => $record->teacher?->user?->name ?? '-'),
                         Placeholder::make('subject_name')
                             ->label('Mata Pelajaran')
-                            ->content(fn (): string => $record->subject?->name ?? '-'),
+                            ->content(fn (): string => $record->subjectForDisplay?->name ?? '-'),
                         Placeholder::make('topic')
                             ->label('Topik')
                             ->content(fn (): string => $record->topic ?? '-'),
                         Placeholder::make('file_path')
                             ->label('File')
-                            ->content(function (): string {
+                            ->content(function () use ($record): string {
                                 if (filled($record->file_path)) {
-                                    return '<a href="' . Storage::url($record->file_path) . '" target="_blank" class="text-blue-600 hover:underline">' . basename($record->file_path) . '</a>';
+                                    return '<a href="'.Storage::url($record->file_path).'" target="_blank" class="text-blue-600 hover:underline">'.basename($record->file_path).'</a>';
                                 }
+
                                 return '-';
                             })
                             ->html(),
@@ -92,51 +93,10 @@ class LessonPlansTable
                             ->content(fn (): string => $record->status ?? '-'),
                         Placeholder::make('revision_note')
                             ->label('Catatan Revisi')
-                            ->content(fn (): string => $record->revision_note ?? '-'),
+                            ->content(fn (): string => RichText::display($record->revision_note)),
                     ]),
-                Action::make('approve')
-                    ->label('Setujui')
-                    ->icon('heroicon-o-check-circle')
-                    ->requiresConfirmation()
-                    ->color('success')
-                    ->visible(fn (LessonPlan $record): bool => $record->status === 'PENDING')
-                    ->action(function (LessonPlan $record): void {
-                        try {
-                            $record->approve(auth()->user());
-                        } catch (DomainException $exception) {
-                            Notification::make()
-                                ->title($exception->getMessage())
-                                ->danger()
-                                ->send();
-                        }
-                    })
-                    ->successNotificationTitle('RPP disetujui.'),
-                Action::make('requestRevision')
-                    ->label('Minta Revisi')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('warning')
-                    ->schema([
-                        Textarea::make('revision_note')
-                            ->label('Alasan Revisi')
-                            ->required(false)
-                            ->rules(['required', 'string', 'max:2000'])
-                            ->markAsRequired(),
-                    ])
-                    ->visible(fn (LessonPlan $record): bool => $record->status === 'PENDING')
-                    ->action(function (array $data, LessonPlan $record): void {
-                        try {
-                            $record->markAsRevised(
-                                actor: auth()->user(),
-                                revisionNote: $data['revision_note'],
-                            );
-                        } catch (DomainException $exception) {
-                            Notification::make()
-                                ->title($exception->getMessage())
-                                ->danger()
-                                ->send();
-                        }
-                    })
-                    ->successNotificationTitle('Permintaan revisi sudah dikirim ke guru.'),
+                EditAction::make()
+                    ->label('Ubah Status'),
             ]);
     }
 }

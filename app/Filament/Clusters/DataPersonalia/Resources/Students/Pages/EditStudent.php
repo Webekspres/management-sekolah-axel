@@ -5,10 +5,13 @@ namespace App\Filament\Clusters\DataPersonalia\Resources\Students\Pages;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
 use App\Models\City;
 use App\Models\SubDistrict;
+use App\Models\User;
 use App\Models\Village;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class EditStudent extends EditRecord
 {
@@ -86,15 +89,16 @@ class EditStudent extends EditRecord
     {
         $userData = $data['user'] ?? [];
 
-        $record->user->update([
-            'name' => $userData['name'],
-            'email' => $userData['email'],
-            'gender' => $userData['gender'] ?? null,
-            'phone_number' => $userData['phone_number'] ?? null,
-            'date_of_birth' => $userData['date_of_birth'] ?? null,
-            'place_of_birth' => $userData['place_of_birth'] ?? null,
-            'address_detail' => $userData['address_detail'] ?? null,
-        ]);
+        $emailExists = User::query()
+            ->where('email', $userData['email'] ?? null)
+            ->whereKeyNot($record->user_id)
+            ->exists();
+
+        if ($emailExists) {
+            throw ValidationException::withMessages([
+                'user.email' => 'Email sudah digunakan.',
+            ]);
+        }
 
         unset(
             $data['user'],
@@ -104,8 +108,31 @@ class EditStudent extends EditRecord
             $data['address_village_id'],
         );
 
-        $record->update($data);
+        return DB::transaction(function () use ($data, $record, $userData): Model {
+            $birthCity = filled($userData['place_of_birth'] ?? null)
+                ? City::query()->where('name', $userData['place_of_birth'])->first()
+                : null;
 
-        return $record;
+            $userPayload = [
+                'name' => $userData['name'],
+                'email' => $userData['email'],
+                'gender' => $userData['gender'] ?? null,
+                'phone_number' => $userData['phone_number'] ?? null,
+                'date_of_birth' => $userData['date_of_birth'] ?? null,
+                'place_of_birth' => $userData['place_of_birth'] ?? null,
+                'address_detail' => $userData['address_detail'] ?? null,
+                'city_id' => $birthCity?->id,
+                'role' => 'siswa_ortu',
+            ];
+
+            if (filled($userData['password'] ?? null)) {
+                $userPayload['password'] = $userData['password'];
+            }
+
+            $record->user->update($userPayload);
+            $record->update($data);
+
+            return $record;
+        });
     }
 }

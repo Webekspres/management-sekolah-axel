@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\HasUlid;
+use App\Models\Traits\HasClassWithAcademicLevel;
 use DomainException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LessonPlan extends Model
 {
-    use HasFactory, HasUlid;
+    use HasClassWithAcademicLevel, HasFactory, HasUlid;
 
     protected $keyType = 'string';
 
@@ -19,7 +20,23 @@ class LessonPlan extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['teacher_id', 'subject_id', 'topic', 'file_path', 'status', 'revision_note'];
+    protected $fillable = [
+        'teacher_id',
+        'subject_id',
+        'class_id',
+        'topic',
+        'implementation_date',
+        'file_path',
+        'status',
+        'revision_note',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'implementation_date' => 'date',
+        ];
+    }
 
     public function submitForApproval(User $actor): void
     {
@@ -82,8 +99,18 @@ class LessonPlan extends Model
 
     public function subject(): BelongsTo
     {
-        return $this->belongsTo(Subject::class)
-            ->withoutGlobalScope('academic_level');
+        return $this->belongsTo(Subject::class);
+    }
+
+    public function subjectForDisplay(): BelongsTo
+    {
+        return $this->belongsTo(Subject::class, 'subject_id')
+            ->withoutGlobalScopes();
+    }
+
+    public function schoolClass(): BelongsTo
+    {
+        return $this->belongsTo(SchoolClass::class, 'class_id');
     }
 
     public function kbms(): HasMany

@@ -23,26 +23,44 @@ use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $levels = $this->normalizeLevels();
+
+        if ($this->hasSeededDemoData()) {
+            $this->command?->info('Data demo sudah ada, seeding dilewati untuk mencegah duplikasi.');
+
+            return;
+        }
+
         // --- 1. Wilayah Indonesia (province, city, sub_district, village) ---
         $this->call(IndonesianRegionSeeder::class);
 
-        // --- 2. Referensi independen ---
-        $academicYear = AcademicYear::factory()->active()->create([
-            'name' => '2025/2026',
-            'semester' => 'Genap',
-        ]);
+        DB::transaction(fn () => $this->seedDemoData($levels));
+    }
 
-        $levels = Level::factory(3)->create();
+    /**
+     * @param  Collection<int, Level>  $levels
+     */
+    private function seedDemoData(Collection $levels): void
+    {
+
+        // --- 2. Referensi independen ---
+        $academicYear = AcademicYear::query()->firstOrCreate(
+            ['name' => '2025/2026', 'semester' => 'Genap'],
+            ['is_active' => true],
+        );
 
         $subjects = Subject::factory(10)->sequence(
             fn ($sequence) => ['level_id' => $levels->random()->id]
         )->create();
+        $subjectsByLevel = $subjects->groupBy('level_id');
 
         Setting::factory(5)->create();
 
@@ -67,6 +85,13 @@ class DatabaseSeeder extends Seeder
                 'email' => 'guru@example.com',
                 'role' => 'guru',
                 'password' => Hash::make('guru123'),
+                'gender' => 'L',
+            ],
+            [
+                'name' => 'Siswa Demo',
+                'email' => 'siswa@example.com',
+                'role' => 'siswa_ortu',
+                'password' => Hash::make('siswa123'),
                 'gender' => 'L',
             ],
         ];
@@ -110,19 +135,32 @@ class DatabaseSeeder extends Seeder
 
         // --- 6. Jadwal per kelas ---
         $schedules = $classes->flatMap(
-            fn (SchoolClass $class) => Schedule::factory(5)->create([
-                'class_id' => $class->id,
-                'teacher_id' => $class->teacher_id,
-                'subject_id' => $subjects->random()->id,
-            ])
+            function (SchoolClass $class) use ($subjects, $subjectsByLevel) {
+                $subjectForClass = $subjectsByLevel->get($class->level_id, collect())->random() ?? $subjects->random();
+
+                return Schedule::factory(5)->create([
+                    'class_id' => $class->id,
+                    'teacher_id' => $class->teacher_id,
+                    'subject_id' => $subjectForClass->id,
+                ]);
+            }
         );
 
         // --- 7. Lesson plan per guru ---
+        $classesByTeacherId = $classes->keyBy('teacher_id');
         $lessonPlans = $teachers->flatMap(
-            fn (Teacher $teacher) => LessonPlan::factory(3)->approved()->create([
-                'teacher_id' => $teacher->id,
-                'subject_id' => $subjects->random()->id,
-            ])
+            function (Teacher $teacher) use ($classesByTeacherId, $subjects, $subjectsByLevel) {
+                $class = $classesByTeacherId->get($teacher->id) ?? $classesByTeacherId->first();
+                $subjectForClass = $class
+                    ? ($subjectsByLevel->get($class->level_id, collect())->random() ?? $subjects->random())
+                    : $subjects->random();
+
+                return LessonPlan::factory(3)->approved()->create([
+                    'teacher_id' => $teacher->id,
+                    'class_id' => $class?->id,
+                    'subject_id' => $subjectForClass->id,
+                ]);
+            }
         );
 
         // --- 8. KBM per jadwal ---
@@ -209,5 +247,113 @@ class DatabaseSeeder extends Seeder
                 'user_id' => $allUsers->random()->id,
             ]);
         }
+    }
+
+    private function hasSeededDemoData(): bool
+    {
+        return User::query()->where('email', 'admin@example.com')->exists()
+            && Student::query()->exists()
+            && Teacher::query()->exists()
+            && SchoolClass::query()->exists();
+    }
+
+    /**
+     * @return Collection<int, Level>
+     */
+    protected function normalizeLevels(): Collection
+    {
+        $references = $this->canonicalLevelReferences();
+        $existingLevels = Level::query()->get();
+        $canonicalLevels = collect();
+
+        foreach ($references as $reference) {
+            $canonicalName = $reference['name'];
+            $canonicalLevel = $existingLevels->first(
+                fn (Level $level): bool => $this->resolveCanonicalLevelName($level->name) === $canonicalName
+            );
+
+            if (! $canonicalLevel) {
+                $canonicalLevel = Level::query()->create([
+                    'name' => $canonicalName,
+                    'default_spp' => $reference['default_spp'],
+                ]);
+
+                $existingLevels->push($canonicalLevel);
+            }
+
+            $canonicalLevel->update([
+                'name' => $canonicalName,
+                'default_spp' => $reference['default_spp'],
+            ]);
+
+            $duplicateIds = $existingLevels
+                ->filter(
+                    fn (Level $level): bool => $level->id !== $canonicalLevel->id
+                        && $this->resolveCanonicalLevelName($level->name) === $canonicalName
+                )
+                ->pluck('id');
+
+            if ($duplicateIds->isNotEmpty()) {
+                SchoolClass::query()->whereIn('level_id', $duplicateIds)->update(['level_id' => $canonicalLevel->id]);
+                Subject::query()->whereIn('level_id', $duplicateIds)->update(['level_id' => $canonicalLevel->id]);
+                Level::query()->whereIn('id', $duplicateIds)->delete();
+
+                $existingLevels = $existingLevels->reject(
+                    fn (Level $level): bool => $duplicateIds->contains($level->id)
+                )->values();
+            }
+
+            $canonicalLevels->push($canonicalLevel->fresh());
+        }
+
+        return $canonicalLevels->values();
+    }
+
+    /**
+     * @return Collection<int, array{name: string, default_spp: int, aliases: array<int, string>}>
+     */
+    protected function canonicalLevelReferences(): Collection
+    {
+        return collect([
+            [
+                'name' => 'SD',
+                'default_spp' => 150000,
+                'aliases' => ['sekolah dasar', 'elementary', 'primary'],
+            ],
+            [
+                'name' => 'SMP',
+                'default_spp' => 250000,
+                'aliases' => ['sekolah menengah pertama', 'junior high', 'middle school'],
+            ],
+            [
+                'name' => 'SMA',
+                'default_spp' => 350000,
+                'aliases' => ['sekolah menengah atas', 'senior high', 'high school'],
+            ],
+        ]);
+    }
+
+    protected function resolveCanonicalLevelName(string $rawName): ?string
+    {
+        $normalizedName = $this->normalizeLevelName($rawName);
+
+        foreach ($this->canonicalLevelReferences() as $reference) {
+            $candidates = collect([$reference['name'], ...$reference['aliases']])
+                ->map(fn (string $name): string => $this->normalizeLevelName($name));
+
+            if ($candidates->contains($normalizedName)) {
+                return $reference['name'];
+            }
+        }
+
+        return null;
+    }
+
+    protected function normalizeLevelName(string $name): string
+    {
+        $normalized = mb_strtolower(trim($name));
+        $normalized = preg_replace('/[^a-z0-9]+/i', ' ', $normalized) ?? $normalized;
+
+        return preg_replace('/\s+/', ' ', $normalized) ?? $normalized;
     }
 }

@@ -13,14 +13,15 @@ class LoginResponse implements LoginResponseContract
     {
         /** @var User $user */
         $user = auth()->user();
+        $effectiveRole = $user->effectiveRole();
 
-        if ($user->role === 'super_admin') {
+        if ($effectiveRole === 'super_admin') {
             return redirect()->to('/admin');
-        } elseif ($user->role === 'kepala_sekolah') {
+        } elseif ($effectiveRole === 'kepala_sekolah') {
             return redirect()->to('/kepsek');
-        } elseif ($user->role === 'guru') {
+        } elseif ($effectiveRole === 'guru') {
             return redirect()->to('/guru');
-        } elseif ($user->role === 'siswa_ortu') {
+        } elseif ($effectiveRole === 'siswa_ortu') {
             return redirect()->to('/student');
         }
 

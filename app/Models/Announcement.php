@@ -20,6 +20,9 @@ class Announcement extends Model
 
     protected function casts(): array
     {
-        return ['created_at' => 'datetime'];
+        return [
+            'target_role' => 'array',
+            'created_at' => 'datetime',
+        ];
     }
 }

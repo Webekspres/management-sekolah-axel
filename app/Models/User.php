@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\HasUlid;
+use App\Support\TemporaryAccessManager;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -74,6 +75,16 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Notification::class);
     }
 
+    public function temporaryPolicyGrants(): HasMany
+    {
+        return $this->hasMany(TemporaryPolicyGrant::class);
+    }
+
+    public function temporaryRoleElevations(): HasMany
+    {
+        return $this->hasMany(TemporaryRoleElevation::class);
+    }
+
     public function address(): BelongsTo
     {
         return $this->belongsTo(Address::class);
@@ -90,14 +101,21 @@ class User extends Authenticatable implements FilamentUser
             return false;
         }
 
+        $effectiveRole = $this->effectiveRole();
+
         return match ($panel->getId()) {
             'auth' => true,
-            'admin' => $this->role === 'super_admin',
-            'kepsek' => in_array($this->role, ['super_admin', 'kepala_sekolah'], true),
-            'guru' => $this->role === 'guru',
-            'student' => $this->role === 'siswa_ortu',
+            'admin' => $effectiveRole === 'super_admin',
+            'kepsek' => in_array($effectiveRole, ['super_admin', 'kepala_sekolah'], true),
+            'guru' => $effectiveRole === 'guru',
+            'student' => $effectiveRole === 'siswa_ortu',
             default => false,
         };
+    }
+
+    public function effectiveRole(): string
+    {
+        return app(TemporaryAccessManager::class)->resolveEffectiveRole($this);
     }
 
     /**

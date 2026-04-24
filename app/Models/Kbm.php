@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\HasUlid;
+use App\Models\Traits\HasScheduleWithAcademicLevel;
 use DomainException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Kbm extends Model
 {
-    use HasFactory, HasUlid;
+    use HasFactory, HasScheduleWithAcademicLevel, HasUlid;
 
     protected $keyType = 'string';
 
@@ -92,8 +93,7 @@ class Kbm extends Model
 
     public function schedule(): BelongsTo
     {
-        return $this->belongsTo(Schedule::class)
-            ->withoutGlobalScope('academic_level');
+        return $this->belongsTo(Schedule::class);
     }
 
     public function lessonPlan(): BelongsTo

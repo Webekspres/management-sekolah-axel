@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\SchoolClass;
 use App\Models\Subject;
 use App\Models\Teacher;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -13,7 +14,9 @@ class LessonPlanFactory extends Factory
         return [
             'teacher_id' => Teacher::factory(),
             'subject_id' => Subject::factory(),
+            'class_id' => SchoolClass::factory(),
             'topic' => fake()->sentence(4),
+            'implementation_date' => fake()->dateTimeBetween('-1 month', '+1 month')->format('Y-m-d'),
             'file_path' => 'lesson_plans/'.fake()->uuid().'.pdf',
             'status' => fake()->randomElement(['DRAFT', 'PENDING', 'REVISED', 'APPROVED']),
             'revision_note' => null,

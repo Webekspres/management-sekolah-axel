@@ -3,12 +3,12 @@
 namespace App\Providers;
 
 use App\Http\Responses\LoginResponse;
+use App\Support\ForeignKeyDeleteGuard;
 use Carbon\CarbonImmutable;
-use Filament\Support\Facades\FilamentView;
-use Filament\View\PanelsRenderHook;
-use Illuminate\Support\Facades\Blade;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -33,11 +33,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
-
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
-            fn (): string => Blade::render('@livewire(\'academic-level-switcher\')'),
-        );
+        $this->registerGlobalDeletionValidation();
     }
 
     /**
@@ -60,5 +56,18 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function registerGlobalDeletionValidation(): void
+    {
+        Event::listen('eloquent.deleting: *', function (string $eventName, array $data): void {
+            $model = $data[0] ?? null;
+
+            if (! $model instanceof Model) {
+                return;
+            }
+
+            ForeignKeyDeleteGuard::ensureDeletable($model);
+        });
     }
 }

@@ -18,7 +18,7 @@ class LessonPlanDetailInfolist
                     ->schema([
                         TextEntry::make('teacher.user.name')
                             ->label('Guru'),
-                        TextEntry::make('subject.name')
+                        TextEntry::make('subjectForDisplay.name')
                             ->label('Mata Pelajaran'),
                         TextEntry::make('topic')
                             ->label('Topik / Materi')

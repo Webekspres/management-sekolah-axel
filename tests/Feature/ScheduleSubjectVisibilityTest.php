@@ -7,7 +7,7 @@ use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\User;
 
-test('nama mata pelajaran tetap tampil di tabel jadwal meski level aktif berbeda', function () {
+test('nama mata pelajaran lintas jenjang tidak tampil di tabel jadwal', function () {
     $admin = User::factory()->asAdmin()->create();
 
     $classLevel = Level::factory()->create(['name' => 'SD']);
@@ -34,5 +34,5 @@ test('nama mata pelajaran tetap tampil di tabel jadwal meski level aktif berbeda
         ->withSession(['active_academic_level_id' => $classLevel->id])
         ->get('/admin/academic/schedules')
         ->assertOk()
-        ->assertSee('Bahasa Arab');
+        ->assertDontSee('Bahasa Arab');
 });

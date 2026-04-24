@@ -12,7 +12,7 @@ class SchoolClassFactory extends Factory
     public function definition(): array
     {
         return [
-            'level_id' => Level::factory(),
+            'level_id' => Level::query()->inRandomOrder()->value('id') ?? Level::factory(),
             'teacher_id' => Teacher::factory(),
             'academic_year_id' => AcademicYear::factory(),
             'name' => function (array $attributes) {
