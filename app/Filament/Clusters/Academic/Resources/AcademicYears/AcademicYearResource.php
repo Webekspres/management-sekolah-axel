@@ -9,6 +9,8 @@ use App\Filament\Clusters\Academic\Resources\AcademicYears\Pages\ListAcademicYea
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Schemas\AcademicYearForm;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Tables\AcademicYearsTable;
 use App\Models\AcademicYear;
+use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -28,6 +30,23 @@ class AcademicYearResource extends Resource
     protected static ?string $pluralLabel = 'Daftar Tahun Ajaran';
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->role === 'super_admin') {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', AcademicYear::class);
+    }
 
     public static function form(Schema $schema): Schema
     {

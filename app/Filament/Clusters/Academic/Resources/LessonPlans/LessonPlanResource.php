@@ -9,6 +9,8 @@ use App\Filament\Clusters\Academic\Resources\LessonPlans\Pages\ListLessonPlans;
 use App\Filament\Clusters\Academic\Resources\LessonPlans\Schemas\LessonPlanForm;
 use App\Filament\Clusters\Academic\Resources\LessonPlans\Tables\LessonPlansTable;
 use App\Models\LessonPlan;
+use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -27,6 +29,23 @@ class LessonPlanResource extends Resource
     protected static ?string $label = 'RPP';
 
     protected static ?string $pluralLabel = 'RPP';
+
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', LessonPlan::class);
+    }
 
     public static function form(Schema $schema): Schema
     {

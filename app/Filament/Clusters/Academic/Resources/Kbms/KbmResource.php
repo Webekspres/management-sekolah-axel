@@ -9,6 +9,8 @@ use App\Filament\Clusters\Academic\Resources\Kbms\Pages\ListKbms;
 use App\Filament\Clusters\Academic\Resources\Kbms\Schemas\KbmForm;
 use App\Filament\Clusters\Academic\Resources\Kbms\Tables\KbmsTable;
 use App\Models\Kbm;
+use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -27,6 +29,23 @@ class KbmResource extends Resource
     protected static ?string $label = 'Laporan KBM';
 
     protected static ?string $pluralLabel = 'Laporan KBM';
+
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', Kbm::class);
+    }
 
     public static function form(Schema $schema): Schema
     {

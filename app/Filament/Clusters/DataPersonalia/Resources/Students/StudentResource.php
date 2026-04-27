@@ -9,6 +9,8 @@ use App\Filament\Clusters\DataPersonalia\Resources\Students\Pages\ListStudents;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\Schemas\StudentForm;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\Tables\StudentsTable;
 use App\Models\Student;
+use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -28,6 +30,23 @@ class StudentResource extends Resource
     protected static ?string $cluster = DataPersonaliaCluster::class;
 
     protected static ?string $recordTitleAttribute = 'nipd';
+
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->role === 'super_admin') {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', Student::class);
+    }
 
     public static function form(Schema $schema): Schema
     {

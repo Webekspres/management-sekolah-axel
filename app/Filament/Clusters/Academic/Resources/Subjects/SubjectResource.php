@@ -9,6 +9,8 @@ use App\Filament\Clusters\Academic\Resources\Subjects\Pages\ListSubjects;
 use App\Filament\Clusters\Academic\Resources\Subjects\Schemas\SubjectForm;
 use App\Filament\Clusters\Academic\Resources\Subjects\Tables\SubjectsTable;
 use App\Models\Subject;
+use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -28,6 +30,23 @@ class SubjectResource extends Resource
     protected static ?string $pluralLabel = 'Daftar Mata Pelajaran';
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', Subject::class);
+    }
 
     public static function form(Schema $schema): Schema
     {
