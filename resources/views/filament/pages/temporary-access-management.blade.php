@@ -4,13 +4,6 @@
         {{ $this->form }}
 
         <div class="flex items-center justify-between">
-            <a
-                href="{{ \App\Filament\Pages\ActiveTemporaryAccessList::getUrl() }}"
-                class="text-sm text-primary-600 hover:text-primary-500 dark:text-primary-400"
-            >
-                Lihat daftar akses yang sedang aktif →
-            </a>
-
             <x-filament::button
                 color="primary"
                 type="button"

@@ -7,6 +7,7 @@ use App\Models\TemporaryPolicyGrant;
 use App\Models\User;
 use App\Models\UserPolicyAbility;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
 
 class TemporaryAccessManager
 {
@@ -242,6 +243,34 @@ class TemporaryAccessManager
     public function isPermanentlyAllowedByRole(User $user, AccessPolicy $policy): bool
     {
         return $policy->isPermanentForRole($user->role);
+    }
+
+    /**
+     * Get level IDs that a user is restricted to via temporary access for a given model.
+     * Returns null if user has no level restriction (access to all levels).
+     * Returns an empty collection if user has no temporary access at all.
+     *
+     * @return Collection<int, string>|null
+     */
+    public function getAllowedLevelIds(User $user, string $targetModel): ?Collection
+    {
+        $abilities = UserPolicyAbility::query()
+            ->forUser($user->id)
+            ->direct()
+            ->notExpired()
+            ->whereHas('accessPolicy', fn ($q) => $q->where('target_model', $targetModel)->where('is_active', true))
+            ->get();
+
+        if ($abilities->isEmpty()) {
+            return null;
+        }
+
+        // If any ability has null level_id, user has unrestricted level access
+        if ($abilities->whereNull('level_id')->isNotEmpty()) {
+            return null;
+        }
+
+        return $abilities->pluck('level_id')->filter()->unique()->values();
     }
 
     /**

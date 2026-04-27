@@ -74,8 +74,17 @@ class ScheduleResource extends Resource
         /** @var User $user */
         $user = auth()->user();
 
+        // Scope to teacher's own schedules for permanent guru role
         if ($user && $user->role === 'guru' && $user->teacher) {
             $query->where('teacher_id', $user->teacher->id);
+        }
+
+        // Scope to allowed levels if user has level-restricted temporary access
+        $allowedLevelIds = app(TemporaryAccessManager::class)
+            ->getAllowedLevelIds($user, Schedule::class);
+
+        if ($allowedLevelIds !== null && $allowedLevelIds->isNotEmpty()) {
+            $query->whereHas('schoolClass', fn (Builder $q) => $q->whereIn('level_id', $allowedLevelIds));
         }
 
         return $query;

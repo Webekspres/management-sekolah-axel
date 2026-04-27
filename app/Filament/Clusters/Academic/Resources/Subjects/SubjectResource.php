@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class SubjectResource extends Resource
 {
@@ -61,9 +62,7 @@ class SubjectResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
@@ -73,5 +72,22 @@ class SubjectResource extends Resource
             'create' => CreateSubject::route('/create'),
             'edit' => EditSubject::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        /** @var User $user */
+        $user = auth()->user();
+
+        $allowedLevelIds = app(TemporaryAccessManager::class)
+            ->getAllowedLevelIds($user, Subject::class);
+
+        if ($allowedLevelIds !== null && $allowedLevelIds->isNotEmpty()) {
+            $query->whereIn('level_id', $allowedLevelIds);
+        }
+
+        return $query;
     }
 }
