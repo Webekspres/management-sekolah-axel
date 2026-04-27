@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\AccessPolicy;
+use App\Models\Level;
 use App\Models\User;
 use App\Support\TemporaryAccessManager;
 use BackedEnum;
@@ -40,7 +41,7 @@ class TemporaryAccessManagement extends Page implements HasForms
      * @var array{
      *     user_ids: array<int, string>,
      *     policy_abilities: array<string, array<int, string>>,
-     *     temporary_role: string|null,
+     *     policy_levels: array<string, array<int, string>>,
      *     duration: string,
      *     custom_expires_at: string|null
      * }
@@ -52,7 +53,7 @@ class TemporaryAccessManagement extends Page implements HasForms
         /** @var User|null $user */
         $user = auth()->user();
 
-        return $user?->effectiveRole() === 'super_admin';
+        return $user?->role === 'super_admin';
     }
 
     public function mount(): void
@@ -77,15 +78,6 @@ class TemporaryAccessManagement extends Page implements HasForms
                             ->live()
                             ->options($this->getUserOptions()),
                         $this->buildPolicyAbilitiesSection(),
-                        Select::make('temporary_role')
-                            ->label('Temporary Role Elevation (Opsional)')
-                            ->live()
-                            ->options([
-                                'guru' => 'Guru',
-                                'kepala_sekolah' => 'Kepala Sekolah',
-                                'super_admin' => 'Super Admin',
-                            ])
-                            ->helperText('Jika dipilih, user akan mewarisi hak role ini sampai waktu berakhir.'),
                         Select::make('duration')
                             ->label('Durasi Akses')
                             ->required()
@@ -111,7 +103,7 @@ class TemporaryAccessManagement extends Page implements HasForms
     private function buildPolicyAbilitiesSection(): Section
     {
         return Section::make('Policies & Abilities')
-            ->description('Centang abilities yang ingin diberikan. Abilities yang di-disable adalah inherited dari role.')
+            ->description('Centang abilities yang ingin diberikan. Pilih jenjang untuk membatasi akses per jenjang (kosongkan = semua jenjang). Abilities yang di-disable adalah inherited dari role.')
             ->schema(fn (Get $get): array => $this->getPolicyAbilitiesSchema($get('user_ids') ?? []))
             ->collapsible();
     }
@@ -127,6 +119,7 @@ class TemporaryAccessManagement extends Page implements HasForms
         }
 
         $policies = AccessPolicy::query()->active()->orderBy('name')->get();
+        $levelOptions = $this->getLevelOptions();
         $schema = [];
 
         foreach ($policies as $policy) {
@@ -136,13 +129,26 @@ class TemporaryAccessManagement extends Page implements HasForms
                 continue;
             }
 
-            $schema[] = CheckboxList::make("policy_abilities.{$policy->id}")
-                ->label($policy->name)
-                ->helperText($policy->description)
-                ->options($this->buildAbilityOptions($selectedUserIds, $policy, $abilities))
-                ->disableOptionWhen(fn (string $value): bool => $this->isAbilityInherited($selectedUserIds, $policy->id, $value))
-                ->live()
-                ->columns(2);
+            $schema[] = Section::make($policy->name)
+                ->description($policy->description)
+                ->schema([
+                    CheckboxList::make("policy_abilities.{$policy->id}")
+                        ->label('Abilities')
+                        ->hiddenLabel()
+                        ->options($this->buildAbilityOptions($selectedUserIds, $policy, $abilities))
+                        ->disableOptionWhen(fn (string $value): bool => $this->isAbilityInherited($selectedUserIds, $policy->id, $value))
+                        ->live()
+                        ->columns(3),
+                    Select::make("policy_levels.{$policy->id}")
+                        ->label('Batasi ke Jenjang')
+                        ->multiple()
+                        ->options($levelOptions)
+                        ->placeholder('Semua jenjang')
+                        ->helperText('Kosongkan untuk akses ke semua jenjang.')
+                        ->visible(fn (Get $get): bool => ! empty($get("policy_abilities.{$policy->id}"))),
+                ])
+                ->collapsible()
+                ->compact();
         }
 
         return $schema;
@@ -206,10 +212,10 @@ class TemporaryAccessManagement extends Page implements HasForms
                 'required_if:data.duration,custom',
                 'after:now',
             ],
-            'data.temporary_role' => ['nullable', 'in:guru,kepala_sekolah,super_admin'],
         ]);
 
         $policyAbilities = $this->data['policy_abilities'] ?? [];
+        $policyLevels = $this->data['policy_levels'] ?? [];
 
         $hasAbilities = false;
         foreach ($policyAbilities as $abilities) {
@@ -219,12 +225,10 @@ class TemporaryAccessManagement extends Page implements HasForms
             }
         }
 
-        $hasTemporaryRole = filled($this->data['temporary_role'] ?? null);
-
-        if (! $hasAbilities && ! $hasTemporaryRole) {
+        if (! $hasAbilities) {
             Notification::make()
                 ->title('Validasi Gagal')
-                ->body('Silakan pilih minimal satu ability atau temporary role.')
+                ->body('Silakan pilih minimal satu ability.')
                 ->danger()
                 ->send();
 
@@ -240,7 +244,6 @@ class TemporaryAccessManagement extends Page implements HasForms
 
         $createdAbilityCount = 0;
         $inheritedAbilityCount = 0;
-        $createdRoleElevationCount = 0;
         $errors = [];
 
         foreach ($users as $user) {
@@ -251,6 +254,12 @@ class TemporaryAccessManagement extends Page implements HasForms
                     continue;
                 }
 
+                // Resolve level IDs for this policy (null = all levels)
+                $selectedLevelIds = $policyLevels[$policyId] ?? [];
+
+                // If no levels selected, assign once with null (all levels)
+                $levelIdsToAssign = empty($selectedLevelIds) ? [null] : $selectedLevelIds;
+
                 foreach ($abilities as $ability) {
                     if ($policy->isAbilityInherited($user, $ability)) {
                         $inheritedAbilityCount++;
@@ -258,32 +267,15 @@ class TemporaryAccessManagement extends Page implements HasForms
                         continue;
                     }
 
-                    try {
-                        if ($temporaryAccessManager->assignAbility($user, $policy, $ability, $grantedBy, $expiresAt)) {
-                            $createdAbilityCount++;
+                    foreach ($levelIdsToAssign as $levelId) {
+                        try {
+                            if ($temporaryAccessManager->assignAbility($user, $policy, $ability, $grantedBy, $expiresAt, $levelId)) {
+                                $createdAbilityCount++;
+                            }
+                        } catch (\Exception $e) {
+                            $errors[] = "{$user->name} - {$policy->name}:{$ability} - {$e->getMessage()}";
                         }
-                    } catch (\Exception $e) {
-                        $errors[] = "{$user->name} - {$policy->name}:{$ability} - {$e->getMessage()}";
                     }
-                }
-            }
-
-            if (filled($this->data['temporary_role'])) {
-                try {
-                    $elevated = $temporaryAccessManager->elevateRole(
-                        $user,
-                        $this->data['temporary_role'],
-                        $grantedBy,
-                        $expiresAt
-                    );
-
-                    if ($elevated) {
-                        $createdRoleElevationCount++;
-                    } else {
-                        $errors[] = "Role elevation untuk {$user->name} ditolak: tidak boleh memberikan role yang sama atau lebih tinggi dari pemberi akses.";
-                    }
-                } catch (\Exception $e) {
-                    $errors[] = "Role elevation untuk {$user->name} gagal: {$e->getMessage()}";
                 }
             }
         }
@@ -296,7 +288,7 @@ class TemporaryAccessManagement extends Page implements HasForms
                 ->send();
         }
 
-        if ($createdAbilityCount === 0 && $createdRoleElevationCount === 0) {
+        if ($createdAbilityCount === 0) {
             Notification::make()
                 ->title('Tidak ada perubahan tersimpan')
                 ->body('Data tidak berubah atau gagal tersimpan. Silakan cek notifikasi warning/error di atas.')
@@ -306,7 +298,7 @@ class TemporaryAccessManagement extends Page implements HasForms
             return;
         }
 
-        $message = "Akses disimpan: {$createdAbilityCount} abilities baru, {$inheritedAbilityCount} abilities inherited (tidak ditambah), role elevation: {$createdRoleElevationCount}";
+        $message = "Akses disimpan: {$createdAbilityCount} abilities baru, {$inheritedAbilityCount} abilities inherited (tidak ditambah).";
 
         Notification::make()
             ->title('Akses berhasil disimpan')
@@ -320,16 +312,18 @@ class TemporaryAccessManagement extends Page implements HasForms
     private function resetForm(): void
     {
         $policyAbilities = [];
+        $policyLevels = [];
         $policies = AccessPolicy::query()->active()->get();
 
         foreach ($policies as $policy) {
             $policyAbilities[$policy->id] = [];
+            $policyLevels[$policy->id] = [];
         }
 
         $this->form->fill([
             'user_ids' => [],
             'policy_abilities' => $policyAbilities,
-            'temporary_role' => null,
+            'policy_levels' => $policyLevels,
             'duration' => '1_week',
             'custom_expires_at' => null,
         ]);
@@ -366,6 +360,18 @@ class TemporaryAccessManagement extends Page implements HasForms
             ->orderBy('name')
             ->get()
             ->mapWithKeys(fn (User $user): array => [$user->id => "{$user->name} ({$user->email})"])
+            ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function getLevelOptions(): array
+    {
+        return Level::query()
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(fn (Level $level): array => [$level->id => $level->name])
             ->all();
     }
 

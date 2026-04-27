@@ -14,9 +14,7 @@ class KbmPolicy
             return true;
         }
 
-        $role = $user->effectiveRole();
-
-        return in_array($role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
     }
 
     public function view(User $user, Kbm $kbm): bool
@@ -25,13 +23,11 @@ class KbmPolicy
             return true;
         }
 
-        $role = $user->effectiveRole();
-
-        if (in_array($role, ['super_admin', 'kepala_sekolah'], true)) {
+        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
             return true;
         }
 
-        if ($role !== 'guru' || ! $user->teacher) {
+        if ($user->role !== 'guru' || ! $user->teacher) {
             return false;
         }
 
@@ -44,9 +40,7 @@ class KbmPolicy
             return true;
         }
 
-        $role = $user->effectiveRole();
-
-        return in_array($role, ['super_admin', 'guru'], true);
+        return in_array($user->role, ['super_admin', 'guru'], true);
     }
 
     public function update(User $user, Kbm $kbm): bool
@@ -55,13 +49,11 @@ class KbmPolicy
             return true;
         }
 
-        $role = $user->effectiveRole();
-
-        if (in_array($role, ['super_admin', 'kepala_sekolah'], true)) {
+        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
             return true;
         }
 
-        if ($role !== 'guru' || ! $user->teacher) {
+        if ($user->role !== 'guru' || ! $user->teacher) {
             return false;
         }
 
@@ -78,13 +70,11 @@ class KbmPolicy
             return true;
         }
 
-        $role = $user->effectiveRole();
-
-        if ($role === 'super_admin') {
+        if ($user->role === 'super_admin') {
             return true;
         }
 
-        if ($role !== 'guru' || ! $user->teacher) {
+        if ($user->role !== 'guru' || ! $user->teacher) {
             return false;
         }
 

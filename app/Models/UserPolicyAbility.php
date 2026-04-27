@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'source_role',
     'granted_by_user_id',
     'expires_at',
+    'level_id',
 ])]
 class UserPolicyAbility extends Model
 {
@@ -47,6 +48,11 @@ class UserPolicyAbility extends Model
     public function grantedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'granted_by_user_id');
+    }
+
+    public function level(): BelongsTo
+    {
+        return $this->belongsTo(Level::class);
     }
 
     public function scopeDirect(Builder $query): Builder
