@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\DataPersonalia\Resources\Teachers;
 
-use App\Filament\Clusters\DataPersonalia\DataPersonaliaCluster;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages\CreateTeacher;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages\EditTeacher;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages\ListTeachers;
@@ -21,7 +20,9 @@ class TeacherResource extends Resource
 {
     protected static ?string $model = Teacher::class;
 
-    protected static ?string $cluster = DataPersonaliaCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Data Personalia';
 
     protected static ?string $label = 'Guru';
 

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Academic\Resources\Schedules;
 
-use App\Filament\Clusters\Academic\AcademicCluster;
 use App\Filament\Clusters\Academic\Resources\Schedules\Pages\CreateSchedule;
 use App\Filament\Clusters\Academic\Resources\Schedules\Pages\EditSchedule;
 use App\Filament\Clusters\Academic\Resources\Schedules\Pages\ListSchedules;
@@ -24,7 +23,9 @@ class ScheduleResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendar;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Jadwal Pelajaran';
 

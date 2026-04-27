@@ -37,7 +37,7 @@ test('nama mata pelajaran tetap tampil di tabel kbm meskipun lintas jenjang', fu
 
     $this->actingAs($admin)
         ->withSession(['active_academic_level_id' => $classLevel->id])
-        ->get('/admin/academic/kbms')
+        ->get('/admin/kbms')
         ->assertOk()
         ->assertSee('Bahasa Arab');
 });

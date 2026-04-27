@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\DataPersonalia\Resources\Students;
 
-use App\Filament\Clusters\DataPersonalia\DataPersonaliaCluster;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\Pages\CreateStudent;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\Pages\EditStudent;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\Pages\ListStudents;
@@ -23,11 +22,11 @@ class StudentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Data Personalia';
+
     protected static ?string $label = 'Siswa';
-
-    protected static ?string $pluralLabel = 'Daftar Siswa';
-
-    protected static ?string $cluster = DataPersonaliaCluster::class;
 
     protected static ?string $recordTitleAttribute = 'nipd';
 

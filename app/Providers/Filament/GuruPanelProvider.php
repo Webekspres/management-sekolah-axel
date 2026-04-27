@@ -40,8 +40,9 @@ class GuruPanelProvider extends PanelProvider
             ])
             ->resources([
                 AnnouncementResource::class,
-                // Resources yang bisa di-assign via Akses Sementara ke guru
-                // canAccess() di masing-masing resource mengontrol visibilitas
+                // Resource yang bisa di-assign via Akses Sementara.
+                // Muncul di sidebar (navigationGroup 'Akademik'/'Data Personalia').
+                // canAccess() di masing-masing resource mengontrol visibilitas.
                 SchoolClassResource::class,
                 AcademicYearResource::class,
                 ScheduleResource::class,

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Academic\Resources\Subjects;
 
-use App\Filament\Clusters\Academic\AcademicCluster;
 use App\Filament\Clusters\Academic\Resources\Subjects\Pages\CreateSubject;
 use App\Filament\Clusters\Academic\Resources\Subjects\Pages\EditSubject;
 use App\Filament\Clusters\Academic\Resources\Subjects\Pages\ListSubjects;
@@ -23,7 +22,9 @@ class SubjectResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Mata Pelajaran';
 

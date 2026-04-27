@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Academic\Resources\AcademicYears;
 
-use App\Filament\Clusters\Academic\AcademicCluster;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Pages\CreateAcademicYear;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Pages\EditAcademicYear;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Pages\ListAcademicYears;
@@ -23,7 +22,9 @@ class AcademicYearResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Tahun Ajaran';
 

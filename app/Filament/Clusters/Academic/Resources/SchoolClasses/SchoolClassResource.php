@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Academic\Resources\SchoolClasses;
 
-use App\Filament\Clusters\Academic\AcademicCluster;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Pages\CreateSchoolClass;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Pages\EditSchoolClass;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Pages\ListSchoolClasses;
@@ -23,7 +22,9 @@ class SchoolClassResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Kelas';
 
