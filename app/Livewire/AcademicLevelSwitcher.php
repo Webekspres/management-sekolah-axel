@@ -50,8 +50,8 @@ class AcademicLevelSwitcher extends Component
 
     /**
      * Returns the levels this user is allowed to switch to based on temporary access.
-     * Returns null if user has permanent role access (no restriction).
-     * Returns a Collection if user only has temporary access (restricted to assigned levels).
+     * Returns null if user has unrestricted access (permanent role or temp access without level restriction).
+     * Returns a Collection if user has temporary access scoped to specific levels.
      *
      * @return Collection<string, string>|null
      */
@@ -63,12 +63,9 @@ class AcademicLevelSwitcher extends Component
             return null;
         }
 
-        // Users with permanent roles see all levels
-        if (in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true)) {
-            return null;
-        }
-
-        // For users with only temporary access, restrict to assigned levels
+        // Check if user has any temporary access with level restrictions.
+        // This takes priority over permanent role — even a guru with temp access
+        // to a specific level should be restricted to that level.
         $assignedLevelIds = UserPolicyAbility::query()
             ->forUser($user->id)
             ->direct()
@@ -78,19 +75,20 @@ class AcademicLevelSwitcher extends Component
             ->unique()
             ->values();
 
-        if ($assignedLevelIds->isEmpty()) {
-            // Has temporary access but no level restriction — show all levels
-            $hasTempAccess = UserPolicyAbility::query()
-                ->forUser($user->id)
-                ->direct()
-                ->notExpired()
-                ->exists();
-
-            return $hasTempAccess ? null : null;
+        if ($assignedLevelIds->isNotEmpty()) {
+            // User has level-scoped temporary access — restrict switcher to those levels
+            return Level::whereIn('id', $assignedLevelIds)
+                ->orderBy('name')
+                ->pluck('name', 'id');
         }
 
-        return Level::whereIn('id', $assignedLevelIds)
-            ->orderBy('name')
-            ->pluck('name', 'id');
+        // No level-scoped temporary access.
+        // Users with permanent roles see all levels (no restriction).
+        if (in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true)) {
+            return null;
+        }
+
+        // Non-permanent role with temporary access but no level restriction — show all levels
+        return null;
     }
 }
