@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class StudentResource extends Resource
 {
@@ -24,7 +25,7 @@ class StudentResource extends Resource
 
     protected static ?string $cluster = null;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Data Personalia';
+    protected static UnitEnum|string|null $navigationGroup = 'Data Personalia';
 
     protected static ?string $label = 'Siswa';
 

@@ -4,9 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\AccessPolicy;
 use App\Models\Level;
-use App\Models\TemporaryPolicyGrant;
 use App\Models\User;
-use App\Models\UserPolicyAbility;
 use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Carbon\CarbonInterface;
@@ -22,7 +20,6 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 
 class TemporaryAccessManagement extends Page implements HasForms
 {
@@ -37,6 +34,8 @@ class TemporaryAccessManagement extends Page implements HasForms
     protected static ?string $slug = 'akses-sementara';
 
     protected static string|\UnitEnum|null $navigationGroup = 'Manajemen Akses';
+
+    protected static ?int $navigationSort = 1;
 
     protected string $view = 'filament.pages.temporary-access-management';
 
@@ -305,59 +304,6 @@ class TemporaryAccessManagement extends Page implements HasForms
             ->send();
 
         $this->resetForm();
-    }
-
-    /**
-     * Revoke a single UserPolicyAbility by ID.
-     */
-    public function revokeAbility(string $abilityId): void
-    {
-        $ability = UserPolicyAbility::find($abilityId);
-
-        if (! $ability) {
-            return;
-        }
-
-        $policy = $ability->accessPolicy;
-        $user = $ability->user;
-
-        $ability->delete();
-
-        // Clean up TemporaryPolicyGrant if no more active abilities remain for this policy
-        $remaining = UserPolicyAbility::query()
-            ->forUser($user->id)
-            ->forPolicy($ability->access_policy_id)
-            ->direct()
-            ->notExpired()
-            ->count();
-
-        if ($remaining === 0) {
-            TemporaryPolicyGrant::query()
-                ->where('user_id', $user->id)
-                ->where('access_policy_id', $ability->access_policy_id)
-                ->delete();
-        }
-
-        Notification::make()
-            ->title('Akses dicabut')
-            ->body("Ability '{$ability->ability}' pada policy '{$policy?->name}' untuk {$user?->name} telah dicabut.")
-            ->success()
-            ->send();
-    }
-
-    /**
-     * Get all currently active (not-expired) direct UserPolicyAbilities.
-     *
-     * @return Collection<int, UserPolicyAbility>
-     */
-    public function getActiveAbilities(): Collection
-    {
-        return UserPolicyAbility::query()
-            ->with(['user', 'accessPolicy', 'grantedBy', 'level'])
-            ->direct()
-            ->notExpired()
-            ->orderBy('expires_at')
-            ->get();
     }
 
     private function resetForm(): void

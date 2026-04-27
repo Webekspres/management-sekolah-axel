@@ -15,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class KbmResource extends Resource
 {
@@ -24,7 +25,7 @@ class KbmResource extends Resource
 
     protected static ?string $cluster = null;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Akademik';
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Laporan KBM';
 
