@@ -208,7 +208,7 @@ class TemporaryAccessManagement extends Page implements HasForms
             'data.duration' => ['required', 'string'],
             'data.custom_expires_at' => [
                 'nullable',
-                'date_format:Y-m-d H:i',
+                'date',
                 'required_if:data.duration,custom',
                 'after:now',
             ],
@@ -338,10 +338,6 @@ class TemporaryAccessManagement extends Page implements HasForms
         }
 
         if (blank($data['duration'] ?? null)) {
-            return true;
-        }
-
-        if (($data['duration'] ?? null) === 'custom' && blank($data['custom_expires_at'] ?? null)) {
             return true;
         }
 

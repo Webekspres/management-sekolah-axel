@@ -199,7 +199,7 @@ test('submit rejects custom_expires_at in the past', function () {
     Livewire::test(TemporaryAccessManagement::class)
         ->set('data.user_ids', [$target->id])
         ->set('data.duration', 'custom')
-        ->set('data.custom_expires_at', now()->subHour()->format('Y-m-d H:i'))
+        ->set('data.custom_expires_at', now()->subHour()->toDateTimeString())
         ->call('submit')
         ->assertHasErrors(['data.custom_expires_at']);
 });
