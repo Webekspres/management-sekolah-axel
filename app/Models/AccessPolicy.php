@@ -84,7 +84,7 @@ class AccessPolicy extends Model
     }
 
     /**
-     * Get direct (manually assigned) abilities for a user
+     * Get direct (manually assigned) abilities for a user that are not expired.
      *
      * @return array<string>
      */
@@ -94,6 +94,7 @@ class AccessPolicy extends Model
             ->forUser($user->id)
             ->forPolicy($this->id)
             ->direct()
+            ->notExpired()
             ->pluck('ability')
             ->toArray();
     }
@@ -124,7 +125,7 @@ class AccessPolicy extends Model
     }
 
     /**
-     * Check if ability is directly assigned
+     * Check if ability is directly assigned and not expired.
      */
     public function isAbilityDirectAssigned(User $user, string $ability): bool
     {
@@ -133,6 +134,7 @@ class AccessPolicy extends Model
             ->forPolicy($this->id)
             ->forAbility($ability)
             ->direct()
+            ->notExpired()
             ->exists();
     }
 

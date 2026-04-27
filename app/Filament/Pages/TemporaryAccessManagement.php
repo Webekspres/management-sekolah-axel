@@ -3,8 +3,6 @@
 namespace App\Filament\Pages;
 
 use App\Models\AccessPolicy;
-use App\Models\TemporaryPolicyGrant;
-use App\Models\TemporaryRoleElevation;
 use App\Models\User;
 use App\Support\TemporaryAccessManager;
 use BackedEnum;
@@ -180,7 +178,6 @@ class TemporaryAccessManagement extends Page implements HasForms
             return false;
         }
 
-        // Check if any of the users has this ability inherited from role
         $policy = AccessPolicy::find($policyId);
 
         if (! $policy) {
@@ -203,13 +200,17 @@ class TemporaryAccessManagement extends Page implements HasForms
         $this->validate([
             'data.user_ids' => ['required', 'array', 'min:1'],
             'data.duration' => ['required', 'string'],
-            'data.custom_expires_at' => ['nullable', 'date_format:Y-m-d H:i', 'required_if:data.duration,custom'],
+            'data.custom_expires_at' => [
+                'nullable',
+                'date_format:Y-m-d H:i',
+                'required_if:data.duration,custom',
+                'after:now',
+            ],
             'data.temporary_role' => ['nullable', 'in:guru,kepala_sekolah,super_admin'],
         ]);
 
         $policyAbilities = $this->data['policy_abilities'] ?? [];
 
-        // Validate that at least one ability is selected if policies are present
         $hasAbilities = false;
         foreach ($policyAbilities as $abilities) {
             if (! empty($abilities)) {
@@ -230,8 +231,10 @@ class TemporaryAccessManagement extends Page implements HasForms
             return;
         }
 
-        $grantedByUserId = auth()->id();
+        /** @var User $grantedBy */
+        $grantedBy = auth()->user();
         $temporaryAccessManager = app(TemporaryAccessManager::class);
+        $expiresAt = $this->resolveExpiresAt();
 
         $users = User::query()->whereIn('id', $this->data['user_ids'])->get();
 
@@ -249,16 +252,14 @@ class TemporaryAccessManagement extends Page implements HasForms
                 }
 
                 foreach ($abilities as $ability) {
-                    // Skip if ability is inherited from role
                     if ($policy->isAbilityInherited($user, $ability)) {
                         $inheritedAbilityCount++;
 
                         continue;
                     }
 
-                    // Assign ability if not already assigned
                     try {
-                        if ($temporaryAccessManager->assignAbility($user, $policy, $ability, auth()->user())) {
+                        if ($temporaryAccessManager->assignAbility($user, $policy, $ability, $grantedBy, $expiresAt)) {
                             $createdAbilityCount++;
                         }
                     } catch (\Exception $e) {
@@ -267,17 +268,20 @@ class TemporaryAccessManagement extends Page implements HasForms
                 }
             }
 
-            // Handle temporary role elevation
             if (filled($this->data['temporary_role'])) {
                 try {
-                    TemporaryRoleElevation::query()->create([
-                        'user_id' => $user->id,
-                        'elevated_role' => $this->data['temporary_role'],
-                        'granted_by_user_id' => $grantedByUserId,
-                        'expires_at' => $this->resolveExpiresAt(),
-                    ]);
+                    $elevated = $temporaryAccessManager->elevateRole(
+                        $user,
+                        $this->data['temporary_role'],
+                        $grantedBy,
+                        $expiresAt
+                    );
 
-                    $createdRoleElevationCount++;
+                    if ($elevated) {
+                        $createdRoleElevationCount++;
+                    } else {
+                        $errors[] = "Role elevation untuk {$user->name} ditolak: tidak boleh memberikan role yang sama atau lebih tinggi dari pemberi akses.";
+                    }
                 } catch (\Exception $e) {
                     $errors[] = "Role elevation untuk {$user->name} gagal: {$e->getMessage()}";
                 }
@@ -315,7 +319,6 @@ class TemporaryAccessManagement extends Page implements HasForms
 
     private function resetForm(): void
     {
-        // Initialize policy_abilities with proper nested structure
         $policyAbilities = [];
         $policies = AccessPolicy::query()->active()->get();
 
@@ -352,11 +355,14 @@ class TemporaryAccessManagement extends Page implements HasForms
     }
 
     /**
+     * Only active users can receive temporary access.
+     *
      * @return array<string, string>
      */
-    private function getUserOptions(): array
+    public function getUserOptions(): array
     {
         return User::query()
+            ->where('is_active', true)
             ->orderBy('name')
             ->get()
             ->mapWithKeys(fn (User $user): array => [$user->id => "{$user->name} ({$user->email})"])

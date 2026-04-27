@@ -7,6 +7,7 @@ use App\Models\TemporaryPolicyGrant;
 use App\Models\TemporaryRoleElevation;
 use App\Models\User;
 use App\Models\UserPolicyAbility;
+use Carbon\CarbonInterface;
 
 class TemporaryAccessManager
 {
@@ -41,7 +42,8 @@ class TemporaryAccessManager
     }
 
     /**
-     * Check if user has temporary policy grant (for backwards compatibility)
+     * Check if user has temporary policy grant via TemporaryPolicyGrant table.
+     * Also checks UserPolicyAbility (direct, not-expired) for the same policy/target.
      */
     public function hasTemporaryPolicyGrant(User $user, string $ability, mixed ...$arguments): bool
     {
@@ -51,6 +53,7 @@ class TemporaryAccessManager
             return false;
         }
 
+        // Check legacy TemporaryPolicyGrant table
         $activeGrants = TemporaryPolicyGrant::query()
             ->where('user_id', $user->id)
             ->where('expires_at', '>', now())
@@ -73,25 +76,34 @@ class TemporaryAccessManager
             }
         }
 
-        return false;
+        // Also check UserPolicyAbility (direct, not-expired) for matching target_model
+        $hasDirectAbility = UserPolicyAbility::query()
+            ->forUser($user->id)
+            ->direct()
+            ->notExpired()
+            ->whereHas('accessPolicy', function ($q) use ($targetModel): void {
+                $q->where('target_model', $targetModel)->where('is_active', true);
+            })
+            ->forAbility($ability)
+            ->exists();
+
+        return $hasDirectAbility;
     }
 
     /**
-     * Check if user has ability either inherited or directly assigned
+     * Check if user has ability either inherited or directly assigned (and not expired).
      */
     public function hasAbility(User $user, AccessPolicy $policy, string $ability): bool
     {
-        // Check inherited abilities (from role)
         if ($policy->isAbilityInherited($user, $ability)) {
             return true;
         }
 
-        // Check directly assigned abilities
         return $policy->isAbilityDirectAssigned($user, $ability);
     }
 
     /**
-     * Get all abilities user has (inherited + direct) for a policy
+     * Get all abilities user has (inherited + direct) for a policy.
      *
      * @return array<string>
      */
@@ -101,7 +113,7 @@ class TemporaryAccessManager
     }
 
     /**
-     * Get abilities inherited from role
+     * Get abilities inherited from role.
      *
      * @return array<string>
      */
@@ -111,7 +123,7 @@ class TemporaryAccessManager
     }
 
     /**
-     * Get abilities directly assigned
+     * Get abilities directly assigned (not expired).
      *
      * @return array<string>
      */
@@ -121,45 +133,82 @@ class TemporaryAccessManager
     }
 
     /**
-     * Assign ability to user (creates delta only if not inherited)
+     * Assign ability to user with an expiry date.
+     * Also creates a TemporaryPolicyGrant so policies can detect the access.
+     * Returns false if ability is already inherited from role.
+     * $expiresAt defaults to 1 week from now if not provided.
      */
-    public function assignAbility(User $user, AccessPolicy $policy, string $ability, User $grantedBy): bool
+    public function assignAbility(User $user, AccessPolicy $policy, string $ability, User $grantedBy, ?CarbonInterface $expiresAt = null): bool
     {
         // Don't allow assigning if already inherited from role
         if ($policy->isAbilityInherited($user, $ability)) {
             return false;
         }
 
-        // Check if already directly assigned
-        $exists = UserPolicyAbility::query()
-            ->forUser($user->id)
-            ->forPolicy($policy->id)
-            ->forAbility($ability)
-            ->direct()
-            ->exists();
+        $expiresAt ??= now()->addWeek();
 
-        if ($exists) {
-            return true; // Already assigned
-        }
+        // Upsert UserPolicyAbility (update expires_at if already exists)
+        UserPolicyAbility::query()->updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'access_policy_id' => $policy->id,
+                'ability' => $ability,
+                'is_inherited' => false,
+            ],
+            [
+                'granted_by_user_id' => $grantedBy->id,
+                'expires_at' => $expiresAt,
+            ]
+        );
 
-        // Create direct assignment
-        UserPolicyAbility::create([
-            'user_id' => $user->id,
-            'access_policy_id' => $policy->id,
-            'ability' => $ability,
-            'is_inherited' => false,
-            'granted_by_user_id' => $grantedBy->id,
-        ]);
+        // Sync TemporaryPolicyGrant so hasTemporaryPolicyGrant() in policies works
+        TemporaryPolicyGrant::query()->updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'access_policy_id' => $policy->id,
+            ],
+            [
+                'granted_by_user_id' => $grantedBy->id,
+                'expires_at' => $expiresAt,
+            ]
+        );
 
         return true;
     }
 
     /**
-     * Revoke ability from user (only removes direct assignments)
+     * Elevate user role temporarily.
+     * Prevents privilege escalation: elevated_role must not exceed grantedBy's role level.
+     * Deduplicates: updates expires_at if an active elevation for the same role already exists.
+     */
+    public function elevateRole(User $user, string $elevatedRole, User $grantedBy, CarbonInterface $expiresAt): bool
+    {
+        $grantorLevel = self::ROLE_LEVELS[$grantedBy->effectiveRole()] ?? 0;
+        $targetLevel = self::ROLE_LEVELS[$elevatedRole] ?? 0;
+
+        if ($targetLevel >= $grantorLevel) {
+            return false;
+        }
+
+        TemporaryRoleElevation::query()->updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'elevated_role' => $elevatedRole,
+            ],
+            [
+                'granted_by_user_id' => $grantedBy->id,
+                'expires_at' => $expiresAt,
+            ]
+        );
+
+        return true;
+    }
+
+    /**
+     * Revoke ability from user (only removes direct assignments).
      */
     public function revokeAbility(User $user, AccessPolicy $policy, string $ability): bool
     {
-        // Cannot revoke inherited abilities
         if ($policy->isAbilityInherited($user, $ability)) {
             return false;
         }
@@ -171,11 +220,26 @@ class TemporaryAccessManager
             ->direct()
             ->delete();
 
+        // Also remove the corresponding TemporaryPolicyGrant if no more abilities remain
+        $remainingAbilities = UserPolicyAbility::query()
+            ->forUser($user->id)
+            ->forPolicy($policy->id)
+            ->direct()
+            ->notExpired()
+            ->count();
+
+        if ($remainingAbilities === 0) {
+            TemporaryPolicyGrant::query()
+                ->where('user_id', $user->id)
+                ->where('access_policy_id', $policy->id)
+                ->delete();
+        }
+
         return true;
     }
 
     /**
-     * Build inherited permissions from role (called during role assignment)
+     * Build inherited permissions from role (called during role assignment).
      */
     public function rebuildInheritedAbilities(User $user): void
     {
@@ -191,12 +255,10 @@ class TemporaryAccessManager
             ->get()
             ->filter(fn (AccessPolicy $policy) => $policy->isPermanentForRole($user->role));
 
-        // Create inherited ability records for each policy
         foreach ($policies as $policy) {
             $abilities = $policy->getAllAbilities();
 
             if (in_array('*', $abilities, true)) {
-                // Handle wildcard - store all available abilities
                 $abilities = $policy->getAllAbilities();
             }
 
@@ -219,6 +281,14 @@ class TemporaryAccessManager
     public function isPermanentlyAllowedByRole(User $user, AccessPolicy $policy): bool
     {
         return $policy->isPermanentForRole($user->role);
+    }
+
+    /**
+     * Get the numeric level for a role.
+     */
+    public function getRoleLevel(string $role): int
+    {
+        return self::ROLE_LEVELS[$role] ?? 0;
     }
 
     /**

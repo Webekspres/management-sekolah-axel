@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'is_inherited',
     'source_role',
     'granted_by_user_id',
+    'expires_at',
 ])]
 class UserPolicyAbility extends Model
 {
@@ -29,6 +30,7 @@ class UserPolicyAbility extends Model
     {
         return [
             'is_inherited' => 'boolean',
+            'expires_at' => 'datetime',
         ];
     }
 
@@ -70,5 +72,15 @@ class UserPolicyAbility extends Model
     public function scopeForAbility(Builder $query, string $ability): Builder
     {
         return $query->where('ability', $ability);
+    }
+
+    /**
+     * Scope to only non-expired abilities (permanent or still active).
+     */
+    public function scopeNotExpired(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q): void {
+            $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+        });
     }
 }

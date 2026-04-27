@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('user_policy_abilities', function (Blueprint $table) {
-            //
+            $table->timestamp('expires_at')->nullable()->after('granted_by_user_id');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('user_policy_abilities', function (Blueprint $table) {
-            //
+            $table->dropColumn('expires_at');
         });
     }
 };
