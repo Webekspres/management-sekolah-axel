@@ -7,7 +7,7 @@ beforeEach(function () {
 });
 
 test('form resource rpp akademik menampilkan field approval lengkap', function () {
-    $this->get('/admin/academic/lesson-plans/create')
+    $this->get('/admin/lesson-plans/create')
         ->assertOk()
         ->assertSee('Guru Pengaju')
         ->assertSee('Mata Pelajaran')

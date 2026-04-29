@@ -7,22 +7,22 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Add level_id to user_policy_abilities for granular per-jenjang access control.
+     * NULL means access to all levels (backward compatible).
      */
     public function up(): void
     {
         Schema::table('user_policy_abilities', function (Blueprint $table) {
-            $table->timestamp('expires_at')->nullable()->after('granted_by_user_id');
+            $table->ulid('level_id')->nullable()->after('expires_at')->index();
+            $table->foreign('level_id')->references('id')->on('levels')->nullOnDelete();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('user_policy_abilities', function (Blueprint $table) {
-            $table->dropColumn('expires_at');
+            $table->dropForeign(['level_id']);
+            $table->dropColumn('level_id');
         });
     }
 };

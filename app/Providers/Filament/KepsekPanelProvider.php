@@ -2,6 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Clusters\Academic\Resources\AcademicYears\AcademicYearResource;
+use App\Filament\Clusters\Academic\Resources\Schedules\ScheduleResource;
+use App\Filament\Clusters\Academic\Resources\SchoolClasses\SchoolClassResource;
+use App\Filament\Clusters\Academic\Resources\Subjects\SubjectResource;
+use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
+use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
 use App\Filament\Resources\Announcements\AnnouncementResource;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -34,8 +40,14 @@ class KepsekPanelProvider extends PanelProvider
             ])
             ->resources([
                 AnnouncementResource::class,
+                // Resource yang bisa di-assign via Akses Sementara.
+                SchoolClassResource::class,
+                AcademicYearResource::class,
+                ScheduleResource::class,
+                SubjectResource::class,
+                TeacherResource::class,
+                StudentResource::class,
             ])
-            ->discoverClusters(in: app_path('Filament/Clusters/DataPersonalia'), for: 'App\Filament\Clusters\DataPersonalia')
             ->discoverResources(in: app_path('Filament/Kepsek/Resources'), for: 'App\Filament\Kepsek\Resources')
             ->discoverClusters(in: app_path('Filament/Kepsek/Clusters'), for: 'App\Filament\Kepsek\Clusters')
             ->discoverPages(in: app_path('Filament/Kepsek/Pages'), for: 'App\Filament\Kepsek\Pages')

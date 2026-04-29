@@ -32,7 +32,7 @@ test('nama mata pelajaran lintas jenjang tidak tampil di tabel jadwal', function
 
     $this->actingAs($admin)
         ->withSession(['active_academic_level_id' => $classLevel->id])
-        ->get('/admin/academic/schedules')
+        ->get('/admin/schedules')
         ->assertOk()
         ->assertDontSee('Bahasa Arab');
 });

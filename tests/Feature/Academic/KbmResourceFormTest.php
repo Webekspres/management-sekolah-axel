@@ -4,7 +4,7 @@ use App\Models\User;
 
 test('form resource kbm akademik menampilkan field approval lengkap', function () {
     $this->actingAs(User::factory()->asAdmin()->create())
-        ->get('/admin/academic/kbms/create')
+        ->get('/admin/kbms/create')
         ->assertOk()
         ->assertSee('Jadwal')
         ->assertSee('RPP Approved')

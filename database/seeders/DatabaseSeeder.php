@@ -33,6 +33,9 @@ class DatabaseSeeder extends Seeder
     {
         $levels = $this->normalizeLevels();
 
+        // Always seed access policies (idempotent)
+        $this->call(AccessPolicySeeder::class);
+
         if ($this->hasSeededDemoData()) {
             $this->command?->info('Data demo sudah ada, seeding dilewati untuk mencegah duplikasi.');
 

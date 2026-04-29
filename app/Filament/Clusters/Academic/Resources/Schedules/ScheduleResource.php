@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Academic\Resources\Schedules;
 
-use App\Filament\Clusters\Academic\AcademicCluster;
 use App\Filament\Clusters\Academic\Resources\Schedules\Pages\CreateSchedule;
 use App\Filament\Clusters\Academic\Resources\Schedules\Pages\EditSchedule;
 use App\Filament\Clusters\Academic\Resources\Schedules\Pages\ListSchedules;
@@ -10,6 +9,7 @@ use App\Filament\Clusters\Academic\Resources\Schedules\Schemas\ScheduleForm;
 use App\Filament\Clusters\Academic\Resources\Schedules\Tables\SchedulesTable;
 use App\Models\Schedule;
 use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -23,11 +23,30 @@ class ScheduleResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendar;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Jadwal Pelajaran';
 
     protected static ?string $pluralLabel = 'Jadwal Pelajaran';
+
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if (in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true)) {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', Schedule::class);
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -55,8 +74,17 @@ class ScheduleResource extends Resource
         /** @var User $user */
         $user = auth()->user();
 
+        // Scope to teacher's own schedules for permanent guru role
         if ($user && $user->role === 'guru' && $user->teacher) {
             $query->where('teacher_id', $user->teacher->id);
+        }
+
+        // Scope to allowed levels if user has level-restricted temporary access
+        $allowedLevelIds = app(TemporaryAccessManager::class)
+            ->getAllowedLevelIds($user, Schedule::class);
+
+        if ($allowedLevelIds !== null && $allowedLevelIds->isNotEmpty()) {
+            $query->whereHas('schoolClass', fn (Builder $q) => $q->whereIn('level_id', $allowedLevelIds));
         }
 
         return $query;

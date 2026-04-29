@@ -32,7 +32,7 @@ test('data mata pelajaran tetap tampil di tabel approval rpp meskipun lintas jen
 
     $this->actingAs($admin)
         ->withSession(['active_academic_level_id' => $activeLevel->id])
-        ->get('/admin/academic/lesson-plans')
+        ->get('/admin/lesson-plans')
         ->assertOk()
         ->assertSee('Pendidikan Pancasila');
 });

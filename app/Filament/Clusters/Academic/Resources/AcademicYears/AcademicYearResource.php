@@ -2,13 +2,14 @@
 
 namespace App\Filament\Clusters\Academic\Resources\AcademicYears;
 
-use App\Filament\Clusters\Academic\AcademicCluster;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Pages\CreateAcademicYear;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Pages\EditAcademicYear;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Pages\ListAcademicYears;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Schemas\AcademicYearForm;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Tables\AcademicYearsTable;
 use App\Models\AcademicYear;
+use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -21,13 +22,32 @@ class AcademicYearResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Tahun Ajaran';
 
     protected static ?string $pluralLabel = 'Daftar Tahun Ajaran';
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->role === 'super_admin') {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', AcademicYear::class);
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -2,6 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Clusters\Academic\Resources\AcademicYears\AcademicYearResource;
+use App\Filament\Clusters\Academic\Resources\Schedules\ScheduleResource;
+use App\Filament\Clusters\Academic\Resources\SchoolClasses\SchoolClassResource;
+use App\Filament\Clusters\Academic\Resources\Subjects\SubjectResource;
+use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
+use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
 use App\Filament\Resources\Announcements\AnnouncementResource;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -34,6 +40,15 @@ class GuruPanelProvider extends PanelProvider
             ])
             ->resources([
                 AnnouncementResource::class,
+                // Resource yang bisa di-assign via Akses Sementara.
+                // Muncul di sidebar (navigationGroup 'Akademik'/'Data Personalia').
+                // canAccess() di masing-masing resource mengontrol visibilitas.
+                SchoolClassResource::class,
+                AcademicYearResource::class,
+                ScheduleResource::class,
+                SubjectResource::class,
+                TeacherResource::class,
+                StudentResource::class,
             ])
             ->discoverResources(in: app_path('Filament/Guru/Resources'), for: 'App\Filament\Guru\Resources')
             ->discoverClusters(in: app_path('Filament/Guru/Clusters'), for: 'App\Filament\Guru\Clusters')

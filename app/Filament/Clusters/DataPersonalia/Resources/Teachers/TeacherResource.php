@@ -2,13 +2,14 @@
 
 namespace App\Filament\Clusters\DataPersonalia\Resources\Teachers;
 
-use App\Filament\Clusters\DataPersonalia\DataPersonaliaCluster;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages\CreateTeacher;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages\EditTeacher;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Pages\ListTeachers;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Schemas\TeacherForm;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\Tables\TeachersTable;
 use App\Models\Teacher;
+use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -19,7 +20,9 @@ class TeacherResource extends Resource
 {
     protected static ?string $model = Teacher::class;
 
-    protected static ?string $cluster = DataPersonaliaCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Data Personalia';
 
     protected static ?string $label = 'Guru';
 
@@ -28,6 +31,23 @@ class TeacherResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'nip';
+
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->role === 'super_admin') {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', Teacher::class);
+    }
 
     public static function form(Schema $schema): Schema
     {

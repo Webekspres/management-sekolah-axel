@@ -4,7 +4,6 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\HasUlid;
-use App\Support\TemporaryAccessManager;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -120,7 +119,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function effectiveRole(): string
     {
-        return app(TemporaryAccessManager::class)->resolveEffectiveRole($this);
+        return $this->role;
     }
 
     /**

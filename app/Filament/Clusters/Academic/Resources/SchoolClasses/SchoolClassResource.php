@@ -2,18 +2,20 @@
 
 namespace App\Filament\Clusters\Academic\Resources\SchoolClasses;
 
-use App\Filament\Clusters\Academic\AcademicCluster;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Pages\CreateSchoolClass;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Pages\EditSchoolClass;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Pages\ListSchoolClasses;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Schemas\SchoolClassForm;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Tables\SchoolClassesTable;
 use App\Models\SchoolClass;
+use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class SchoolClassResource extends Resource
 {
@@ -21,13 +23,32 @@ class SchoolClassResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Kelas';
 
     protected static ?string $pluralLabel = 'Daftar Kelas';
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', SchoolClass::class);
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -41,9 +62,7 @@ class SchoolClassResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
@@ -53,5 +72,22 @@ class SchoolClassResource extends Resource
             'create' => CreateSchoolClass::route('/create'),
             'edit' => EditSchoolClass::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        /** @var User $user */
+        $user = auth()->user();
+
+        $allowedLevelIds = app(TemporaryAccessManager::class)
+            ->getAllowedLevelIds($user, SchoolClass::class);
+
+        if ($allowedLevelIds !== null && $allowedLevelIds->isNotEmpty()) {
+            $query->whereIn('level_id', $allowedLevelIds);
+        }
+
+        return $query;
     }
 }

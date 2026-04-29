@@ -2,19 +2,20 @@
 
 namespace App\Filament\Clusters\Academic\Resources\Kbms;
 
-use App\Filament\Clusters\Academic\AcademicCluster;
 use App\Filament\Clusters\Academic\Resources\Kbms\Pages\CreateKbm;
 use App\Filament\Clusters\Academic\Resources\Kbms\Pages\EditKbm;
 use App\Filament\Clusters\Academic\Resources\Kbms\Pages\ListKbms;
 use App\Filament\Clusters\Academic\Resources\Kbms\Schemas\KbmForm;
 use App\Filament\Clusters\Academic\Resources\Kbms\Tables\KbmsTable;
 use App\Models\Kbm;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class KbmResource extends Resource
 {
@@ -22,11 +23,23 @@ class KbmResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Laporan KBM';
 
     protected static ?string $pluralLabel = 'Laporan KBM';
+
+    // Admin-only view: super_admin only.
+    // Guru uses Filament/Guru/Resources/Kbms, Kepsek uses Filament/Kepsek/Resources/Kbms.
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        return $user?->role === 'super_admin';
+    }
 
     public static function form(Schema $schema): Schema
     {

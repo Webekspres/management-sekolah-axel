@@ -34,7 +34,7 @@ test('admin dashboard shows archive navigation cards', function () {
         ->assertSee(StudentResource::getUrl(panel: 'admin'), false)
         ->assertSee(TeacherResource::getUrl(panel: 'admin'), false)
         ->assertSee(ScheduleResource::getUrl(panel: 'admin'), false)
-        ->assertSee('/admin/academic', false);
+        ->assertSee('/admin', false);
 });
 
 test('admin dapat mengakses panel kepsek', function () {
@@ -49,10 +49,10 @@ test('admin dapat mengakses menu approval rpp dan kbm di panel admin', function 
     $user = User::factory()->asAdmin()->create();
 
     $this->actingAs($user)
-        ->get('/admin/academic/lesson-plans')
+        ->get('/admin/lesson-plans')
         ->assertOk();
 
     $this->actingAs($user)
-        ->get('/admin/academic/kbms')
+        ->get('/admin/kbms')
         ->assertOk();
 });
