@@ -2,8 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Attendance;
 use App\Models\Kbm;
-use App\Models\LessonPlan;
 use App\Models\Schedule;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -38,37 +38,43 @@ class GuruOverviewStats extends StatsOverviewWidget
             ->where('day_of_week', $todayIndex)
             ->count();
 
-        $lessonPlanNeedAction = LessonPlan::query()
-            ->where('teacher_id', $teacherId)
-            ->whereIn('status', ['DRAFT', 'PENDING', 'REVISED'])
-            ->count();
-
-        $kbmNeedAction = Kbm::query()
+        $latestKbm = Kbm::query()
             ->whereHas('schedule', function (Builder $query) use ($teacherId): void {
                 $query->where('teacher_id', $teacherId);
             })
-            ->whereIn('status', ['DRAFT', 'REVISED'])
-            ->count();
+            ->orderByDesc('date')
+            ->first();
 
-        $approvedKbmCount = Kbm::query()
+        $attendanceTodayQuery = Kbm::query()
             ->whereHas('schedule', function (Builder $query) use ($teacherId): void {
                 $query->where('teacher_id', $teacherId);
             })
-            ->where('status', 'APPROVED')
+            ->whereDate('date', today())
+            ->withCount('attendances');
+
+        $attendanceTodayCount = $attendanceTodayQuery->get()->sum('attendances_count');
+        $hadirCount = Attendance::query()
+            ->whereHas('kbm.schedule', function (Builder $query) use ($teacherId): void {
+                $query->where('teacher_id', $teacherId);
+            })
+            ->whereHas('kbm', fn (Builder $query) => $query->whereDate('date', today()))
+            ->where('status', 'HADIR')
             ->count();
+
+        $latestKbmValue = $latestKbm?->status ?? 'Belum Ada';
+        $latestKbmDescription = $latestKbm
+            ? 'Laporan tanggal '.$latestKbm->date->format('d M Y')
+            : 'Belum ada laporan KBM';
 
         return [
             Stat::make('Jadwal Hari Ini', number_format($scheduleTodayCount))
                 ->description('Total sesi mengajar hari ini')
                 ->color('info'),
-            Stat::make('RPP Perlu Tindak Lanjut', number_format($lessonPlanNeedAction))
-                ->description('Status DRAFT, PENDING, atau REVISED')
+            Stat::make('KBM Terbaru', $latestKbmValue)
+                ->description($latestKbmDescription)
                 ->color('warning'),
-            Stat::make('KBM Perlu Tindak Lanjut', number_format($kbmNeedAction))
-                ->description('Laporan perlu dilengkapi atau direvisi')
-                ->color('warning'),
-            Stat::make('KBM Disetujui', number_format($approvedKbmCount))
-                ->description('Laporan yang sudah APPROVED')
+            Stat::make('Ringkasan Absensi Kelas', number_format($attendanceTodayCount))
+                ->description("Entri hari ini, HADIR: {$hadirCount}")
                 ->color('success'),
         ];
     }

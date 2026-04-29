@@ -2,9 +2,9 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Invoice;
+use App\Models\Announcement;
+use App\Models\Attendance;
 use App\Models\Kbm;
-use App\Models\LessonPlan;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
@@ -20,36 +20,41 @@ class KepsekOverviewStats extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $pendingLessonPlans = LessonPlan::query()
+        $attendanceTodayCount = Attendance::query()
+            ->whereHas('kbm', fn ($query) => $query->whereDate('date', today()))
+            ->count();
+
+        $kbmTodayCount = Kbm::query()
+            ->whereDate('date', today())
+            ->count();
+
+        $kbmPendingCount = Kbm::query()
             ->where('status', 'PENDING')
             ->count();
 
-        $pendingKbms = Kbm::query()
-            ->where('status', 'PENDING')
-            ->count();
+        $latestAnnouncement = Announcement::query()
+            ->where(function ($query): void {
+                $query->whereJsonContains('target_role', 'kepala_sekolah')
+                    ->orWhereJsonContains('target_role', 'super_admin');
+            })
+            ->orderByDesc('created_at')
+            ->first();
 
-        $approvedKbmsThisMonth = Kbm::query()
-            ->where('status', 'APPROVED')
-            ->whereBetween('date', [now()->startOfMonth(), now()->endOfMonth()])
-            ->count();
-
-        $unpaidInvoices = Invoice::query()
-            ->whereIn('status', ['UNPAID', 'PENDING'])
-            ->count();
+        $announcementValue = $latestAnnouncement?->title ?? 'Belum Ada';
+        $announcementDescription = $latestAnnouncement
+            ? 'Dipublikasikan '.$latestAnnouncement->created_at?->format('d M Y H:i')
+            : 'Belum ada pengumuman untuk kepala sekolah';
 
         return [
-            Stat::make('RPP Menunggu Approval', number_format($pendingLessonPlans))
-                ->description('Perlu verifikasi sebelum publikasi')
+            Stat::make('Overview Kehadiran', number_format($attendanceTodayCount))
+                ->description('Total entri kehadiran hari ini')
                 ->color('warning'),
-            Stat::make('KBM Menunggu Approval', number_format($pendingKbms))
-                ->description('Laporan harian menunggu persetujuan')
+            Stat::make('Overview KBM', number_format($kbmTodayCount))
+                ->description('KBM hari ini, pending: '.$kbmPendingCount)
                 ->color('warning'),
-            Stat::make('KBM Disetujui Bulan Ini', number_format($approvedKbmsThisMonth))
-                ->description('Status APPROVED pada bulan berjalan')
+            Stat::make('Pengumuman Terbaru', $announcementValue)
+                ->description($announcementDescription)
                 ->color('success'),
-            Stat::make('Tagihan Belum Lunas', number_format($unpaidInvoices))
-                ->description('Monitoring administrasi keuangan')
-                ->color('danger'),
         ];
     }
 }

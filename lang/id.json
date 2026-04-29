@@ -165,7 +165,7 @@
     "Save": "Simpan",
     "Save & Close": "Simpan & Tutup",
     "Save & Return": "Simpan & Kembalikan",
-    "Save :name": "Hemat :name",
+    "Save :name": "Simpan :name",
     "Search": "Cari",
     "Search :name": "Pencarian :name",
     "See Other": "Lihat lainnya",
@@ -223,7 +223,7 @@
     "Verify your email address": "Verifikasi alamat email Anda",
     "View": "Tampilan",
     "View :name": "Lihat :name",
-    "Web Server is Down": "Web server sedang turun",
+    "Web Server is Down": "Web server sedang nonaktif",
     "Whoops!": "Aduh!",
     "Yes": "Ya",
     "You are receiving this email because we received a password reset request for your account.": "Anda menerima surel ini karena kami menerima permintaan pengaturan ulang kata sandi untuk akun anda."

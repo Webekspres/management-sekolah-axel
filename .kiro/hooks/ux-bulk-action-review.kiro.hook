@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "UX & Bulk Action Review",
+  "description": "After completing a task, checks whether the new feature is readable and UX-friendly, and reminds the agent to provide bulk/batch operation alternatives for repetitive tasks so users aren't forced to execute actions one by one.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Tinjau fitur yang baru saja kamu buat dari sisi UX dan keterbacaan:\n\n1. **Readability**: Apakah label, pesan, dan alur UI sudah jelas dan mudah dipahami pengguna?\n2. **Edge case interaksi berulang**: Apakah pengguna terpaksa melakukan banyak aksi satu per satu untuk menyelesaikan tugas yang repetitif? Contoh: mengisi data absensi siswa satu per satu.\n3. **Alternatif bulk/batch**: Jika ada potensi interaksi berulang, sediakan minimal satu alternatif untuk eksekusi massal, misalnya:\n   - Import via CSV/Excel\n   - Bulk select + aksi sekaligus (bulk action di tabel)\n   - Form multi-entry dalam satu submit\n   - Fungsi \"salin dari hari sebelumnya\" atau preset otomatis\n4. **Konfirmasi**: Sebutkan secara eksplisit apakah fitur ini sudah memiliki opsi bulk/batch, atau jelaskan mengapa tidak diperlukan untuk kasus ini."
+  }
+}

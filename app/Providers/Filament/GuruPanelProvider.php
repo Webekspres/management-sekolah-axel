@@ -9,6 +9,7 @@ use App\Filament\Clusters\Academic\Resources\Subjects\SubjectResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
 use App\Filament\Resources\Announcements\AnnouncementResource;
+use App\Filament\Widgets\GuruOverviewStats;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -58,6 +59,7 @@ class GuruPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Guru/Widgets'), for: 'App\Filament\Guru\Widgets')
             ->widgets([
+                GuruOverviewStats::class,
                 AccountWidget::class,
             ])
             ->renderHook(

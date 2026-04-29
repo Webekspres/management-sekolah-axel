@@ -9,6 +9,7 @@ use App\Filament\Clusters\Academic\Resources\Subjects\SubjectResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
 use App\Filament\Resources\Announcements\AnnouncementResource;
+use App\Filament\Widgets\KepsekOverviewStats;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -56,6 +57,7 @@ class KepsekPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Kepsek/Widgets'), for: 'App\Filament\Kepsek\Widgets')
             ->widgets([
+                KepsekOverviewStats::class,
                 AccountWidget::class,
             ])
             ->renderHook(

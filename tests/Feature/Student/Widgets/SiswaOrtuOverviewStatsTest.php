@@ -1,52 +1,62 @@
 <?php
 
 use App\Filament\Student\Widgets\SiswaOrtuOverviewStats;
-use App\Models\LessonPlan;
-use App\Models\Level;
-use App\Models\SchoolClass;
+use App\Models\Announcement;
+use App\Models\Attendance;
+use App\Models\Kbm;
+use App\Models\Schedule;
 use App\Models\Student;
-use App\Models\Subject;
-use App\Models\Teacher;
 use Filament\Facades\Filament;
 use Livewire\Livewire;
 
-test('widget hanya menghitung rpp dengan status approved untuk siswa terkait', function () {
+test('widget siswa menampilkan jadwal hari ini, pengumuman terbaru, dan ringkasan kehadiran sendiri', function () {
     $student = Student::factory()->create();
-    $teacher = Teacher::factory()->create();
-    $level = Level::factory()->create(['name' => 'SD']);
-    $subject = Subject::factory()->create([
-        'level_id' => $level->id,
+
+    Schedule::factory()->create([
+        'class_id' => $student->class_id,
+        'day_of_week' => now()->dayOfWeekIso,
+    ]);
+
+    $kbmApproved = Kbm::factory()->create([
+        'date' => today()->toDateString(),
+        'status' => 'APPROVED',
+    ]);
+
+    $kbmPending = Kbm::factory()->create([
+        'date' => today()->toDateString(),
+        'status' => 'PENDING',
+    ]);
+
+    Attendance::factory()->hadir()->create([
+        'kbm_id' => $kbmApproved->id,
+        'student_id' => $student->id,
+    ]);
+
+    Attendance::factory()->alpa()->create([
+        'kbm_id' => $kbmPending->id,
+        'student_id' => $student->id,
+    ]);
+
+    Announcement::factory()->create([
+        'title' => 'Pengumuman Lama Siswa',
+        'target_role' => ['siswa_ortu'],
+        'created_at' => now()->subDay(),
+    ]);
+
+    Announcement::factory()->create([
+        'title' => 'Pengumuman Terbaru Siswa',
+        'target_role' => ['siswa_ortu'],
+        'created_at' => now(),
     ]);
 
     $this->actingAs($student->user);
     Filament::setCurrentPanel(Filament::getPanel('student'));
 
-    LessonPlan::factory()->create([
-        'teacher_id' => $teacher->id,
-        'subject_id' => $subject->id,
-        'class_id' => $student->class_id,
-        'status' => 'APPROVED',
-        'implementation_date' => now()->toDateString(),
-    ]);
-
-    LessonPlan::factory()->create([
-        'teacher_id' => $teacher->id,
-        'subject_id' => $subject->id,
-        'class_id' => $student->class_id,
-        'status' => 'PENDING',
-        'implementation_date' => now()->toDateString(),
-    ]);
-
-    LessonPlan::factory()->create([
-        'teacher_id' => $teacher->id,
-        'subject_id' => $subject->id,
-        'class_id' => SchoolClass::factory(),
-        'status' => 'APPROVED',
-        'implementation_date' => now()->toDateString(),
-    ]);
-
     Livewire::test(SiswaOrtuOverviewStats::class)
-        ->assertSee('RPP Approved Minggu Ini')
+        ->assertSee('Jadwal Hari Ini')
+        ->assertSee('Pengumuman Terbaru')
+        ->assertSee('Pengumuman Terbaru Siswa')
+        ->assertSee('Ringkasan Kehadiran Saya')
         ->assertSee('1')
-        ->assertSee('Hanya RPP berstatus APPROVED');
+        ->assertSee('Bulan ini (APPROVED), HADIR: 1');
 });
