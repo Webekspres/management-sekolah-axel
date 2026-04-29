@@ -70,8 +70,8 @@ class AttendancesTable
                     )),
             ])
             ->defaultSort('kbm.date', 'desc')
-            ->paginationPageOptions([25, 50, 100])
-            ->defaultPaginationPageOption(25)
+            ->paginationPageOptions([10, 25, 50, 100])
+            ->defaultPaginationPageOption(10)
             ->filters([
                 Filter::make('date_range')
                     ->label('Rentang Tanggal KBM')
