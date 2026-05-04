@@ -22,10 +22,15 @@ class StudentPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel = $panel
             ->id('student')
-            ->path('student')
-            ->spa()
+            ->path('student');
+
+        if (! app()->runningUnitTests()) {
+            $panel = $panel->spa();
+        }
+
+        return $panel
             ->colors([
                 'primary' => Color::Amber,
             ])

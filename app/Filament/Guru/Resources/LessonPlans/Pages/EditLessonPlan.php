@@ -10,9 +10,14 @@ class EditLessonPlan extends EditRecord
 {
     protected static string $resource = LessonPlanResource::class;
 
+    protected function getHeaderActions(): array
+    {
+        return [];
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if (! in_array($this->record->status, ['DRAFT', 'PENDING'], true)) {
+        if (! in_array($this->record->status, ['DRAFT', 'REVISED'], true)) {
             throw ValidationException::withMessages([
                 'status' => 'RPP dengan status saat ini tidak dapat diubah.',
             ]);

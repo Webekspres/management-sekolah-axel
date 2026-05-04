@@ -10,6 +10,11 @@ class EditKbm extends EditRecord
 {
     protected static string $resource = KbmResource::class;
 
+    protected function getHeaderActions(): array
+    {
+        return [];
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         if (! in_array($this->record->status, ['DRAFT', 'PENDING'], true)) {

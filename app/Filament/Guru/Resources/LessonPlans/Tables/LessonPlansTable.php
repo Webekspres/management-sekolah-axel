@@ -3,10 +3,10 @@
 namespace App\Filament\Guru\Resources\LessonPlans\Tables;
 
 use App\Models\LessonPlan;
+use App\Support\PublicStorageUrl;
 use App\Support\RichText;
 use DomainException;
 use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Notifications\Notification;
@@ -14,7 +14,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
 
 class LessonPlansTable
 {
@@ -59,7 +58,7 @@ class LessonPlansTable
                 TextColumn::make('file_path')
                     ->label('File')
                     ->formatStateUsing(fn (string $state): string => basename($state))
-                    ->url(fn (LessonPlan $record): string => Storage::url($record->file_path), shouldOpenInNewTab: true),
+                    ->url(fn (LessonPlan $record): string => PublicStorageUrl::fromPublicDiskPath($record->file_path), shouldOpenInNewTab: true),
             ])
             ->defaultSort('id', 'desc')
             ->filters([
@@ -119,8 +118,6 @@ class LessonPlansTable
                     ]),
                 EditAction::make()
                     ->label('Detail / Edit'),
-                DeleteAction::make()
-                    ->visible(fn (LessonPlan $record): bool => $record->status !== 'APPROVED'),
             ]);
     }
 }

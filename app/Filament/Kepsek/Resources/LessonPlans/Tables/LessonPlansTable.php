@@ -3,6 +3,7 @@
 namespace App\Filament\Kepsek\Resources\LessonPlans\Tables;
 
 use App\Models\LessonPlan;
+use App\Support\PublicStorageUrl;
 use App\Support\RichText;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -11,7 +12,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
 
 class LessonPlansTable
 {
@@ -49,7 +49,7 @@ class LessonPlansTable
                 TextColumn::make('file_path')
                     ->label('File')
                     ->formatStateUsing(fn (string $state): string => basename($state))
-                    ->url(fn (LessonPlan $record): string => Storage::url($record->file_path), shouldOpenInNewTab: true),
+                    ->url(fn (LessonPlan $record): string => PublicStorageUrl::fromPublicDiskPath($record->file_path), shouldOpenInNewTab: true),
             ])
             ->defaultSort('id', 'desc')
             ->filters([
@@ -82,7 +82,9 @@ class LessonPlansTable
                             ->label('File')
                             ->content(function () use ($record): string {
                                 if (filled($record->file_path)) {
-                                    return '<a href="'.Storage::url($record->file_path).'" target="_blank" class="text-blue-600 hover:underline">'.basename($record->file_path).'</a>';
+                                    $url = PublicStorageUrl::fromPublicDiskPath($record->file_path);
+
+                                    return '<a href="'.e($url).'" target="_blank" class="text-blue-600 hover:underline">'.e(basename($record->file_path)).'</a>';
                                 }
 
                                 return '-';

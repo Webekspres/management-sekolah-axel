@@ -31,6 +31,10 @@ test('lesson plan policy follows role and status matrix', function () {
         'status' => 'PENDING',
     ]);
 
+    $guruRevisedLessonPlan = LessonPlan::factory()->revised()->create([
+        'teacher_id' => $guruTeacher->id,
+    ]);
+
     $guruApprovedLessonPlan = LessonPlan::factory()->create([
         'teacher_id' => $guruTeacher->id,
         'status' => 'APPROVED',
@@ -54,9 +58,12 @@ test('lesson plan policy follows role and status matrix', function () {
         ->and($policy->view($guruUser, $guruDraftLessonPlan))->toBeTrue()
         ->and($policy->view($guruUser, $otherGuruLessonPlan))->toBeFalse()
         ->and($policy->update($guruUser, $guruDraftLessonPlan))->toBeTrue()
-        ->and($policy->update($guruUser, $guruPendingLessonPlan))->toBeTrue()
+        ->and($policy->update($guruUser, $guruPendingLessonPlan))->toBeFalse()
+        ->and($policy->update($guruUser, $guruRevisedLessonPlan))->toBeTrue()
         ->and($policy->update($guruUser, $guruApprovedLessonPlan))->toBeFalse()
-        ->and($policy->delete($guruUser, $guruDraftLessonPlan))->toBeTrue()
+        ->and($policy->delete($guruUser, $guruDraftLessonPlan))->toBeFalse()
+        ->and($policy->delete($guruUser, $guruPendingLessonPlan))->toBeFalse()
+        ->and($policy->delete($guruUser, $guruRevisedLessonPlan))->toBeFalse()
         ->and($policy->delete($guruUser, $guruApprovedLessonPlan))->toBeFalse();
 
     expect($policy->viewAny($siswa))->toBeFalse()
@@ -115,7 +122,8 @@ test('kbm policy follows role and status matrix', function () {
         ->and($policy->update($guruUser, $guruDraftKbm))->toBeTrue()
         ->and($policy->update($guruUser, $guruPendingKbm))->toBeTrue()
         ->and($policy->update($guruUser, $guruApprovedKbm))->toBeFalse()
-        ->and($policy->delete($guruUser, $guruDraftKbm))->toBeTrue()
+        ->and($policy->delete($guruUser, $guruDraftKbm))->toBeFalse()
+        ->and($policy->delete($guruUser, $guruPendingKbm))->toBeFalse()
         ->and($policy->delete($guruUser, $guruApprovedKbm))->toBeFalse();
 
     expect($policy->viewAny($siswa))->toBeFalse()

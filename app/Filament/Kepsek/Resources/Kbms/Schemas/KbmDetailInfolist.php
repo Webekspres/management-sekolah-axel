@@ -2,10 +2,10 @@
 
 namespace App\Filament\Kepsek\Resources\Kbms\Schemas;
 
+use App\Support\PublicStorageUrl;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Illuminate\Support\Facades\Storage;
 
 class KbmDetailInfolist
 {
@@ -75,7 +75,7 @@ class KbmDetailInfolist
                         TextEntry::make('documentation_path')
                             ->label('')
                             ->formatStateUsing(fn (string $state): string => basename($state))
-                            ->url(fn ($record): string => Storage::url($record->documentation_path), shouldOpenInNewTab: true)
+                            ->url(fn ($record): string => PublicStorageUrl::fromPublicDiskPath($record->documentation_path), shouldOpenInNewTab: true)
                             ->columnSpanFull(),
                     ]),
             ]);

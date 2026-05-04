@@ -62,6 +62,7 @@ class LessonPlanResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScope('academic_level')
             ->with(['teacher.user', 'subjectForDisplay', 'schoolClass']);
     }
 }

@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
 
         if ($this->hasSeededDemoData()) {
             $this->command?->info('Data demo sudah ada, seeding dilewati untuk mencegah duplikasi.');
+            $this->ensureDemoUserProfiles();
 
             return;
         }
@@ -250,6 +251,130 @@ class DatabaseSeeder extends Seeder
                 'user_id' => $allUsers->random()->id,
             ]);
         }
+
+        // --- 17. Pastikan akun demo punya profil Teacher / Student ---
+        $this->ensureDemoUserProfiles();
+    }
+
+    /**
+     * Idempotent: pastikan Guru Demo punya Teacher record dan Siswa Demo punya Student record.
+     * Dipanggil saat fresh seed maupun saat database sudah ada (untuk memperbaiki data lama).
+     */
+    protected function ensureDemoUserProfiles(): void
+    {
+        $this->ensureGuruDemoProfile();
+        $this->ensureSiswaDemoProfile();
+    }
+
+    private function ensureGuruDemoProfile(): void
+    {
+        $guruDemo = User::query()->where('email', 'guru@example.com')->first();
+
+        if (! $guruDemo) {
+            return;
+        }
+
+        $teacher = Teacher::firstOrCreate(
+            ['user_id' => $guruDemo->id],
+            [
+                'nip' => fake()->unique()->numerify('##################'),
+                'employment_status' => 'guru_kelas',
+            ],
+        );
+
+        $academicYear = AcademicYear::query()->where('is_active', true)->first()
+            ?? AcademicYear::query()->orderByDesc('id')->first();
+
+        if (! $academicYear) {
+            return;
+        }
+
+        $level = Level::query()->first();
+
+        if (! $level) {
+            return;
+        }
+
+        $subject = Subject::query()->where('level_id', $level->id)->first()
+            ?? Subject::query()->first();
+
+        if (! $subject) {
+            return;
+        }
+
+        // Pastikan ada kelas yang dipegang Guru Demo sebagai walikelas
+        $demoClass = SchoolClass::query()
+            ->where('teacher_id', $teacher->id)
+            ->first();
+
+        if (! $demoClass) {
+            $demoClass = SchoolClass::factory()->create([
+                'teacher_id' => $teacher->id,
+                'level_id' => $level->id,
+                'academic_year_id' => $academicYear->id,
+            ]);
+        }
+
+        // Pastikan ada jadwal untuk Guru Demo (dibutuhkan untuk membuat KBM)
+        $hasSchedule = Schedule::query()
+            ->where('teacher_id', $teacher->id)
+            ->exists();
+
+        if (! $hasSchedule) {
+            Schedule::factory(3)->create([
+                'class_id' => $demoClass->id,
+                'teacher_id' => $teacher->id,
+                'subject_id' => $subject->id,
+            ]);
+        }
+
+        // Pastikan ada RPP APPROVED untuk Guru Demo (dibutuhkan untuk membuat KBM)
+        $hasApprovedLessonPlan = LessonPlan::query()
+            ->where('teacher_id', $teacher->id)
+            ->where('status', 'APPROVED')
+            ->exists();
+
+        if (! $hasApprovedLessonPlan) {
+            LessonPlan::factory()->approved()->create([
+                'teacher_id' => $teacher->id,
+                'class_id' => $demoClass->id,
+                'subject_id' => $subject->id,
+            ]);
+        }
+    }
+
+    private function ensureSiswaDemoProfile(): void
+    {
+        $siswaDemo = User::query()->where('email', 'siswa@example.com')->first();
+
+        if (! $siswaDemo || $siswaDemo->student) {
+            return;
+        }
+
+        $class = SchoolClass::query()->first();
+
+        if (! $class) {
+            return;
+        }
+
+        Student::firstOrCreate(
+            ['user_id' => $siswaDemo->id],
+            [
+                'class_id' => $class->id,
+                'nipd' => fake()->unique()->numerify('##########'),
+                'nisn' => fake()->unique()->numerify('##########'),
+                'nik' => fake()->unique()->numerify('################'),
+                'kk_number' => fake()->numerify('################'),
+                'birth_cert_number' => fake()->numerify('####/####/####'),
+                'religion' => 'Islam',
+                'student_phone' => fake()->numerify('08##########'),
+                'admission_date' => now()->format('Y-m-d'),
+                'father_name' => fake()->name('male'),
+                'father_phone' => fake()->numerify('08##########'),
+                'mother_name' => fake()->name('female'),
+                'mother_phone' => fake()->numerify('08##########'),
+            ],
+        );
     }
 
     private function hasSeededDemoData(): bool

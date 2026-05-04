@@ -61,7 +61,7 @@ class LessonPlanPolicy
             return false;
         }
 
-        return in_array($lessonPlan->status, ['DRAFT', 'PENDING'], true);
+        return in_array($lessonPlan->status, ['DRAFT', 'REVISED'], true);
     }
 
     public function delete(User $user, LessonPlan $lessonPlan): bool
@@ -70,19 +70,7 @@ class LessonPlanPolicy
             return true;
         }
 
-        if ($user->role === 'super_admin') {
-            return true;
-        }
-
-        if ($user->role !== 'guru' || ! $user->teacher) {
-            return false;
-        }
-
-        if ($lessonPlan->teacher_id !== $user->teacher->id) {
-            return false;
-        }
-
-        return $lessonPlan->status !== 'APPROVED';
+        return $user->role === 'super_admin';
     }
 
     public function restore(User $user, LessonPlan $lessonPlan): bool

@@ -83,11 +83,14 @@ class SchedulesTable
                     ->label('Guru')
                     ->relationship(
                         name: 'teacher',
-                        titleAttribute: 'nip',
-                        modifyQueryUsing: fn (Builder $query) => $query->with('user')
+                        titleAttribute: 'user_id',
+                        modifyQueryUsing: fn (Builder $query) => $query
+                            ->join('users', 'users.id', '=', 'teachers.user_id')
+                            ->select('teachers.*')
+                            ->orderBy('users.name'),
                     )
                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?? $record->nip)
-                    ->searchable()
+                    ->searchable(['users.name', 'teachers.nip'])
                     ->preload()
                     ->multiple(),
             ])

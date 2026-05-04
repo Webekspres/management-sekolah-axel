@@ -3,6 +3,7 @@
 namespace App\Filament\Kepsek\Resources\Kbms\Schemas;
 
 use App\Models\Kbm;
+use App\Support\PublicStorageUrl;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
@@ -12,7 +13,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class KbmForm
@@ -76,7 +76,7 @@ class KbmForm
                                     return '-';
                                 }
 
-                                $url = Storage::url($record->documentation_path);
+                                $url = PublicStorageUrl::fromPublicDiskPath($record->documentation_path);
                                 $filename = basename($record->documentation_path);
 
                                 return new HtmlString("<a href=\"{$url}\" target=\"_blank\" class=\"text-primary-600 hover:underline\">{$filename}</a>");

@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Academic\Resources\Kbms\Tables;
 
 use App\Models\Kbm;
+use App\Support\PublicStorageUrl;
 use App\Support\RichText;
 use DomainException;
 use Filament\Actions\Action;
@@ -14,7 +15,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class KbmsTable
 {
@@ -63,7 +63,7 @@ class KbmsTable
                     ->label('Dokumentasi')
                     ->formatStateUsing(fn (?string $state): string => filled($state) ? basename($state) : '-')
                     ->url(
-                        fn (Kbm $record): ?string => filled($record->documentation_path) ? Storage::url($record->documentation_path) : null,
+                        fn (Kbm $record): ?string => filled($record->documentation_path) ? PublicStorageUrl::fromPublicDiskPath($record->documentation_path) : null,
                         shouldOpenInNewTab: true,
                     ),
                 TextColumn::make('revision_note')

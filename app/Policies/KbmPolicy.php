@@ -70,19 +70,7 @@ class KbmPolicy
             return true;
         }
 
-        if ($user->role === 'super_admin') {
-            return true;
-        }
-
-        if ($user->role !== 'guru' || ! $user->teacher) {
-            return false;
-        }
-
-        if ($kbm->schedule?->teacher_id !== $user->teacher->id) {
-            return false;
-        }
-
-        return $kbm->status !== 'APPROVED';
+        return $user->role === 'super_admin';
     }
 
     public function restore(User $user, Kbm $kbm): bool

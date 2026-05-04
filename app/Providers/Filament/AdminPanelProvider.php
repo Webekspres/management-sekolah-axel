@@ -25,10 +25,15 @@ class AdminPanelProvider extends PanelProvider
 
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel = $panel
             ->id('admin')
-            ->path('admin')
-            ->spa()
+            ->path('admin');
+
+        if (! app()->runningUnitTests()) {
+            $panel = $panel->spa();
+        }
+
+        return $panel
             ->colors([
                 'primary' => Color::Amber,
             ])

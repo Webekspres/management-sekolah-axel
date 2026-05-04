@@ -3,6 +3,7 @@
 namespace App\Filament\Kepsek\Resources\Kbms\Tables;
 
 use App\Models\Kbm;
+use App\Support\PublicStorageUrl;
 use App\Support\RichText;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -11,7 +12,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
 
 class KbmsTable
 {
@@ -56,7 +56,7 @@ class KbmsTable
                     ->label('Dokumentasi')
                     ->formatStateUsing(fn (?string $state): string => filled($state) ? basename($state) : '-')
                     ->url(
-                        fn (Kbm $record): ?string => filled($record->documentation_path) ? Storage::url($record->documentation_path) : null,
+                        fn (Kbm $record): ?string => filled($record->documentation_path) ? PublicStorageUrl::fromPublicDiskPath($record->documentation_path) : null,
                         shouldOpenInNewTab: true
                     ),
                 TextColumn::make('revision_note')
@@ -111,7 +111,9 @@ class KbmsTable
                             ->label('Dokumentasi')
                             ->content(function () use ($record): string {
                                 if (filled($record->documentation_path)) {
-                                    return '<a href="'.Storage::url($record->documentation_path).'" target="_blank" class="text-blue-600 hover:underline">'.basename($record->documentation_path).'</a>';
+                                    $url = PublicStorageUrl::fromPublicDiskPath($record->documentation_path);
+
+                                    return '<a href="'.e($url).'" target="_blank" class="text-blue-600 hover:underline">'.e(basename($record->documentation_path)).'</a>';
                                 }
 
                                 return '-';

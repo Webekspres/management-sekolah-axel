@@ -50,7 +50,8 @@ class LessonPlanResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->withoutGlobalScope('academic_level');
 
         /** @var User $user */
         $user = auth()->user();

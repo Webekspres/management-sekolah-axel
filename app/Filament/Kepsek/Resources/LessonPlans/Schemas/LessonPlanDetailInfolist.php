@@ -2,10 +2,10 @@
 
 namespace App\Filament\Kepsek\Resources\LessonPlans\Schemas;
 
+use App\Support\PublicStorageUrl;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Illuminate\Support\Facades\Storage;
 
 class LessonPlanDetailInfolist
 {
@@ -47,7 +47,7 @@ class LessonPlanDetailInfolist
                         TextEntry::make('file_path')
                             ->label('')
                             ->formatStateUsing(fn (string $state): string => basename($state))
-                            ->url(fn ($record): string => Storage::url($record->file_path), shouldOpenInNewTab: true)
+                            ->url(fn ($record): string => PublicStorageUrl::fromPublicDiskPath($record->file_path), shouldOpenInNewTab: true)
                             ->columnSpanFull(),
                     ]),
             ]);

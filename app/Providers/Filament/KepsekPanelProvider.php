@@ -32,10 +32,15 @@ class KepsekPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel = $panel
             ->id('kepsek')
-            ->path('kepsek')
-            ->spa()
+            ->path('kepsek');
+
+        if (! app()->runningUnitTests()) {
+            $panel = $panel->spa();
+        }
+
+        return $panel
             ->colors([
                 'primary' => Color::Amber,
             ])

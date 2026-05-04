@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Academic\Resources\LessonPlans\Tables;
 
 use App\Models\LessonPlan;
+use App\Support\PublicStorageUrl;
 use DomainException;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
@@ -13,7 +14,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class LessonPlansTable
 {
@@ -61,7 +61,7 @@ class LessonPlansTable
                 TextColumn::make('file_path')
                     ->label('Dokumen')
                     ->formatStateUsing(fn (string $state): string => basename($state))
-                    ->url(fn (LessonPlan $record): string => Storage::url($record->file_path), shouldOpenInNewTab: true),
+                    ->url(fn (LessonPlan $record): string => PublicStorageUrl::fromPublicDiskPath($record->file_path), shouldOpenInNewTab: true),
             ])
             ->defaultSort('id', 'desc')
             ->filters([

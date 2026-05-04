@@ -8,7 +8,6 @@ use App\Models\Student;
 use App\Support\RichText;
 use DomainException;
 use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
@@ -244,8 +243,6 @@ class KbmsTable
                     ]),
                 EditAction::make()
                     ->label('Detail / Edit'),
-                DeleteAction::make()
-                    ->visible(fn (Kbm $record): bool => $record->status !== 'APPROVED'),
             ]);
     }
 }

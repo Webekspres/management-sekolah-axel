@@ -3,6 +3,7 @@
 namespace App\Filament\Kepsek\Resources\LessonPlans\Schemas;
 
 use App\Models\LessonPlan;
+use App\Support\PublicStorageUrl;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
@@ -11,7 +12,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class LessonPlanForm
@@ -56,7 +56,7 @@ class LessonPlanForm
                                     return '-';
                                 }
 
-                                $url = Storage::url($record->file_path);
+                                $url = PublicStorageUrl::fromPublicDiskPath($record->file_path);
                                 $filename = basename($record->file_path);
 
                                 return new HtmlString("<a href=\"{$url}\" target=\"_blank\" class=\"text-primary-600 hover:underline\">{$filename}</a>");

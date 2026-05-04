@@ -87,6 +87,7 @@ class KbmForm
                         FileUpload::make('documentation_path')
                             ->label('Dokumentasi KBM')
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+                            ->disk('public')
                             ->directory('kbm-documentations')
                             ->visibility('public')
                             ->downloadable()
