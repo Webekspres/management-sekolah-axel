@@ -3,7 +3,7 @@
 namespace App\Filament\Student\Resources\Announcements\Pages;
 
 use App\Filament\Student\Resources\Announcements\AnnouncementResource;
-use Filament\Actions\EditAction;
+use App\Models\AnnouncementRead;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewAnnouncement extends ViewRecord
@@ -12,8 +12,16 @@ class ViewAnnouncement extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            EditAction::make(),
-        ];
+        return [];
+    }
+
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+
+        AnnouncementRead::firstOrCreate([
+            'announcement_id' => $this->record->id,
+            'user_id' => auth()->id(),
+        ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\AccessPolicy;
+use App\Models\TemporaryAccessLog;
 use App\Models\TemporaryPolicyGrant;
 use App\Models\User;
 use App\Models\UserPolicyAbility;
@@ -151,6 +152,16 @@ class TemporaryAccessManager
                 'expires_at' => $expiresAt,
             ]
         );
+
+        TemporaryAccessLog::create([
+            'user_id' => $user->id,
+            'access_policy_id' => $policy->id,
+            'ability' => $ability,
+            'level_id' => $levelId,
+            'granted_by_user_id' => $grantedBy->id,
+            'granted_at' => now(),
+            'expires_at' => $expiresAt,
+        ]);
 
         // Sync TemporaryPolicyGrant so hasTemporaryPolicyGrant() in legacy policies works
         TemporaryPolicyGrant::query()->updateOrCreate(

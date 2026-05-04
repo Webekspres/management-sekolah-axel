@@ -3,12 +3,27 @@
 namespace App\Providers;
 
 use App\Http\Responses\LoginResponse;
+use App\Models\AttitudeScore;
+use App\Models\Grade;
+use App\Models\KnowledgeSkillScore;
+use App\Models\LearningAchievement;
+use App\Models\PersonalityScore;
+use App\Models\Rapor;
+use App\Models\SubjectKkm;
+use App\Policies\AttitudeScorePolicy;
+use App\Policies\GradePolicy;
+use App\Policies\KnowledgeSkillScorePolicy;
+use App\Policies\LearningAchievementPolicy;
+use App\Policies\PersonalityScorePolicy;
+use App\Policies\RaporPolicy;
+use App\Policies\SubjectKkmPolicy;
 use App\Support\ForeignKeyDeleteGuard;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -34,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->registerGlobalDeletionValidation();
+        $this->registerPolicies();
     }
 
     /**
@@ -69,5 +85,16 @@ class AppServiceProvider extends ServiceProvider
 
             ForeignKeyDeleteGuard::ensureDeletable($model);
         });
+    }
+
+    protected function registerPolicies(): void
+    {
+        Gate::policy(Grade::class, GradePolicy::class);
+        Gate::policy(Rapor::class, RaporPolicy::class);
+        Gate::policy(AttitudeScore::class, AttitudeScorePolicy::class);
+        Gate::policy(KnowledgeSkillScore::class, KnowledgeSkillScorePolicy::class);
+        Gate::policy(LearningAchievement::class, LearningAchievementPolicy::class);
+        Gate::policy(PersonalityScore::class, PersonalityScorePolicy::class);
+        Gate::policy(SubjectKkm::class, SubjectKkmPolicy::class);
     }
 }

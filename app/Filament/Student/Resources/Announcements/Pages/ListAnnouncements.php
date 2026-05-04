@@ -3,7 +3,6 @@
 namespace App\Filament\Student\Resources\Announcements\Pages;
 
 use App\Filament\Student\Resources\Announcements\AnnouncementResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListAnnouncements extends ListRecords
@@ -12,8 +11,6 @@ class ListAnnouncements extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            CreateAction::make(),
-        ];
+        return [];
     }
 }

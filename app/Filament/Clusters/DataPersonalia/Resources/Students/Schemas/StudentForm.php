@@ -261,7 +261,8 @@ class StudentForm
                             ->hidden(),
 
                         TextInput::make('house_number')
-                            ->label('Nomor Rumah'),
+                            ->label('Nomor Rumah')
+                            ->placeholder('Isi "-" jika tidak ada nomor rumah'),
                         TextInput::make('rt')
                             ->label('RT'),
                         TextInput::make('rw')

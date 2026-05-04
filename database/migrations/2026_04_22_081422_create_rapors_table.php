@@ -15,7 +15,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('student_id')->constrained('students');
             $table->foreignUlid('academic_year_id')->constrained('academic_years');
-            $table->string('file_path');
+            $table->string('file_path')->nullable();
         });
     }
 

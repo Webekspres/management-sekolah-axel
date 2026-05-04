@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Student extends Model
 {
@@ -85,5 +86,25 @@ class Student extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function attitudeScores(): HasMany
+    {
+        return $this->hasMany(AttitudeScore::class);
+    }
+
+    public function knowledgeSkillScores(): HasMany
+    {
+        return $this->hasMany(KnowledgeSkillScore::class);
+    }
+
+    public function learningAchievements(): HasMany
+    {
+        return $this->hasMany(LearningAchievement::class);
+    }
+
+    public function personalityScore(): HasOne
+    {
+        return $this->hasOne(PersonalityScore::class);
     }
 }

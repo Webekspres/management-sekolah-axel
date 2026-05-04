@@ -139,7 +139,8 @@ class DatabaseSeeder extends Seeder
         // --- 6. Jadwal per kelas ---
         $schedules = $classes->flatMap(
             function (SchoolClass $class) use ($subjects, $subjectsByLevel) {
-                $subjectForClass = $subjectsByLevel->get($class->level_id, collect())->random() ?? $subjects->random();
+                $levelSubjects = $subjectsByLevel->get($class->level_id, collect());
+                $subjectForClass = $levelSubjects->isNotEmpty() ? $levelSubjects->random() : $subjects->random();
 
                 return Schedule::factory(5)->create([
                     'class_id' => $class->id,
@@ -154,9 +155,8 @@ class DatabaseSeeder extends Seeder
         $lessonPlans = $teachers->flatMap(
             function (Teacher $teacher) use ($classesByTeacherId, $subjects, $subjectsByLevel) {
                 $class = $classesByTeacherId->get($teacher->id) ?? $classesByTeacherId->first();
-                $subjectForClass = $class
-                    ? ($subjectsByLevel->get($class->level_id, collect())->random() ?? $subjects->random())
-                    : $subjects->random();
+                $levelSubjects = $class ? $subjectsByLevel->get($class->level_id, collect()) : collect();
+                $subjectForClass = $levelSubjects->isNotEmpty() ? $levelSubjects->random() : $subjects->random();
 
                 return LessonPlan::factory(3)->approved()->create([
                     'teacher_id' => $teacher->id,

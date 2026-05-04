@@ -57,15 +57,17 @@ class SchoolClassForm
                             ->label('Wali Kelas')
                             ->relationship(
                                 name: 'homeroomTeacher',
-                                titleAttribute: 'nip',
-                                modifyQueryUsing: fn (Builder $query): Builder => $query->with('user'),
+                                titleAttribute: 'user_id',
+                                modifyQueryUsing: fn (Builder $query): Builder => $query
+                                    ->join('users', 'users.id', '=', 'teachers.user_id')
+                                    ->select('teachers.*'),
                             )
                             ->getOptionLabelFromRecordUsing(
                                 fn (Teacher $record): string => $record->nip
                                     ? "{$record->user?->name} ({$record->nip})"
                                     : ($record->user?->name ?? '-')
                             )
-                            ->searchable()
+                            ->searchable(['users.name', 'teachers.nip'])
                             ->preload()
                             ->required(false)
                             ->rules(['required'])

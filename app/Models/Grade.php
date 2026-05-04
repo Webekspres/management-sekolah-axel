@@ -12,6 +12,12 @@ class Grade extends Model
 {
     use HasFactory, HasStudentWithAcademicLevel, HasUlid;
 
+    public const GRADE_TYPES = ['PH1', 'PH2', 'PH3', 'PH4', 'TUGAS1', 'TUGAS2', 'TUGAS3', 'TUGAS4', 'ATS', 'SAS', 'RAPOR'];
+
+    public const PH_TYPES = ['PH1', 'PH2', 'PH3', 'PH4'];
+
+    public const TUGAS_TYPES = ['TUGAS1', 'TUGAS2', 'TUGAS3', 'TUGAS4'];
+
     protected $keyType = 'string';
 
     public $incrementing = false;

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Carbon\CarbonInterface;
+use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -61,6 +62,22 @@ class TemporaryAccessManagement extends Page implements HasForms
     public function mount(): void
     {
         $this->resetForm();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('save')
+                ->label('Simpan')
+                ->icon(Heroicon::OutlinedCheck)
+                ->color('primary')
+                ->requiresConfirmation()
+                ->modalHeading('Konfirmasi Pemberian Akses')
+                ->modalDescription('Simpan pemberian akses sementara ini? Akses akan aktif sesuai durasi yang dipilih.')
+                ->modalSubmitActionLabel('Ya, Simpan')
+                ->disabled(fn (): bool => $this->isSaveDisabled())
+                ->action(fn () => $this->submit()),
+        ];
     }
 
     public function form(Schema $schema): Schema

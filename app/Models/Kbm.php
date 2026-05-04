@@ -98,7 +98,7 @@ class Kbm extends Model
 
     public function lessonPlan(): BelongsTo
     {
-        return $this->belongsTo(LessonPlan::class);
+        return $this->belongsTo(LessonPlan::class)->withoutGlobalScopes();
     }
 
     public function attendances(): HasMany

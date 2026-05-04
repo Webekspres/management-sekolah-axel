@@ -1,19 +1,26 @@
 {
-  "mcpServers": {
-    "laravel-boost": {
-      "command": "wsl.exe",
-      "args": [
-        "--",
-        "/home/developer-webekspres/.config/herd-lite/bin/php",
-        "/home/developer-webekspres/sultan/project/laravel/axel-manajemen-sekolah/artisan",
-        "boost:mcp"
-      ],
-      "autoApprove": [
-        "application-info",
-        "database-schema",
-        "search-docs",
-        "last-error"
-      ]
+    "mcpServers": {
+        "fetch": {
+            "command": "wsl.exe",
+            "args": [
+                "--shell-type",
+                "login",
+                "uvx",
+                "mcp-server-fetch"
+            ],
+            "env": [],
+            "disabled": false,
+            "autoApprove": [
+                "fetch"
+            ]
+        },
+        "laravel-boost": {
+            "command": "wsl.exe",
+            "args": [
+                "/usr/bin/php8.4",
+                "/home/developer-webekspres/sultan/project/laravel/axel-manajemen-sekolah/artisan",
+                "boost:mcp"
+            ]
+        }
     }
-  }
 }

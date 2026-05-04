@@ -3,7 +3,7 @@
         "laravel-boost": {
             "command": "wsl.exe",
             "args": [
-                "/home/developer-webekspres/.config/herd-lite/bin/php",
+                "/usr/bin/php8.4",
                 "/home/developer-webekspres/sultan/project/laravel/axel-manajemen-sekolah/artisan",
                 "boost:mcp"
             ]

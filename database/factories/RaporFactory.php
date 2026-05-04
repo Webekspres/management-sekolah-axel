@@ -13,7 +13,24 @@ class RaporFactory extends Factory
         return [
             'student_id' => Student::factory(),
             'academic_year_id' => AcademicYear::factory(),
-            'file_path' => 'rapors/'.fake()->uuid().'.pdf',
+            'file_path' => null,
+            'status' => 'DRAFT',
+            'approved_at' => null,
+            'rejection_note' => null,
         ];
+    }
+
+    public function finalized(): static
+    {
+        return $this->state(['status' => 'FINALIZED']);
+    }
+
+    public function approved(): static
+    {
+        return $this->state([
+            'status' => 'APPROVED',
+            'approved_at' => now(),
+            'file_path' => 'rapors/'.fake()->uuid().'.pdf',
+        ]);
     }
 }

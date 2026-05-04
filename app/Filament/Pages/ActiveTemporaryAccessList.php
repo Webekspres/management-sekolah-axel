@@ -2,12 +2,14 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\TemporaryAccessLog;
 use App\Models\TemporaryPolicyGrant;
 use App\Models\User;
 use App\Models\UserPolicyAbility;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\Action as TableAction;
+use Filament\Actions\BulkAction;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -16,6 +18,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class ActiveTemporaryAccessList extends Page implements HasTable
 {
@@ -143,6 +146,18 @@ class ActiveTemporaryAccessList extends Page implements HasTable
                     ->modalDescription(fn (UserPolicyAbility $record): string => "Cabut ability '{$record->ability}' pada policy '{$record->accessPolicy?->name}' untuk {$record->user?->name}?")
                     ->action(fn (UserPolicyAbility $record) => $this->revokeAbility($record)),
             ])
+            ->toolbarActions([
+                BulkAction::make('revokeSelected')
+                    ->label('Cabut Akses Terpilih')
+                    ->icon(Heroicon::OutlinedXCircle)
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Cabut Akses Terpilih')
+                    ->modalDescription(fn (Collection $records): string => "Cabut {$records->count()} akses yang dipilih? Aksi ini tidak dapat dibatalkan.")
+                    ->modalSubmitActionLabel('Ya, Cabut Semua')
+                    ->action(fn (Collection $records) => $this->revokeSelectedAbilities($records))
+                    ->deselectRecordsAfterCompletion(),
+            ])
             ->emptyStateIcon(Heroicon::OutlinedShieldCheck)
             ->emptyStateHeading('Tidak ada akses aktif')
             ->emptyStateDescription('Belum ada akses sementara yang sedang aktif saat ini.')
@@ -159,6 +174,16 @@ class ActiveTemporaryAccessList extends Page implements HasTable
         $policyId = $ability->access_policy_id;
 
         $ability->delete();
+
+        TemporaryAccessLog::query()
+            ->where('user_id', $ability->user_id)
+            ->where('access_policy_id', $ability->access_policy_id)
+            ->where('ability', $ability->ability)
+            ->whereNull('revoked_at')
+            ->update([
+                'revoked_at' => now(),
+                'revoked_by_user_id' => auth()->id(),
+            ]);
 
         $remaining = UserPolicyAbility::query()
             ->forUser($userId)
@@ -179,6 +204,33 @@ class ActiveTemporaryAccessList extends Page implements HasTable
             ->body("Ability '{$abilityName}' pada policy '{$policyName}' untuk {$userName} telah dicabut.")
             ->success()
             ->send();
+    }
+
+    private function revokeSelectedAbilities(Collection $abilities): void
+    {
+        $revokedCount = 0;
+        $failedCount = 0;
+
+        foreach ($abilities as $ability) {
+            try {
+                $this->revokeAbility($ability);
+                $revokedCount++;
+            } catch (\Throwable $e) {
+                $failedCount++;
+            }
+        }
+
+        Notification::make()
+            ->title("{$revokedCount} akses berhasil dicabut")
+            ->success()
+            ->send();
+
+        if ($failedCount > 0) {
+            Notification::make()
+                ->title("{$failedCount} akses gagal dicabut")
+                ->warning()
+                ->send();
+        }
     }
 
     protected function getHeaderActions(): array
