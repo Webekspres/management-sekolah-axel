@@ -11,14 +11,14 @@ class StudentAttendanceSummaryWidget extends StatsOverviewWidget
 {
     protected ?string $heading = 'Rekap Kehadiran Saya';
 
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 10;
 
     /**
      * @var int | string | array<string, int | string | null>
      */
     protected int|string|array $columnSpan = [
         'default' => 'full',
-        'lg' => 4,
+        'lg' => 6,
     ];
 
     /**

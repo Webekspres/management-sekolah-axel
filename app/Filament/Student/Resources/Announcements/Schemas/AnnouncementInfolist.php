@@ -3,6 +3,7 @@
 namespace App\Filament\Student\Resources\Announcements\Schemas;
 
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class AnnouncementInfolist
@@ -11,14 +12,23 @@ class AnnouncementInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('title')
-                    ->label('Judul Pengumuman'),
-                TextEntry::make('content')
-                    ->label('Isi Pengumuman')
-                    ->columnSpanFull(),
-                TextEntry::make('created_at')
-                    ->label('Dibuat Pada')
-                    ->dateTime(),
+                Section::make('Pengumuman')
+                    ->schema([
+                        TextEntry::make('title')
+                            ->label('Judul')
+                            ->columnSpanFull(),
+                        TextEntry::make('content')
+                            ->label('Isi Pengumuman')
+                            ->html()
+                            ->columnSpanFull(),
+                    ]),
+                Section::make('Informasi')
+                    ->collapsed()
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Dibuat Pada')
+                            ->dateTime(),
+                    ]),
             ]);
     }
 }

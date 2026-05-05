@@ -6,7 +6,6 @@ use App\Models\Kbm;
 use App\Support\PublicStorageUrl;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -94,8 +93,9 @@ class KbmForm
                             ->required()
                             ->native(false)
                             ->live(),
-                        RichEditor::make('revision_note')
+                        Textarea::make('revision_note')
                             ->label('Catatan Perubahan')
+                            ->rows(4)
                             ->required(fn (Get $get): bool => $get('status') === 'REVISED')
                             ->disabled(fn (Get $get): bool => $get('status') !== 'REVISED')
                             ->columnSpanFull(),

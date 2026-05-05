@@ -19,13 +19,13 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class GuruPanelProvider extends PanelProvider
@@ -41,8 +41,8 @@ class GuruPanelProvider extends PanelProvider
             $panel = $panel
                 ->spa()
                 ->spaUrlExceptions([
-                    '*/guru/academic/lesson-plans/*/edit',
-                    '*/guru/academic/lesson-plans/create',
+                    '*/guru/lesson-plans/*/edit',
+                    '*/guru/lesson-plans/create',
                 ]);
         }
 
@@ -63,7 +63,6 @@ class GuruPanelProvider extends PanelProvider
                 StudentResource::class,
             ])
             ->discoverResources(in: app_path('Filament/Guru/Resources'), for: 'App\Filament\Guru\Resources')
-            ->discoverClusters(in: app_path('Filament/Guru/Clusters'), for: 'App\Filament\Guru\Clusters')
             ->discoverPages(in: app_path('Filament/Guru/Pages'), for: 'App\Filament\Guru\Pages')
             ->pages([
                 BentoDashboard::class,
@@ -71,11 +70,21 @@ class GuruPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Guru/Widgets'), for: 'App\Filament\Guru\Widgets')
             ->widgets([
                 GuruOverviewStats::class,
-                AccountWidget::class,
             ])
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => Blade::render('@livewire(\'academic-level-switcher\')'),
+            )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): HtmlString => new HtmlString('<style>
+                    .fi-wi-widget{display:flex;flex-direction:column}
+                    .fi-wi-widget>*{flex:1;display:flex;flex-direction:column}
+                    .fi-wi-widget .fi-wi-table,.fi-wi-widget .fi-wi-stats-overview{flex:1}
+                    .fi-wi-stats-overview .fi-sc-section{flex:1;display:flex;flex-direction:column}
+                    .fi-wi-stats-overview .fi-sc-section>div:last-child{flex:1;display:grid}
+                    .fi-wi-stats-overview .fi-wi-stats-overview-stat{height:100%}
+                </style>'),
             )
             ->middleware([
                 EncryptCookies::class,

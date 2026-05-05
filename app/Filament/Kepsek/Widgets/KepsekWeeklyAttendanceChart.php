@@ -22,10 +22,10 @@ class KepsekWeeklyAttendanceChart extends ChartWidget
      */
     protected int|string|array $columnSpan = [
         'default' => 'full',
-        'lg' => 6,
+        'lg' => 12,
     ];
 
-    protected static ?int $sort = 13;
+    protected static ?int $sort = 30;
 
     public static function canView(): bool
     {

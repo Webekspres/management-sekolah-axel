@@ -24,7 +24,7 @@ test('user tidak terautentikasi diredirect ke login saat akses admin attendance'
 });
 
 test('user tidak terautentikasi diredirect ke login saat akses guru attendance', function (): void {
-    $this->get('/guru/academic/attendances')
+    $this->get('/guru/attendances')
         ->assertRedirect();
 });
 

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Guru\Resources\Attendances;
 
-use App\Filament\Guru\Clusters\AcademicCluster;
 use App\Filament\Guru\Resources\Attendances\Pages\EditAttendance;
 use App\Filament\Guru\Resources\Attendances\Pages\ListAttendances;
 use App\Filament\Guru\Resources\Attendances\Schemas\AttendanceForm;
@@ -15,6 +14,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use UnitEnum;
 
 class AttendanceResource extends Resource
 {
@@ -22,7 +22,9 @@ class AttendanceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Absensi';
 

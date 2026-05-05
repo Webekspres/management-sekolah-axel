@@ -4,20 +4,17 @@ namespace App\Filament\Guru\Resources\LessonPlans\Schemas;
 
 use App\Models\LessonPlan;
 use App\Models\SchoolClass;
-use App\Support\PublicStorageFilePreview;
 use App\Support\PublicStorageUrl;
-use App\Support\RichText;
 use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Filesystem\FilesystemAdapter;
-use Illuminate\Support\HtmlString;
 use League\Flysystem\UnableToCheckFileExistence;
 
 class LessonPlanForm
@@ -108,29 +105,14 @@ class LessonPlanForm
                         Placeholder::make('status_display')
                             ->label('Status')
                             ->content(fn (?LessonPlan $record): string => $record?->status ?? 'DRAFT')
-                            ->hiddenOn('create'),
-                        Placeholder::make('revision_note_display')
+                            ->hiddenOn('create')
+                            ->columnSpanFull(),
+                        Textarea::make('revision_note')
                             ->label('Catatan Revisi dari Kepsek')
-                            ->content(fn (?LessonPlan $record): string => RichText::display($record?->revision_note))
-                            ->hiddenOn('create'),
-                        Placeholder::make('file_current_preview')
-                            ->label('Pratinjau file')
-                            ->content(function (Get $get, ?LessonPlan $record): HtmlString|string {
-                                $path = $get('file_path');
-                                if (is_array($path)) {
-                                    $path = reset($path) ?: null;
-                                }
-                                if (! is_string($path) || blank($path)) {
-                                    $path = $record instanceof LessonPlan ? $record->file_path : null;
-                                }
-                                if (! is_string($path) || blank($path)) {
-                                    return new HtmlString(
-                                        '<p class="text-sm text-gray-500 dark:text-gray-400">Unggah file RPP (PDF atau Word) untuk melihat pratinjau di sini.</p>'
-                                    );
-                                }
-
-                                return PublicStorageFilePreview::render($path);
-                            })
+                            ->rows(5)
+                            ->readOnly()
+                            ->dehydrated(false)
+                            ->placeholder('Tidak ada catatan revisi.')
                             ->hiddenOn('create')
                             ->columnSpanFull(),
                     ]),

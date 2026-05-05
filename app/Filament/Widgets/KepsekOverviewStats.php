@@ -34,7 +34,7 @@ class KepsekOverviewStats extends StatsOverviewWidget
     protected int|array|null $columns = [
         'default' => 1,
         'sm' => 2,
-        'lg' => 5,
+        'lg' => 3,
     ];
 
     public static function canView(): bool

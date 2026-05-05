@@ -2,7 +2,6 @@
 
 namespace App\Filament\Guru\Resources\LessonPlans;
 
-use App\Filament\Guru\Clusters\AcademicCluster;
 use App\Filament\Guru\Resources\LessonPlans\Pages\CreateLessonPlan;
 use App\Filament\Guru\Resources\LessonPlans\Pages\EditLessonPlan;
 use App\Filament\Guru\Resources\LessonPlans\Pages\ListLessonPlans;
@@ -17,6 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use UnitEnum;
 
 class LessonPlanResource extends Resource
 {
@@ -24,7 +24,9 @@ class LessonPlanResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Pengajuan RPP';
 

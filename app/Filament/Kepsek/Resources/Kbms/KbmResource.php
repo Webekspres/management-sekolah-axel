@@ -2,7 +2,6 @@
 
 namespace App\Filament\Kepsek\Resources\Kbms;
 
-use App\Filament\Kepsek\Clusters\AcademicCluster;
 use App\Filament\Kepsek\Resources\Kbms\Pages\EditKbm;
 use App\Filament\Kepsek\Resources\Kbms\Pages\ListKbms;
 use App\Filament\Kepsek\Resources\Kbms\Schemas\KbmForm;
@@ -14,6 +13,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class KbmResource extends Resource
 {
@@ -21,7 +21,9 @@ class KbmResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Approval KBM';
 

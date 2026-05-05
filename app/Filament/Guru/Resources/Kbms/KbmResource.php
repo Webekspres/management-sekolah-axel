@@ -2,7 +2,6 @@
 
 namespace App\Filament\Guru\Resources\Kbms;
 
-use App\Filament\Guru\Clusters\AcademicCluster;
 use App\Filament\Guru\Resources\Kbms\Pages\CreateKbm;
 use App\Filament\Guru\Resources\Kbms\Pages\EditKbm;
 use App\Filament\Guru\Resources\Kbms\Pages\ListKbms;
@@ -16,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class KbmResource extends Resource
 {
@@ -23,7 +23,9 @@ class KbmResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Laporan KBM';
 

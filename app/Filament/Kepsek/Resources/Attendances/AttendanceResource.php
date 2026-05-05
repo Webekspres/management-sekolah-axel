@@ -2,7 +2,6 @@
 
 namespace App\Filament\Kepsek\Resources\Attendances;
 
-use App\Filament\Kepsek\Clusters\AcademicCluster;
 use App\Filament\Kepsek\Resources\Attendances\Pages\ListAttendances;
 use App\Filament\Kepsek\Resources\Attendances\Tables\AttendancesTable;
 use App\Models\Attendance;
@@ -12,6 +11,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use UnitEnum;
 
 class AttendanceResource extends Resource
 {
@@ -19,7 +19,9 @@ class AttendanceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static ?string $cluster = null;
+
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Absensi';
 

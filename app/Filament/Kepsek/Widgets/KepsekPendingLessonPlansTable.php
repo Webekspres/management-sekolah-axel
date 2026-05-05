@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class KepsekPendingLessonPlansTable extends TableWidget
 {
-    protected static ?int $sort = 11;
+    protected static ?int $sort = 21;
 
     /**
      * @var int | string | array<string, int | string | null>

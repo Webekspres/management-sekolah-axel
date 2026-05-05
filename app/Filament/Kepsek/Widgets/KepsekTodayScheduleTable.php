@@ -12,14 +12,14 @@ use Illuminate\Support\Str;
 
 class KepsekTodayScheduleTable extends TableWidget
 {
-    protected static ?int $sort = 12;
+    protected static ?int $sort = 10;
 
     /**
      * @var int | string | array<string, int | string | null>
      */
     protected int|string|array $columnSpan = [
         'default' => 'full',
-        'lg' => 6,
+        'lg' => 12,
     ];
 
     public static function canView(): bool

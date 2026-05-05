@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\Auth;
 
 class GuruAnnouncementsTable extends TableWidget
 {
-    protected static ?int $sort = 11;
+    protected static ?int $sort = 10;
 
     /**
      * @var int | string | array<string, int | string | null>
      */
     protected int|string|array $columnSpan = [
         'default' => 'full',
-        'lg' => 4,
+        'lg' => 6,
     ];
 
     public static function canView(): bool
@@ -36,7 +36,7 @@ class GuruAnnouncementsTable extends TableWidget
                 ->whereJsonContains('target_role', 'guru')
                 ->latest('created_at'))
             ->columns([
-                TextColumn::make('title')->label('Judul')->limit(60)->searchable(),
+                TextColumn::make('title')->label('Judul')->limit(60),
                 TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
             ->recordActions([

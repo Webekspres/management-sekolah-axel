@@ -25,7 +25,7 @@ class StudentAttendanceTrendChart extends ChartWidget
         'lg' => 12,
     ];
 
-    protected static ?int $sort = 6;
+    protected static ?int $sort = 20;
 
     public static function canView(): bool
     {

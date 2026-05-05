@@ -15,14 +15,14 @@ use Illuminate\Support\Facades\Auth;
 
 class StudentAnnouncementListWidget extends TableWidget
 {
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 11;
 
     /**
      * @var int | string | array<string, int | string | null>
      */
     protected int|string|array $columnSpan = [
         'default' => 'full',
-        'lg' => 8,
+        'lg' => 6,
     ];
 
     public static function canView(): bool
