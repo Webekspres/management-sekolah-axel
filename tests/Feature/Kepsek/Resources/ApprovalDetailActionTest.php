@@ -1,7 +1,6 @@
 <?php
 
 use App\Filament\Kepsek\Resources\Kbms\Pages\ListKbms;
-use App\Filament\Kepsek\Resources\LessonPlans\Pages\ListLessonPlans;
 use App\Models\Kbm;
 use App\Models\LessonPlan;
 use App\Models\Schedule;
@@ -34,16 +33,5 @@ test('kepsek dapat membuka detail kbm tanpa error', function () {
 
     Livewire::test(ListKbms::class)
         ->mountTableAction('detail', $kbm->getKey())
-        ->assertHasNoTableActionErrors();
-});
-
-test('kepsek dapat membuka detail rpp tanpa error', function () {
-    $lessonPlan = LessonPlan::factory()->create([
-        'status' => 'PENDING',
-        'file_path' => 'lesson_plans/rpp-bab-1.pdf',
-    ]);
-
-    Livewire::test(ListLessonPlans::class)
-        ->mountTableAction('detail', $lessonPlan->getKey())
         ->assertHasNoTableActionErrors();
 });

@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Guru\Widgets\GuruTodayChecklistTable;
 use App\Filament\Widgets\GuruOverviewStats;
 use App\Models\Attendance;
 use App\Models\Kbm;
@@ -65,5 +66,8 @@ test('guru overview stats menampilkan jadwal, kbm terbaru, dan ringkasan absensi
         ->assertSee('PENDING')
         ->assertSee('Ringkasan Absensi Kelas')
         ->assertSee('3')
-        ->assertSee('Entri hari ini, HADIR: 2');
+        ->assertSee('(67%)')
+        ->assertSee('RPP saya (draft)');
+
+    Livewire::test(GuruTodayChecklistTable::class)->assertSuccessful();
 });

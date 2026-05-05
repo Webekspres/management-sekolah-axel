@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Bento\BentoDashboard;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\AcademicYearResource;
 use App\Filament\Clusters\Academic\Resources\Schedules\ScheduleResource;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\SchoolClassResource;
@@ -14,7 +15,6 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -34,7 +34,8 @@ class KepsekPanelProvider extends PanelProvider
     {
         $panel = $panel
             ->id('kepsek')
-            ->path('kepsek');
+            ->path('kepsek')
+            ->resourceCreatePageRedirect('index');
 
         if (! app()->runningUnitTests()) {
             $panel = $panel->spa();
@@ -58,7 +59,7 @@ class KepsekPanelProvider extends PanelProvider
             ->discoverClusters(in: app_path('Filament/Kepsek/Clusters'), for: 'App\Filament\Kepsek\Clusters')
             ->discoverPages(in: app_path('Filament/Kepsek/Pages'), for: 'App\Filament\Kepsek\Pages')
             ->pages([
-                Dashboard::class,
+                BentoDashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Kepsek/Widgets'), for: 'App\Filament\Kepsek\Widgets')
             ->widgets([

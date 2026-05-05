@@ -16,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class LessonPlanResource extends Resource
 {
@@ -32,6 +33,21 @@ class LessonPlanResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return LessonPlanForm::configure($schema);
+    }
+
+    /**
+     * Guru perlu membuka halaman edit untuk melihat RPP (semua status yang boleh dilihat).
+     * Penyimpanan tetap dilindungi oleh {@see LessonPlanPolicy::update} dan {@see EditLessonPlan::mutateFormDataBeforeSave()}.
+     */
+    public static function canEdit(Model $record): bool
+    {
+        $user = auth()->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        return $user->can('view', $record);
     }
 
     public static function table(Table $table): Table

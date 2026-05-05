@@ -1,6 +1,10 @@
 <?php
 
+use App\Filament\Widgets\AdminAttendanceTrendChart;
+use App\Filament\Widgets\AdminHighAlpaClassesTable;
+use App\Filament\Widgets\AdminMissingKbmTodayTable;
 use App\Filament\Widgets\AdminOverviewStats;
+use App\Filament\Widgets\AdminTeachersWithoutScheduleTable;
 use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\Kbm;
@@ -61,4 +65,9 @@ test('admin overview stats menampilkan ringkasan fase 2', function () {
         ->assertSee('3')
         ->assertSee('1')
         ->assertSee('H: 1 | I: 1 | S: 1 | A: 0');
+
+    Livewire::test(AdminAttendanceTrendChart::class)->assertSuccessful();
+    Livewire::test(AdminMissingKbmTodayTable::class)->assertSuccessful();
+    Livewire::test(AdminHighAlpaClassesTable::class)->assertSuccessful();
+    Livewire::test(AdminTeachersWithoutScheduleTable::class)->assertSuccessful();
 });

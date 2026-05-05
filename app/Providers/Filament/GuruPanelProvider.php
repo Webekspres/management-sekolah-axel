@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Bento\BentoDashboard;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\AcademicYearResource;
 use App\Filament\Clusters\Academic\Resources\Schedules\ScheduleResource;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\SchoolClassResource;
@@ -14,7 +15,6 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -34,10 +34,16 @@ class GuruPanelProvider extends PanelProvider
     {
         $panel = $panel
             ->id('guru')
-            ->path('guru');
+            ->path('guru')
+            ->resourceCreatePageRedirect('index');
 
         if (! app()->runningUnitTests()) {
-            $panel = $panel->spa();
+            $panel = $panel
+                ->spa()
+                ->spaUrlExceptions([
+                    '*/guru/academic/lesson-plans/*/edit',
+                    '*/guru/academic/lesson-plans/create',
+                ]);
         }
 
         return $panel
@@ -60,7 +66,7 @@ class GuruPanelProvider extends PanelProvider
             ->discoverClusters(in: app_path('Filament/Guru/Clusters'), for: 'App\Filament\Guru\Clusters')
             ->discoverPages(in: app_path('Filament/Guru/Pages'), for: 'App\Filament\Guru\Pages')
             ->pages([
-                Dashboard::class,
+                BentoDashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Guru/Widgets'), for: 'App\Filament\Guru\Widgets')
             ->widgets([

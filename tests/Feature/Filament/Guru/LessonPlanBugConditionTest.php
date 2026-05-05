@@ -20,6 +20,8 @@ use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -108,7 +110,11 @@ test('1.3 save RPP berstatus PENDING gagal dengan validation error (expected: re
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('1.4 create RPP baru tersimpan ke database (expected: count increased by 1)', function () {
+    Storage::fake('public');
+
     $countBefore = LessonPlan::count();
+
+    $uploadedFile = UploadedFile::fake()->create('RPP-Baru.pdf', 256, 'application/pdf');
 
     // Expected behavior: create RPP baru harus menyimpan record ke database
     Livewire::test(CreateLessonPlan::class)
@@ -117,7 +123,7 @@ test('1.4 create RPP baru tersimpan ke database (expected: count increased by 1)
             'class_id' => SchoolClass::factory()->create()->id,
             'topic' => 'Topik RPP Baru',
             'implementation_date' => now()->addDays(7)->format('Y-m-d'),
-            'file_path' => 'lesson-plans/test-file.pdf',
+            'file_path' => $uploadedFile,
         ])
         ->call('create')
         ->assertHasNoErrors();

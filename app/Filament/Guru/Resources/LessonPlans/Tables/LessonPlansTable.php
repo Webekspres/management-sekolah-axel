@@ -3,6 +3,7 @@
 namespace App\Filament\Guru\Resources\LessonPlans\Tables;
 
 use App\Models\LessonPlan;
+use App\Support\PublicStorageFilePreview;
 use App\Support\PublicStorageUrl;
 use App\Support\RichText;
 use DomainException;
@@ -114,7 +115,7 @@ class LessonPlansTable
                             ->content(RichText::display($record->revision_note)),
                         Placeholder::make('file')
                             ->label('Dokumen')
-                            ->content(filled($record->file_path) ? basename($record->file_path) : '-'),
+                            ->content(filled($record->file_path) ? PublicStorageFilePreview::render($record->file_path) : '-'),
                     ]),
                 EditAction::make()
                     ->label('Detail / Edit'),

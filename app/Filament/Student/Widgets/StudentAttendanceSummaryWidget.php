@@ -11,6 +11,21 @@ class StudentAttendanceSummaryWidget extends StatsOverviewWidget
 {
     protected ?string $heading = 'Rekap Kehadiran Saya';
 
+    protected static ?int $sort = 5;
+
+    /**
+     * @var int | string | array<string, int | string | null>
+     */
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'lg' => 4,
+    ];
+
+    /**
+     * @var int | array<string, ?int> | null
+     */
+    protected int|array|null $columns = 2;
+
     public static function canView(): bool
     {
         return Auth::user()?->role === 'siswa_ortu';

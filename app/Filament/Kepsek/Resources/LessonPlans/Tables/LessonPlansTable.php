@@ -5,9 +5,7 @@ namespace App\Filament\Kepsek\Resources\LessonPlans\Tables;
 use App\Models\LessonPlan;
 use App\Support\PublicStorageUrl;
 use App\Support\RichText;
-use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Placeholder;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -62,41 +60,6 @@ class LessonPlansTable
                     ]),
             ])
             ->recordActions([
-                Action::make('detail')
-                    ->label('Detail')
-                    ->icon('heroicon-o-eye')
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Tutup')
-                    ->modalHeading('Detail Pengajuan RPP')
-                    ->form(fn (LessonPlan $record): array => [
-                        Placeholder::make('teacher_name')
-                            ->label('Guru')
-                            ->content(fn (): string => $record->teacher?->user?->name ?? '-'),
-                        Placeholder::make('subject_name')
-                            ->label('Mata Pelajaran')
-                            ->content(fn (): string => $record->subjectForDisplay?->name ?? '-'),
-                        Placeholder::make('topic')
-                            ->label('Topik')
-                            ->content(fn (): string => $record->topic ?? '-'),
-                        Placeholder::make('file_path')
-                            ->label('File')
-                            ->content(function () use ($record): string {
-                                if (filled($record->file_path)) {
-                                    $url = PublicStorageUrl::fromPublicDiskPath($record->file_path);
-
-                                    return '<a href="'.e($url).'" target="_blank" class="text-blue-600 hover:underline">'.e(basename($record->file_path)).'</a>';
-                                }
-
-                                return '-';
-                            })
-                            ->html(),
-                        Placeholder::make('status')
-                            ->label('Status')
-                            ->content(fn (): string => $record->status ?? '-'),
-                        Placeholder::make('revision_note')
-                            ->label('Catatan Revisi')
-                            ->content(fn (): string => RichText::display($record->revision_note)),
-                    ]),
                 EditAction::make()
                     ->label('Ubah Status'),
             ]);

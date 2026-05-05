@@ -2,11 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Bento\BentoDashboard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -17,6 +17,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -27,7 +28,8 @@ class AdminPanelProvider extends PanelProvider
     {
         $panel = $panel
             ->id('admin')
-            ->path('admin');
+            ->path('admin')
+            ->resourceCreatePageRedirect('index');
 
         if (! app()->runningUnitTests()) {
             $panel = $panel->spa();
@@ -41,13 +43,23 @@ class AdminPanelProvider extends PanelProvider
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
-                Dashboard::class,
+                BentoDashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->widgets([])
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => Blade::render('@livewire(\'academic-level-switcher\')'),
+            )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): HtmlString => new HtmlString('<style>
+                    .fi-wi-widget{display:flex;flex-direction:column}
+                    .fi-wi-widget>*{flex:1;display:flex;flex-direction:column}
+                    .fi-wi-widget .fi-wi-table,.fi-wi-widget .fi-wi-stats-overview{flex:1}
+                    .fi-wi-stats-overview .fi-sc-section{flex:1;display:flex;flex-direction:column}
+                    .fi-wi-stats-overview .fi-sc-section>div:last-child{flex:1;display:grid}
+                    .fi-wi-stats-overview .fi-wi-stats-overview-stat{height:100%}
+                </style>'),
             )
             ->middleware([
                 EncryptCookies::class,

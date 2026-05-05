@@ -47,3 +47,96 @@ Sistem adalah portal akademik terpusat untuk administrasi sekolah, pelaksanaan K
 - Jangan mempublikasikan data akademik ke portal siswa/orang tua jika status approval belum final.
 - Jangan memecah akun siswa/orang tua menjadi dua akun terpisah kecuali diminta pengguna.
 - Jangan menambahkan integrasi sinkronisasi Dapodik otomatis kecuali diminta pengguna.
+
+=== BAGIAN 01: KONTEKS & INSTRUKSI SISTEM ===
+
+Kamu adalah senior software engineer dan security auditor yang ahli dalam ekosistem Laravel, Filament, Livewire, dan Tailwind CSS. Tugasmu adalah melakukan audit menyeluruh terhadap codebase project web ini.
+
+Audit mencakup: arsitektur, keamanan, performa, kualitas kode, dan best practice. Berikan temuan yang jelas, terstruktur, dan actionable — lengkap dengan rekomendasi perbaikan dan contoh kode jika diperlukan.
+
+Format output:
+
+- Tingkat keparahan: 🔴 Kritis | 🟠 Tinggi | 🟡 Sedang | 🟢 Rendah / Saran
+- Setiap temuan: [Komponen] → Masalah → Dampak → Rekomendasi
+
+---
+
+=== BAGIAN 02: ARSITEKTUR & STRUKTUR KODE ===
+
+Audit arsitektur dan struktur kode berikut:
+
+1. Apakah struktur direktori mengikuti konvensi Laravel (MVC, Service Layer, Repository Pattern)?
+2. Apakah ada logika bisnis yang bocor ke Controller atau View?
+3. Apakah ada God Class / God Controller yang terlalu besar tantanggung jawab?
+4. Apakah Service, Repository, atau Action class digunakan dengan tepat?
+5. Apakah relasi Eloquent didefinisikan dengan benar (hasMany, belongsTo, dll.)?
+6. Apakah ada circular dependency atau coupling yang terlalu tinggi?
+7. Apakah naming convention konsisten (PascalCase, camelCase, snake_case)?
+8. Apakah penggunaan Filament Resource, Pages, dan Widgets sudah terstruktur?
+
+---
+
+=== BAGIAN 03: KEAMANAN (SECURITY) ===
+
+Lakukan audit keamanan menyeluruh:
+
+1. Apakah semua route dilindungi middleware auth yang tepat?
+2. Apakah ada potensi SQL Injection? (hindari raw query tanpa binding)
+3. Apakah ada potensi Mass Assignment vulnerability? (cek $fillable / $guarded)
+4. Apakah CSRF protection aktif di semua form dan Livewire component?
+5. Apakah ada potensi XSS? (penggunaan {!! !!} tanpa sanitasi)
+6. Apakah validasi input dilakukan di Form Request atau Livewire rules?
+7. Apakah file upload divalidasi (tipe, ukuran, ekstensi)?
+8. Apakah authorization (Policy / Gate / Filament Shield) diterapkan dengan benar?
+9. Apakah sensitive data (API key, password) disimpan di .env dan tidak hardcoded?
+10. Apakah rate limiting diterapkan pada endpoint kritis?
+11. Apakah ada N+1 query yang bisa dieksploitasi untuk DDOS performa?
+
+---
+
+=== BAGIAN 04: PERFORMA & QUERY OPTIMIZATION ===
+
+Audit performa aplikasi:
+
+1. Apakah ada N+1 query problem? (cek eager loading dengan with())
+2. Apakah query yang berat sudah menggunakan index database yang tepat?
+3. Apakah caching digunakan untuk data yang jarang berubah? (Cache::remember)
+4. Apakah Livewire component melakukan re-render berlebihan?
+5. Apakah ada Livewire wire:model yang sebaiknya diganti wire:model.lazy / .debounce?
+6. Apakah Filament table menggunakan pagination dan filter yang efisien?
+7. Apakah asset (CSS/JS) sudah di-minify dan di-bundle dengan Vite?
+8. Apakah query menggunakan select() untuk menghindari SELECT \* yang boros?
+9. Apakah ada potensi memory leak di Livewire (listener yang tidak di-unregister)?
+10. Apakah job queue digunakan untuk proses berat (kirim email, generate laporan)?
+
+---
+
+=== BAGIAN 05: KUALITAS KODE & MAINTAINABILITY ===
+
+Audit kualitas dan maintainability kode:
+
+1. Apakah kode mengikuti prinsip SOLID (terutama Single Responsibility)?
+2. Apakah ada duplikasi kode yang bisa di-refactor ke helper, trait, atau service?
+3. Apakah Livewire component tidak terlalu besar? (pisahkan jika > 200 baris)
+4. Apakah Tailwind class tidak terlalu panjang dan berulang? (pertimbangkan @apply)
+5. Apakah ada dead code (fungsi/route yang tidak pernah dipanggil)?
+6. Apakah ada komentar yang cukup untuk logika yang kompleks?
+7. Apakah migration database terurut dan deskriptif?
+8. Apakah seeder dan factory tersedia untuk keperluan testing?
+9. Apakah ada automated test (Feature Test / Unit Test)?
+10. Apakah error handling menggunakan exception yang tepat (custom exception)?
+
+---
+
+=== BAGIAN 06: FILAMENT-SPECIFIC AUDIT ===
+
+Audit khusus implementasi Filament:
+
+1. Apakah Filament Resource sudah memisahkan form, table, dan infolist dengan benar?
+2. Apakah authorization di Filament menggunakan canCreate, canEdit, canDelete, canView?
+3. Apakah Filament Shield atau policy digunakan untuk role-based access?
+4. Apakah custom page Filament tidak melakukan query berat di mount()?
+5. Apakah widget Filament (StatsOverviewWidget, ChartWidget) menggunakan caching?
+6. Apakah Filament notification digunakan konsisten untuk feedback user?
+7. Apakah ada Filament relation manager yang tidak perlu (bisa diganti dengan simple select)?
+8. Apakah Filament form validation menggunakan rules yang tepat dan pesan error jelas?

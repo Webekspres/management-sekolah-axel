@@ -28,6 +28,10 @@ test('guru announcement resource only shows announcements for their role', funct
         ->not->toContain($hiddenAnnouncement->id);
 });
 
+test('announcement resource uses title as record title attribute', function () {
+    expect(PanelAnnouncementResource::getRecordTitleAttribute())->toBe('title');
+});
+
 test('policy allows user to view announcement with matching role', function () {
     $guru = User::factory()->asGuru()->create();
     $announcement = Announcement::factory()->forGuru()->create();

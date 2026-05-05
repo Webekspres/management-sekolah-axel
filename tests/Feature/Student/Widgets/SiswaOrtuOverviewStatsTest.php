@@ -1,6 +1,8 @@
 <?php
 
 use App\Filament\Student\Widgets\SiswaOrtuOverviewStats;
+use App\Filament\Student\Widgets\StudentAnnouncementListWidget;
+use App\Filament\Student\Widgets\StudentAttendanceTrendChart;
 use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\Kbm;
@@ -59,4 +61,8 @@ test('widget siswa menampilkan jadwal hari ini, pengumuman terbaru, dan ringkasa
         ->assertSee('Ringkasan Kehadiran Saya')
         ->assertSee('1')
         ->assertSee('Bulan ini (APPROVED), HADIR: 1');
+
+    Livewire::test(StudentAttendanceTrendChart::class)->assertSuccessful();
+
+    Livewire::test(StudentAnnouncementListWidget::class)->assertSuccessful();
 });

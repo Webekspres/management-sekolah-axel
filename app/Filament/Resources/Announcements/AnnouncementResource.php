@@ -24,7 +24,7 @@ class AnnouncementResource extends Resource
 
     protected static UnitEnum|string|null $navigationGroup = 'Informasi Terkini';
 
-    protected static ?string $recordTitleAttribute = 'Pengumuman';
+    protected static ?string $recordTitleAttribute = 'title';
 
     protected static ?string $label = 'Pengumuman';
 

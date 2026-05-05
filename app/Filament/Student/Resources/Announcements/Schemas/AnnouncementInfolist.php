@@ -19,9 +19,6 @@ class AnnouncementInfolist
                 TextEntry::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime(),
-                TextEntry::make('updated_at')
-                    ->label('Diperbaharui Pada')
-                    ->dateTime(),
             ]);
     }
 }

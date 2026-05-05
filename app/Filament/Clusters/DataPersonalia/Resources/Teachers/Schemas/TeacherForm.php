@@ -112,8 +112,7 @@ class TeacherForm
                                 $set('address_city_id', null);
                                 $set('address_sub_district_id', null);
                                 $set('address_village_id', null);
-                            })
-                            ->dehydrated(false),
+                            }),
                         Select::make('address_city_id')
                             ->label('Kota/Kabupaten')
                             ->options(function (Get $get): array {
@@ -135,8 +134,7 @@ class TeacherForm
                             ->afterStateUpdated(function (Set $set): void {
                                 $set('address_sub_district_id', null);
                                 $set('address_village_id', null);
-                            })
-                            ->dehydrated(false),
+                            }),
                         Select::make('address_sub_district_id')
                             ->label('Kecamatan')
                             ->options(function (Get $get): array {
@@ -157,8 +155,7 @@ class TeacherForm
                             ->live()
                             ->afterStateUpdated(function (Set $set): void {
                                 $set('address_village_id', null);
-                            })
-                            ->dehydrated(false),
+                            }),
                         Select::make('address_village_id')
                             ->label('Desa/Kelurahan')
                             ->options(function (Get $get): array {
@@ -175,17 +172,14 @@ class TeacherForm
                                     ->toArray();
                             })
                             ->searchable()
-                            ->disabled(fn (Get $get): bool => ! $get('address_sub_district_id'))
-                            ->dehydrated(false),
+                            ->disabled(fn (Get $get): bool => ! $get('address_sub_district_id')),
                         TextInput::make('address_street')
                             ->label('Jalan/Gang/Nomor')
                             ->placeholder('Jl. Mawar No. 10, RT 02/RW 05')
-                            ->columnSpan(2)
-                            ->dehydrated(false),
+                            ->columnSpan(2),
                         TextInput::make('address_postal_code')
                             ->label('Kode Pos')
-                            ->maxLength(5)
-                            ->dehydrated(false),
+                            ->maxLength(5),
                         Textarea::make('user.address_detail')
                             ->label('Detail Alamat Tambahan')
                             ->placeholder('Nama perumahan, blok, gang, patokan, dll.')

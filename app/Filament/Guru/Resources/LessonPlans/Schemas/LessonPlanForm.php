@@ -4,6 +4,7 @@ namespace App\Filament\Guru\Resources\LessonPlans\Schemas;
 
 use App\Models\LessonPlan;
 use App\Models\SchoolClass;
+use App\Support\PublicStorageFilePreview;
 use App\Support\PublicStorageUrl;
 use App\Support\RichText;
 use Filament\Forms\Components\BaseFileUpload;
@@ -70,6 +71,8 @@ class LessonPlanForm
                             ->disk('public')
                             ->directory('lesson-plans')
                             ->visibility('public')
+                            ->preserveFilenames()
+                            ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                             ->downloadable()
                             ->openable()
                             ->getUploadedFileUsing(static function (BaseFileUpload $component, string $file, string|array|null $storedFileNames): ?array {
@@ -102,33 +105,31 @@ class LessonPlanForm
                             ->markAsRequired(fn (?LessonPlan $record): bool => ! self::isContentLocked($record))
                             ->disabled(fn (?LessonPlan $record): bool => self::isContentLocked($record))
                             ->columnSpanFull(),
-                        Placeholder::make('status')
+                        Placeholder::make('status_display')
                             ->label('Status')
-                            ->content(fn (?string $state): string => $state ?? 'DRAFT')
+                            ->content(fn (?LessonPlan $record): string => $record?->status ?? 'DRAFT')
                             ->hiddenOn('create'),
-                        Placeholder::make('revision_note')
+                        Placeholder::make('revision_note_display')
                             ->label('Catatan Revisi dari Kepsek')
-                            ->content(function (?string $state): string {
-                                return RichText::display($state);
-                            })
+                            ->content(fn (?LessonPlan $record): string => RichText::display($record?->revision_note))
                             ->hiddenOn('create'),
-                        Placeholder::make('file_link')
-                            ->label('File Saat Ini')
-                            ->content(function (Get $get): HtmlString|string {
+                        Placeholder::make('file_current_preview')
+                            ->label('Pratinjau file')
+                            ->content(function (Get $get, ?LessonPlan $record): HtmlString|string {
                                 $path = $get('file_path');
                                 if (is_array($path)) {
-                                    $path = $path[0] ?? null;
+                                    $path = reset($path) ?: null;
                                 }
                                 if (! is_string($path) || blank($path)) {
-                                    return '-';
+                                    $path = $record instanceof LessonPlan ? $record->file_path : null;
+                                }
+                                if (! is_string($path) || blank($path)) {
+                                    return new HtmlString(
+                                        '<p class="text-sm text-gray-500 dark:text-gray-400">Unggah file RPP (PDF atau Word) untuk melihat pratinjau di sini.</p>'
+                                    );
                                 }
 
-                                $url = PublicStorageUrl::fromPublicDiskPath($path);
-                                $name = basename($path);
-
-                                return new HtmlString(
-                                    '<a href="'.e($url).'" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline">'.e($name).'</a>'
-                                );
+                                return PublicStorageFilePreview::render($path);
                             })
                             ->hiddenOn('create')
                             ->columnSpanFull(),

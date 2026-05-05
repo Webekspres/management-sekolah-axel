@@ -69,6 +69,7 @@ class LessonPlanForm
                             ->disk('public')
                             ->directory('lesson-plans')
                             ->visibility('public')
+                            ->preserveFilenames()
                             ->downloadable()
                             ->openable()
                             ->getUploadedFileUsing(static function (BaseFileUpload $component, string $file, string|array|null $storedFileNames): ?array {

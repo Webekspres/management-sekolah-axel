@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Kbm;
 use App\Models\Notification;
 use App\Models\Schedule;
+use App\Support\DashboardAcademicContext;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,22 @@ use Illuminate\Support\Facades\Auth;
 class SiswaOrtuOverviewStats extends StatsOverviewWidget
 {
     protected ?string $heading = 'Dashboard Siswa & Orang Tua';
+
+    protected static ?int $sort = -2;
+
+    /**
+     * @var int | string | array<string, int | string | null>
+     */
+    protected int|string|array $columnSpan = 'full';
+
+    /**
+     * @var int | array<string, ?int> | null
+     */
+    protected int|array|null $columns = [
+        'default' => 1,
+        'sm' => 2,
+        'lg' => 3,
+    ];
 
     public static function canView(): bool
     {
@@ -34,6 +51,8 @@ class SiswaOrtuOverviewStats extends StatsOverviewWidget
                     ->color('gray'),
             ];
         }
+
+        $ctx = DashboardAcademicContext::statsSuffix();
 
         $todayIndex = now()->dayOfWeekIso;
 
@@ -85,22 +104,22 @@ class SiswaOrtuOverviewStats extends StatsOverviewWidget
 
         return [
             Stat::make('Jadwal Hari Ini', number_format($scheduleTodayCount))
-                ->description('Sesi belajar sesuai kelas saat ini')
+                ->description('Sesi belajar sesuai kelas saat ini'.$ctx)
                 ->color('info'),
             Stat::make('Pengumuman Terbaru', $announcementValue)
-                ->description($announcementDescription)
+                ->description($announcementDescription.$ctx)
                 ->color('success'),
             Stat::make('Ringkasan Kehadiran Saya', number_format($attendanceThisMonthCount))
-                ->description("Bulan ini (APPROVED), HADIR: {$hadirThisMonthCount}")
+                ->description("Bulan ini (APPROVED), HADIR: {$hadirThisMonthCount}{$ctx}")
                 ->color('success'),
             Stat::make('Tagihan Aktif', number_format($activeInvoiceCount))
-                ->description('Status UNPAID dan PENDING')
+                ->description('Status UNPAID dan PENDING'.$ctx)
                 ->color('warning'),
             Stat::make('KBM Approved Minggu Ini', number_format($approvedKbmThisWeek))
-                ->description('Laporan yang sudah disetujui Kepsek')
+                ->description('Laporan yang sudah disetujui Kepsek'.$ctx)
                 ->color('success'),
             Stat::make('Notifikasi Belum Dibaca', number_format($unreadNotificationCount))
-                ->description('Informasi terbaru untuk siswa/orang tua')
+                ->description('Informasi terbaru untuk siswa/orang tua'.$ctx)
                 ->color('danger'),
         ];
     }

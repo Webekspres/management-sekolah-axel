@@ -13,6 +13,18 @@ class AttendanceSummaryWidget extends StatsOverviewWidget
 {
     protected ?string $heading = 'Ringkasan Absensi';
 
+    protected static ?int $sort = 22;
+
+    /**
+     * @var int | string | array<string, int | string | null>
+     */
+    protected int|string|array $columnSpan = 'full';
+
+    /**
+     * @var int | array<string, ?int> | null
+     */
+    protected int|array|null $columns = 3;
+
     public static function canView(): bool
     {
         $role = Auth::user()?->role;

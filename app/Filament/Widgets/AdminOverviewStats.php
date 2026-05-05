@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Filament\Clusters\Academic\Resources\Schedules\ScheduleResource;
+use App\Filament\Clusters\Academic\Resources\Attendances\AttendanceResource;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\SchoolClassResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
@@ -10,21 +10,32 @@ use App\Models\Attendance;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Support\DashboardAcademicContext;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
 
 class AdminOverviewStats extends StatsOverviewWidget
 {
-    protected static ?int $sort = -2;
+    protected static ?int $sort = 1;
+
+    /**
+     * @var int | string | array<string, int | string | null>
+     */
+    protected int|string|array $columnSpan = [
+        'default' => 'full',
+        'lg' => 5,
+        'xl' => 5,
+    ];
+
+    /**
+     * @var int | array<string, ?int> | null
+     */
+    protected int|array|null $columns = 2;
 
     protected static bool $isLazy = false;
 
     protected ?string $pollingInterval = null;
-
-    protected ?string $heading = 'Dashboard Admin';
-
-    protected ?string $description = 'Ringkasan operasional sekolah hari ini';
 
     public static function canView(): bool
     {
@@ -33,6 +44,8 @@ class AdminOverviewStats extends StatsOverviewWidget
 
     protected function getStats(): array
     {
+        $ctx = DashboardAcademicContext::statsSuffix();
+
         $attendanceTodayQuery = Attendance::query()
             ->whereHas('kbm', fn ($query) => $query->whereDate('date', today()));
 
@@ -46,14 +59,14 @@ class AdminOverviewStats extends StatsOverviewWidget
             $this->makeNavigableStat(
                 label: 'Total Siswa',
                 value: number_format(Student::query()->count()),
-                description: 'Data siswa terdaftar',
+                description: 'Data siswa terdaftar'.$ctx,
                 color: 'gray',
                 url: StudentResource::getUrl(panel: 'admin'),
             ),
             $this->makeNavigableStat(
                 label: 'Total Guru dan Staf',
                 value: number_format(Teacher::query()->count()),
-                description: 'Tenaga pendidik dan staf aktif',
+                description: 'Tenaga pendidik dan staf aktif'.$ctx,
                 color: 'success',
                 url: TeacherResource::getUrl(panel: 'admin'),
             ),
@@ -64,16 +77,16 @@ class AdminOverviewStats extends StatsOverviewWidget
                         ->whereHas('academicYear', fn ($query) => $query->where('is_active', true))
                         ->count()
                 ),
-                description: 'Kelas dengan tahun akademik aktif',
+                description: 'Kelas dengan tahun akademik aktif'.$ctx,
                 color: 'primary',
                 url: SchoolClassResource::getUrl(panel: 'admin'),
             ),
             $this->makeNavigableStat(
                 label: 'Kehadiran Hari Ini',
                 value: number_format($attendanceTodayCount),
-                description: "H: {$hadirCount} | I: {$izinCount} | S: {$sakitCount} | A: {$alpaCount}",
+                description: "Hadir {$hadirCount} · Izin {$izinCount} · Sakit {$sakitCount} · Alpa {$alpaCount}{$ctx}",
                 color: 'info',
-                url: ScheduleResource::getUrl(panel: 'admin'),
+                url: AttendanceResource::getUrl(panel: 'admin'),
             ),
         ];
     }

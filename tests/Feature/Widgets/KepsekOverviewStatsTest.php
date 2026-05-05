@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Kepsek\Widgets\KepsekWeeklyAttendanceChart;
 use App\Filament\Widgets\KepsekOverviewStats;
 use App\Models\Announcement;
 use App\Models\Attendance;
@@ -45,10 +46,13 @@ test('kepsek overview stats menampilkan kehadiran, kbm, dan pengumuman terbaru',
     Filament::setCurrentPanel(Filament::getPanel('kepsek'));
 
     Livewire::test(KepsekOverviewStats::class)
-        ->assertSee('Overview Kehadiran')
+        ->assertSee('Kehadiran hari ini')
         ->assertSee('2')
-        ->assertSee('Overview KBM')
-        ->assertSee('KBM hari ini, pending: 2')
-        ->assertSee('Pengumuman Terbaru')
+        ->assertSee('KBM hari ini')
+        ->assertSee('KBM menunggu approval')
+        ->assertSee('RPP menunggu approval')
+        ->assertSee('Pengumuman terbaru')
         ->assertSee('Pengumuman Terbaru Kepsek');
+
+    Livewire::test(KepsekWeeklyAttendanceChart::class)->assertSuccessful();
 });
