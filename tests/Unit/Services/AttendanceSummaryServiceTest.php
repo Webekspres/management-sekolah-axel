@@ -70,3 +70,21 @@ test('calculateStats returns zero percentage for empty collection', function ():
         ->and($stats['alpa'])->toBe(0)
         ->and($stats['percentage'])->toBe(0.0);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tests untuk metode baru: getSemesterMonths (pure logic, no DB)
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('semester 1 menggunakan bulan Juli-Desember', function (): void {
+    $service = new AttendanceSummaryService;
+    $months = $service->getSemesterMonths(1);
+
+    expect($months)->toBe([7, 8, 9, 10, 11, 12]);
+});
+
+test('semester 2 menggunakan bulan Januari-Juni', function (): void {
+    $service = new AttendanceSummaryService;
+    $months = $service->getSemesterMonths(2);
+
+    expect($months)->toBe([1, 2, 3, 4, 5, 6]);
+});

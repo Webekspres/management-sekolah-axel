@@ -43,8 +43,10 @@ class SubjectKkm extends Model
      */
     public static function getKkm(string $subjectId, string $levelId): float
     {
-        return (float) static::where('subject_id', $subjectId)
+        $kkm = static::where('subject_id', $subjectId)
             ->where('level_id', $levelId)
-            ->value('kkm') ?? 70.0;
+            ->value('kkm');
+
+        return $kkm !== null ? (float) $kkm : 70.0;
     }
 }

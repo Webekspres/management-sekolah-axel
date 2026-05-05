@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceSummaryService
 {
@@ -105,6 +107,98 @@ class AttendanceSummaryService
             'student' => $student,
             'stats' => $this->calculateStats($attendances),
             'attendances' => $attendances,
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Metode baru untuk rekap absensi rapor
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Kembalikan daftar bulan untuk semester tertentu.
+     *
+     * Semester 1: Juli–Desember (7–12)
+     * Semester 2: Januari–Juni (1–6)
+     *
+     * @return array<int>
+     */
+    public function getSemesterMonths(int $semester): array
+    {
+        return $semester === 1
+            ? [7, 8, 9, 10, 11, 12]
+            : [1, 2, 3, 4, 5, 6];
+    }
+
+    /**
+     * Ambil rekap absensi per bulan per mata pelajaran untuk satu siswa.
+     *
+     * Mengembalikan Collection dengan key = subject_id, value = array berisi:
+     * - subject_name: string
+     * - months: array<int, array{hadir: int, sakit: int, izin: int, alpa: int, total: int}>
+     * - total: int (total semua sesi)
+     *
+     * @return Collection<string, array{subject_name: string, months: array, total: int}>
+     */
+    public function getMonthlyBreakdownBySubject(Student $student, AcademicYear $academicYear): Collection
+    {
+        $semesterMonths = $this->getSemesterMonths((int) $academicYear->semester);
+
+        $attendances = Attendance::where('student_id', $student->id)
+            ->whereHas('kbm', function ($query) use ($semesterMonths): void {
+                $query->whereIn(DB::raw('MONTH(date)'), $semesterMonths);
+            })
+            ->with(['kbm.schedule.subject'])
+            ->get();
+
+        return $attendances
+            ->groupBy(fn (Attendance $a) => $a->kbm?->schedule?->subject_id)
+            ->filter(fn ($group, $subjectId) => $subjectId !== null)
+            ->map(function (Collection $group, string $subjectId) use ($semesterMonths): array {
+                $subject = $group->first()->kbm?->schedule?->subject;
+
+                $months = [];
+                foreach ($semesterMonths as $month) {
+                    $monthGroup = $group->filter(
+                        fn (Attendance $a) => $a->kbm?->date?->month === $month
+                    );
+
+                    $months[$month] = [
+                        'hadir' => $monthGroup->where('status', 'HADIR')->count(),
+                        'sakit' => $monthGroup->where('status', 'SAKIT')->count(),
+                        'izin' => $monthGroup->where('status', 'IZIN')->count(),
+                        'alpa' => $monthGroup->where('status', 'ALPA')->count(),
+                        'total' => $monthGroup->count(),
+                    ];
+                }
+
+                return [
+                    'subject_name' => $subject?->name ?? '—',
+                    'months' => $months,
+                    'total' => $group->count(),
+                ];
+            });
+    }
+
+    /**
+     * Hitung total SAKIT, IZIN, ALPA untuk satu siswa dalam satu tahun akademik.
+     *
+     * @return array{sakit: int, izin: int, alpa: int, total: int}
+     */
+    public function getOverallSummary(Student $student, AcademicYear $academicYear): array
+    {
+        $semesterMonths = $this->getSemesterMonths((int) $academicYear->semester);
+
+        $attendances = Attendance::where('student_id', $student->id)
+            ->whereHas('kbm', function ($query) use ($semesterMonths): void {
+                $query->whereIn(DB::raw('MONTH(date)'), $semesterMonths);
+            })
+            ->get();
+
+        return [
+            'sakit' => $attendances->where('status', 'SAKIT')->count(),
+            'izin' => $attendances->where('status', 'IZIN')->count(),
+            'alpa' => $attendances->where('status', 'ALPA')->count(),
+            'total' => $attendances->count(),
         ];
     }
 }

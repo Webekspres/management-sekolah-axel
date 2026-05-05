@@ -2,7 +2,8 @@
     "agents": [
         "copilot",
         "cursor",
-        "kiro"
+        "kiro",
+        "gemini"
     ],
     "cloud": false,
     "guidelines": true,

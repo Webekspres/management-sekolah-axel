@@ -2,9 +2,12 @@
 
 namespace App\Filament\Clusters\Academic\Resources\Schedules\Tables;
 
+use App\Filament\Guru\Resources\GradeInputs\GradeInputResource;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -95,6 +98,13 @@ class SchedulesTable
                     ->multiple(),
             ])
             ->recordActions([
+                Action::make('input_nilai')
+                    ->label('Input Nilai')
+                    ->icon(Heroicon::OutlinedPencilSquare)
+                    ->color('primary')
+                    ->url(fn ($record): string => GradeInputResource::getUrl('index', ['schedule' => $record->id], panel: 'guru'))
+                    ->visible(fn (): bool => auth()->user()?->role === 'guru')
+                    ->openUrlInNewTab(false),
                 EditAction::make(),
             ])
             ->toolbarActions([

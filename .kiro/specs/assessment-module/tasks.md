@@ -99,7 +99,7 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - _Requirements: 5.4, 6.5, 7.2, 8.3, 11.4, 12.2, 12.5, 15.3_
 
 - [x] 5. Guru Panel — GradeInputPage (TDD)
-  - [-] 5.1 Tulis feature tests untuk GradeInputPage (Red)
+  - [x] 5.1 Tulis feature tests untuk GradeInputPage (Red)
     - Buat `tests/Feature/Filament/Guru/GradeInputPageTest.php`
     - Test Guru dapat melihat halaman input nilai untuk jadwal miliknya
     - Test Guru tidak dapat akses jadwal bukan miliknya (403)
@@ -111,7 +111,7 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Test nilai RAPOR ditampilkan bersama komponen nilai
     - _Requirements: 1.1–1.6, 2.1–2.4, 3.1–3.4, 4.4, 4.5, 14.1–14.4, 17.1, 17.2, 19.1, 19.2_
 
-  - [ ] 5.2 Implementasi `GradeInputPage` di Guru Panel (Green)
+  - [x] 5.2 Implementasi `GradeInputPage` di Guru Panel (Green)
     - Buat `app/Filament/Guru/Pages/GradeInputPage.php` sebagai custom Filament Page
     - Implementasi grid siswa × tipe nilai (PH1–PH4, TUGAS1–TUGAS4, ATS, SAS)
     - Tampilkan nilai RAPOR yang terhitung otomatis
@@ -120,8 +120,8 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Jalankan tests 5.1 — semua harus lulus
     - _Requirements: 1.1–1.6, 2.1–2.4, 3.1–3.4, 4.4, 4.5, 14.1–14.4_
 
-- [ ] 6. Guru Panel — AttitudeScoreResource (TDD)
-  - [ ] 6.1 Tulis feature tests untuk AttitudeScoreResource (Red)
+- [x] 6. Guru Panel — AttitudeScoreResource (TDD)
+  - [x] 6.1 Tulis feature tests untuk AttitudeScoreResource (Red)
     - Buat `tests/Feature/Filament/Guru/AttitudeScoreResourceTest.php`
     - Test Wali Kelas dapat input nilai sikap untuk siswa di kelasnya
     - Test Wali Kelas tidak dapat input untuk kelas lain (403)
@@ -129,15 +129,15 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Test simpan dalam satu transaksi
     - _Requirements: 5.1–5.5, 19.3_
 
-  - [ ] 6.2 Implementasi `AttitudeScoreResource` di Guru Panel (Green)
+  - [x] 6.2 Implementasi `AttitudeScoreResource` di Guru Panel (Green)
     - Buat `app/Filament/Guru/Resources/AttitudeScoreResource.php` menggunakan `php artisan make:filament-resource --no-interaction`
     - Implementasi form dengan aspek Spiritual, Sosial, dan aspek kustom
     - Tampilkan rata-rata nilai sikap
     - Jalankan tests 6.1 — semua harus lulus
     - _Requirements: 5.1–5.5_
 
-- [ ] 7. Guru Panel — KnowledgeSkillScoreResource (TDD)
-  - [ ] 7.1 Tulis feature tests untuk KnowledgeSkillScoreResource (Red)
+- [x] 7. Guru Panel — KnowledgeSkillScoreResource (TDD)
+  - [x] 7.1 Tulis feature tests untuk KnowledgeSkillScoreResource (Red)
     - Buat `tests/Feature/Filament/Guru/KnowledgeSkillScoreResourceTest.php`
     - Test Guru dapat input nilai pengetahuan & keterampilan untuk jadwal miliknya
     - Test predikat otomatis ter-assign berdasarkan skor (A/B/C/D)
@@ -146,7 +146,7 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Test Guru tidak bisa akses jadwal bukan miliknya
     - _Requirements: 6.1–6.6, 19.3_
 
-  - [ ] 7.2 Implementasi `KnowledgeSkillScoreResource` di Guru Panel (Green)
+  - [x] 7.2 Implementasi `KnowledgeSkillScoreResource` di Guru Panel (Green)
     - Buat `app/Filament/Guru/Resources/KnowledgeSkillScoreResource.php`
     - Implementasi auto-assign predikat via `RaporService::assignPredicate()`
     - Tampilkan KKM dari `SubjectKkm::getKkm()` (default 70 jika tidak ada)
@@ -154,56 +154,56 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Jalankan tests 7.1 — semua harus lulus
     - _Requirements: 6.1–6.6_
 
-- [ ] 8. Guru Panel — LearningAchievementResource (TDD)
-  - [ ] 8.1 Tulis feature tests untuk LearningAchievementResource (Red)
+- [x] 8. Guru Panel — LearningAchievementResource (TDD)
+  - [x] 8.1 Tulis feature tests untuk LearningAchievementResource (Red)
     - Buat `tests/Feature/Filament/Guru/LearningAchievementResourceTest.php`
     - Test Guru dapat input capaian pembelajaran untuk jadwal miliknya
     - Test tampilkan rata-rata PH, ATS, SAS sebagai referensi
     - Test Guru tidak bisa akses jadwal bukan miliknya
     - _Requirements: 7.1–7.4, 19.3_
 
-  - [ ] 8.2 Implementasi `LearningAchievementResource` di Guru Panel (Green)
+  - [x] 8.2 Implementasi `LearningAchievementResource` di Guru Panel (Green)
     - Buat `app/Filament/Guru/Resources/LearningAchievementResource.php`
     - Implementasi form dengan `topic_coverage` (Pemaparan Materi) dan `notes` (Keterangan)
     - Tampilkan rata-rata PH, ATS, SAS sebagai referensi read-only
     - Jalankan tests 8.1 — semua harus lulus
     - _Requirements: 7.1–7.4_
 
-- [ ] 9. Guru Panel — PersonalityScoreResource (TDD)
-  - [ ] 9.1 Tulis feature tests untuk PersonalityScoreResource (Red)
+- [x] 9. Guru Panel — PersonalityScoreResource (TDD)
+  - [x] 9.1 Tulis feature tests untuk PersonalityScoreResource (Red)
     - Buat `tests/Feature/Filament/Guru/PersonalityScoreResourceTest.php`
     - Test Wali Kelas dapat input kepribadian (A/B/C/D) untuk siswa di kelasnya
     - Test nilai selain A/B/C/D ditolak validasi
     - Test Wali Kelas tidak bisa akses kelas lain
     - _Requirements: 8.1–8.4, 17.6, 19.3_
 
-  - [ ] 9.2 Implementasi `PersonalityScoreResource` di Guru Panel (Green)
+  - [x] 9.2 Implementasi `PersonalityScoreResource` di Guru Panel (Green)
     - Buat `app/Filament/Guru/Resources/PersonalityScoreResource.php`
     - Implementasi form dengan 4 aspek: Kedisiplinan, Kerapihan, Kerajinan, Kesopanan
     - Validasi nilai hanya A/B/C/D menggunakan `in:A,B,C,D` rule
     - Jalankan tests 9.1 — semua harus lulus
     - _Requirements: 8.1–8.4, 17.6_
 
-- [ ] 10. Checkpoint — Pastikan semua Guru Panel tests lulus
+- [x] 10. Checkpoint — Pastikan semua Guru Panel tests lulus
   - Jalankan `php artisan test --compact tests/Feature/Filament/Guru/`
   - Semua tests harus lulus sebelum melanjutkan. Tanyakan ke user jika ada pertanyaan.
 
-- [ ] 11. Admin Panel — SubjectKkmResource (TDD)
-  - [ ] 11.1 Tulis feature tests untuk SubjectKkmResource (Red)
+- [x] 11. Admin Panel — SubjectKkmResource (TDD)
+  - [x] 11.1 Tulis feature tests untuk SubjectKkmResource (Red)
     - Buat `tests/Feature/Filament/Admin/SubjectKkmResourceTest.php`
     - Test Admin dapat set KKM per mapel per level
     - Test default KKM 70 digunakan jika tidak dikonfigurasi
     - Test non-Admin tidak bisa akses resource ini
     - _Requirements: 10.1–10.5, 16.2, 19.5_
 
-  - [ ] 11.2 Implementasi `SubjectKkmResource` di Admin Panel (Green)
+  - [x] 11.2 Implementasi `SubjectKkmResource` di Admin Panel (Green)
     - Buat `app/Filament/Clusters/Academic/Resources/SubjectKkmResource.php`
     - Implementasi static helper `SubjectKkm::getKkm(string $subjectId, string $levelId): float`
     - Jalankan tests 11.1 — semua harus lulus
     - _Requirements: 10.1–10.5_
 
-- [ ] 12. Workflow Rapor — Finalisasi dan Approval (TDD)
-  - [ ] 12.1 Implementasi `validateCompleteness()`, `finalizeRapor()`, `approveRapor()`, `rejectRapor()` di `RaporService`
+- [x] 12. Workflow Rapor — Finalisasi dan Approval (TDD)
+  - [x] 12.1 Implementasi `validateCompleteness()`, `finalizeRapor()`, `approveRapor()`, `rejectRapor()` di `RaporService`
     - Tambahkan method ke `app/Services/RaporService.php`
     - `validateCompleteness(Rapor $rapor): array` — kembalikan array komponen yang kurang
     - `finalizeRapor(Rapor $rapor): void` — ubah status ke FINALIZED
@@ -211,7 +211,7 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - `rejectRapor(Rapor $rapor, string $rejectionNote): void` — kembalikan ke DRAFT dengan catatan
     - _Requirements: 11.1–11.5, 12.1–12.6_
 
-  - [ ] 12.2 Tulis feature tests untuk workflow rapor (Red)
+  - [x] 12.2 Tulis feature tests untuk workflow rapor (Red)
     - Buat `tests/Feature/Filament/Rapor/RaporWorkflowTest.php`
     - Test Wali Kelas dapat finalisasi rapor yang lengkap (DRAFT → FINALIZED)
     - Test finalisasi gagal jika komponen nilai kurang (tampilkan daftar missing)
@@ -222,21 +222,21 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Test Wali Kelas dapat revert FINALIZED ke DRAFT (sebelum di-approve)
     - _Requirements: 11.1–11.5, 12.1–12.6, 19.4_
 
-  - [ ] 12.3 Implementasi Wali Kelas finalisasi rapor di Guru Panel (Green)
+  - [x] 12.3 Implementasi Wali Kelas finalisasi rapor di Guru Panel (Green)
     - Tambahkan action finalisasi ke resource/page rapor di Guru Panel
     - Tampilkan modal dengan daftar komponen yang kurang jika validasi gagal
     - Jalankan tests 12.2 — semua harus lulus
     - _Requirements: 11.1–11.5_
 
-  - [ ] 12.4 Implementasi Kepsek approval di Kepsek Panel (Green)
+  - [x] 12.4 Implementasi Kepsek approval di Kepsek Panel (Green)
     - Buat `app/Filament/Kepsek/Resources/RaporResource.php`
     - Implementasi action approve dan reject dengan modal catatan penolakan
     - Kepsek tidak bisa create/edit/delete data nilai (hanya approve/reject)
     - Jalankan tests 12.2 — semua harus lulus
     - _Requirements: 12.1–12.6_
 
-- [ ] 13. Admin Panel — RaporResource dan GradeResource (TDD)
-  - [ ] 13.1 Tulis feature tests untuk Admin RaporResource dan GradeResource (Red)
+- [x] 13. Admin Panel — RaporResource dan GradeResource (TDD)
+  - [x] 13.1 Tulis feature tests untuk Admin RaporResource dan GradeResource (Red)
     - Buat `tests/Feature/Filament/Admin/RaporResourceTest.php`
     - Test Admin dapat melihat semua rapor dengan filter (tahun akademik, kelas, mapel, siswa)
     - Test Admin dapat mengubah Rapor_Status
@@ -244,7 +244,7 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Test Admin dapat CRUD semua Grade record
     - _Requirements: 16.1–16.5, 18.3_
 
-  - [ ] 13.2 Implementasi `RaporResource` dan `GradeResource` di Admin Panel (Green)
+  - [x] 13.2 Implementasi `RaporResource` dan `GradeResource` di Admin Panel (Green)
     - Buat/lengkapi `app/Filament/Clusters/Academic/Resources/RaporResource.php`
     - Buat/lengkapi `app/Filament/Clusters/Academic/Resources/GradeResource.php`
     - Implementasi filter: academic_year, class, subject, student
@@ -253,8 +253,8 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Jalankan tests 13.1 — semua harus lulus
     - _Requirements: 16.1–16.5, 18.1, 18.3_
 
-- [ ] 14. Student Panel — MyGradesPage dan MyRaporPage (TDD)
-  - [ ] 14.1 Tulis feature tests untuk Student Panel (Red)
+- [x] 14. Student Panel — MyGradesPage dan MyRaporPage (TDD)
+  - [x] 14.1 Tulis feature tests untuk Student Panel (Red)
     - Buat `tests/Feature/Filament/Student/MyGradesPageTest.php`
     - Test Siswa hanya melihat nilai miliknya sendiri (tidak bisa lihat nilai siswa lain)
     - Test Siswa tidak dapat memodifikasi nilai
@@ -264,7 +264,7 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Test Siswa tidak dapat download rapor DRAFT atau FINALIZED
     - _Requirements: 15.1–15.5, 19.5_
 
-  - [ ] 14.2 Implementasi `MyGradesPage` dan `MyRaporPage` di Student Panel (Green)
+  - [x] 14.2 Implementasi `MyGradesPage` dan `MyRaporPage` di Student Panel (Green)
     - Buat `app/Filament/Student/Pages/MyGradesPage.php`
     - Buat `app/Filament/Student/Pages/MyRaporPage.php`
     - Tampilkan nilai dikelompokkan per mapel
@@ -273,8 +273,8 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Jalankan tests 14.1 — semua harus lulus
     - _Requirements: 15.1–15.5_
 
-- [ ] 15. Rekap Absensi Otomatis
-  - [ ] 15.1 Tulis unit tests untuk `AttendanceSummaryService` — metode baru (Red)
+- [x] 15. Rekap Absensi Otomatis
+  - [x] 15.1 Tulis unit tests untuk `AttendanceSummaryService` — metode baru (Red)
     - Tambahkan tests ke `tests/Unit/Services/AttendanceSummaryServiceTest.php`
     - Test `getMonthlyBreakdownBySubject()` mengelompokkan absensi per bulan per mapel
     - Test semester 1 menggunakan bulan Juli–Desember
@@ -282,18 +282,18 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Test `getOverallSummary()` menghitung total SAKIT, IZIN, ALPA
     - _Requirements: 9.1–9.5_
 
-  - [ ] 15.2 Implementasi metode baru di `AttendanceSummaryService` (Green)
+  - [x] 15.2 Implementasi metode baru di `AttendanceSummaryService` (Green)
     - Tambahkan `getMonthlyBreakdownBySubject(Student $student, AcademicYear $academicYear): Collection`
     - Tambahkan `getOverallSummary(Student $student, AcademicYear $academicYear): array`
     - Jalankan tests 15.1 — semua harus lulus
     - _Requirements: 9.1–9.5_
 
-- [ ] 16. Checkpoint — Pastikan semua tests lulus sebelum PDF generation
+- [x] 16. Checkpoint — Pastikan semua tests lulus sebelum PDF generation
   - Jalankan `php artisan test --compact`
   - Semua tests harus lulus sebelum melanjutkan ke PDF generation. Tanyakan ke user jika ada pertanyaan.
 
-- [ ] 17. Generate PDF Rapor (TDD)
-  - [ ] 17.1 Tulis feature tests untuk PDF generation (Red)
+- [x] 17. Generate PDF Rapor (TDD)
+  - [x] 17.1 Tulis feature tests untuk PDF generation (Red)
     - Buat `tests/Feature/Filament/Rapor/RaporPdfTest.php`
     - Test PDF berhasil digenerate dan `file_path` tersimpan di tabel `rapors`
     - Test regenerasi PDF menimpa file lama (untuk rapor DRAFT/FINALIZED)
@@ -302,14 +302,14 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Test Siswa tidak dapat download rapor DRAFT/FINALIZED
     - _Requirements: 13.7, 13.8, 13.9, 19.10_
 
-  - [ ] 17.2 Buat Blade template PDF rapor 3 halaman
+  - [x] 17.2 Buat Blade template PDF rapor 3 halaman
     - Buat `resources/views/rapor/pdf.blade.php`
     - **Halaman 1**: Header siswa, tabel absensi per mapel per bulan, tabel daftar nilai (PH1–PH4, TUGAS1–TUGAS4, ATS, SAS, Nilai Rapor, Guru Bidang Studi)
     - **Halaman 2**: Nilai Sikap, Nilai Pengetahuan & Keterampilan (KKM, nilai, predikat, deskripsi), rekap absensi (Sakit/Izin/Alpa), Kepribadian, TTD (Orang Tua/Wali, Wali Kelas, Kepala Sekolah)
     - **Halaman 3**: Tabel Capaian Pembelajaran (Mapel, Pemaparan Materi, PH avg, ATS, SAS, Keterangan), legenda predikat, TTD (Ketua Litbang HS-TKB, Wali Kelas)
     - _Requirements: 13.1–13.6_
 
-  - [ ] 17.3 Implementasi `generatePdf()` di `RaporService` (Green)
+  - [x] 17.3 Implementasi `generatePdf()` di `RaporService` (Green)
     - Implementasi `generatePdf(Rapor $rapor): string` menggunakan `barryvdh/laravel-dompdf`
     - Load semua data dalam maksimal 5 query menggunakan eager loading
     - Simpan file ke storage dan update `file_path` di tabel `rapors`
@@ -317,13 +317,13 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Jalankan tests 17.1 — semua harus lulus
     - _Requirements: 13.7, 13.8, 13.9, 18.4_
 
-  - [ ] 17.4 Integrasikan tombol generate/download PDF ke semua panel yang relevan
+  - [x] 17.4 Integrasikan tombol generate/download PDF ke semua panel yang relevan
     - Tambahkan action generate PDF di Guru Panel (Wali Kelas), Admin Panel, Kepsek Panel
     - Tombol download di Student Panel (hanya APPROVED)
     - _Requirements: 13.1, 13.7, 13.8, 13.9_
 
-- [ ] 18. Kepsek Panel — RaporResource (TDD)
-  - [ ] 18.1 Tulis feature tests untuk Kepsek RaporResource (Red)
+- [x] 18. Kepsek Panel — RaporResource (TDD)
+  - [x] 18.1 Tulis feature tests untuk Kepsek RaporResource (Red)
     - Buat `tests/Feature/Filament/Kepsek/RaporResourceTest.php`
     - Test Kepsek dapat melihat semua rapor dengan status masing-masing
     - Test Kepsek tidak dapat edit data nilai (hanya approve/reject)
@@ -331,13 +331,13 @@ Implementasi modul penilaian mengikuti pendekatan **TDD (Test-Driven Development
     - Test Kepsek dapat reject rapor FINALIZED dengan catatan
     - _Requirements: 12.1–12.6, 19.4_
 
-  - [ ] 18.2 Lengkapi implementasi `RaporResource` di Kepsek Panel (Green)
+  - [x] 18.2 Lengkapi implementasi `RaporResource` di Kepsek Panel (Green)
     - Pastikan `canCreate()`, `canEdit()`, `canDelete()` mengembalikan `false`
     - Tampilkan semua rapor dengan filter status
     - Jalankan tests 18.1 — semua harus lulus
     - _Requirements: 12.1–12.6_
 
-- [ ] 19. Final Checkpoint — Semua tests lulus dan kode bersih
+- [x] 19. Final Checkpoint — Semua tests lulus dan kode bersih
   - Jalankan `php artisan test --compact` — semua tests harus lulus
   - Jalankan `vendor/bin/pint --dirty --format agent` untuk memastikan code style konsisten
   - Pastikan tidak ada N+1 query: eager load relasi di semua list view

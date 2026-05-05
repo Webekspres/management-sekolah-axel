@@ -1,10 +1,9 @@
 {
     "mcpServers": {
         "laravel-boost": {
-            "command": "wsl.exe",
+            "command": "php",
             "args": [
-                "/home/developer-webekspres/.config/herd-lite/bin/php",
-                "/home/developer-webekspres/sultan/project/laravel/axel-manajemen-sekolah/artisan",
+                "artisan",
                 "boost:mcp"
             ]
         }

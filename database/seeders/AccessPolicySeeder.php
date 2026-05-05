@@ -175,6 +175,28 @@ class AccessPolicySeeder extends Seeder
                 'abilities' => ['viewAny', 'view', 'create', 'update', 'delete'],
                 'permanent_roles' => ['super_admin'],
             ],
+
+            // ---------------------------------------------------------------
+            // Penilaian (Nilai & Rapor)
+            // ---------------------------------------------------------------
+            [
+                'id' => (string) Str::ulid(),
+                'code' => 'grade_management',
+                'name' => 'Manajemen Nilai',
+                'description' => 'Akses input dan mengelola nilai siswa (PH, Tugas, ATS, SAS) per jadwal mata pelajaran.',
+                'target_model' => 'App\\Models\\Grade',
+                'abilities' => ['viewAny', 'view', 'create', 'update', 'delete'],
+                'permanent_roles' => ['super_admin', 'guru'],
+            ],
+            [
+                'id' => (string) Str::ulid(),
+                'code' => 'rapor_management',
+                'name' => 'Manajemen Rapor',
+                'description' => 'Akses melihat, finalisasi, approve/reject, dan generate PDF rapor siswa.',
+                'target_model' => 'App\\Models\\Rapor',
+                'abilities' => ['viewAny', 'view', 'create', 'update', 'delete'],
+                'permanent_roles' => ['super_admin', 'kepala_sekolah', 'guru'],
+            ],
         ];
     }
 }

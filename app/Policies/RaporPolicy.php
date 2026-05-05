@@ -41,6 +41,11 @@ class RaporPolicy
             return true;
         }
 
+        // Prevent any modification when rapor is FINALIZED or APPROVED
+        if ($rapor->isFinalized() || $rapor->isApproved()) {
+            return false;
+        }
+
         if ($user->role === 'guru' && $user->teacher) {
             return $this->isWaliKelasForRapor($user, $rapor);
         }
