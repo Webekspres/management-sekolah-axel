@@ -47,6 +47,12 @@ class RaporsTable
                     ->dateTime('d M Y H:i')
                     ->placeholder('—')
                     ->sortable(),
+                TextColumn::make('generated_at')
+                    ->label('Terakhir Di-generate')
+                    ->dateTime('d M Y, H:i')
+                    ->placeholder('Belum di-generate')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('rejection_note')
                     ->label('Catatan Penolakan')
                     ->limit(60)

@@ -42,6 +42,14 @@ class RaporsTable
                         'APPROVED' => 'Disetujui',
                         default => $state,
                     }),
+                TextColumn::make('generated_at')
+                    ->label('Terakhir Di-generate')
+                    ->dateTime('d M Y, H:i')
+                    ->placeholder('Belum pernah di-generate')
+                    ->sortable()
+                    ->description(fn (Rapor $record): string => $record->generated_at
+                        ? 'PDF sudah tersedia'
+                        : 'Klik Generate PDF untuk membuat PDF'),
                 TextColumn::make('rejection_note')
                     ->label('Catatan Penolakan')
                     ->limit(50)
@@ -120,16 +128,20 @@ class RaporsTable
                     }),
 
                 Action::make('generate_pdf')
-                    ->label('Generate PDF')
+                    ->label(fn (Rapor $record): string => $record->generated_at ? 'Generate Ulang PDF' : 'Generate PDF')
                     ->icon(Heroicon::OutlinedDocumentArrowDown)
                     ->color('primary')
                     ->visible(fn (Rapor $record): bool => ! $record->isApproved())
+                    ->tooltip(fn (Rapor $record): string => $record->generated_at
+                        ? 'Terakhir di-generate: '.$record->generated_at->format('d M Y, H:i').'. Klik untuk generate ulang dengan data terbaru.'
+                        : 'Generate PDF rapor dengan data nilai terkini')
                     ->action(function (Rapor $record): void {
                         try {
                             app(RaporService::class)->generatePdf($record);
 
                             Notification::make()
                                 ->title('PDF berhasil digenerate')
+                                ->body('Data nilai terbaru sudah tercermin di PDF.')
                                 ->success()
                                 ->send();
                         } catch (\Throwable $e) {

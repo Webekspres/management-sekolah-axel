@@ -219,7 +219,8 @@ class RaporService
         }
 
         // Check knowledge/skill scores exist
-        $hasKnowledgeSkill = KnowledgeSkillScore::where('student_id', $studentId)
+        $hasKnowledgeSkill = KnowledgeSkillScore::withoutGlobalScope('academic_level')
+            ->where('student_id', $studentId)
             ->where('academic_year_id', $academicYearId)
             ->exists();
 
@@ -228,7 +229,8 @@ class RaporService
         }
 
         // Check attitude scores exist
-        $hasAttitude = AttitudeScore::where('student_id', $studentId)
+        $hasAttitude = AttitudeScore::withoutGlobalScope('academic_level')
+            ->where('student_id', $studentId)
             ->where('academic_year_id', $academicYearId)
             ->exists();
 
@@ -237,7 +239,8 @@ class RaporService
         }
 
         // Check personality score exists
-        $hasPersonality = PersonalityScore::where('student_id', $studentId)
+        $hasPersonality = PersonalityScore::withoutGlobalScope('academic_level')
+            ->where('student_id', $studentId)
             ->where('academic_year_id', $academicYearId)
             ->exists();
 
@@ -334,11 +337,13 @@ class RaporService
                 ->get();
 
             // Query 3: Load attitude, knowledge/skill, learning achievements, personality
-            $attitudeScores = AttitudeScore::where('student_id', $student->id)
+            $attitudeScores = AttitudeScore::withoutGlobalScope('academic_level')
+                ->where('student_id', $student->id)
                 ->where('academic_year_id', $academicYear->id)
                 ->get();
 
-            $knowledgeSkillScores = KnowledgeSkillScore::where('student_id', $student->id)
+            $knowledgeSkillScores = KnowledgeSkillScore::withoutGlobalScope('academic_level')
+                ->where('student_id', $student->id)
                 ->where('academic_year_id', $academicYear->id)
                 ->with('subject')
                 ->get()
@@ -349,12 +354,14 @@ class RaporService
                     return $ks;
                 });
 
-            $learningAchievements = LearningAchievement::where('student_id', $student->id)
+            $learningAchievements = LearningAchievement::withoutGlobalScope('academic_level')
+                ->where('student_id', $student->id)
                 ->where('academic_year_id', $academicYear->id)
                 ->with('subject')
                 ->get();
 
-            $personalityScore = PersonalityScore::where('student_id', $student->id)
+            $personalityScore = PersonalityScore::withoutGlobalScope('academic_level')
+                ->where('student_id', $student->id)
                 ->where('academic_year_id', $academicYear->id)
                 ->first();
 
@@ -413,7 +420,10 @@ class RaporService
             $filePath = "rapors/{$rapor->id}.pdf";
             Storage::put($filePath, $pdf->output());
 
-            $rapor->update(['file_path' => $filePath]);
+            $rapor->update([
+                'file_path' => $filePath,
+                'generated_at' => now(),
+            ]);
 
             return $filePath;
         } catch (\RuntimeException $e) {

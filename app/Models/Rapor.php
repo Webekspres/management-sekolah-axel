@@ -25,11 +25,15 @@ class Rapor extends Model
         'status',
         'approved_at',
         'rejection_note',
+        'generated_at',
     ];
 
     protected function casts(): array
     {
-        return ['approved_at' => 'datetime'];
+        return [
+            'approved_at' => 'datetime',
+            'generated_at' => 'datetime',
+        ];
     }
 
     public function isDraft(): bool
