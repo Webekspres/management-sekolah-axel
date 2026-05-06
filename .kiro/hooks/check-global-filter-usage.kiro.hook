@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Check Global Filter Usage",
+  "description": "Sebelum task spec dijalankan, cek apakah fitur atau task yang dikerjakan perlu menggunakan global filter (seperti academic level switcher) untuk konteks guru, siswa, kepsek dalam administrasi keuangan dan pelaporan KBM.",
+  "version": "1",
+  "when": {
+    "type": "preTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Sebelum mengerjakan task ini, evaluasi apakah fitur atau perubahan yang akan dikerjakan berkaitan dengan:\n1. Data yang bersifat per-tahun ajaran atau per-semester (misalnya jadwal, kehadiran, SPP, laporan KBM, RPP)\n2. Halaman atau resource yang diakses oleh guru, siswa, kepala sekolah, atau wali kelas\n3. Proses administrasi keuangan (SPP, pembayaran) atau pelaporan belajar mengajar (KBM, RPP, kehadiran)\n\nJika ya, pastikan:\n- Apakah fitur ini perlu menggunakan global filter seperti **academic level switcher** atau **academic year/semester filter**?\n- Apakah query data sudah di-scope berdasarkan tahun ajaran / semester aktif yang dipilih user?\n- Apakah ada risiko data tercampur antar tahun ajaran atau level akademik yang berbeda?\n- Apakah tampilan UI sudah menunjukkan konteks aktif (tahun ajaran / level) yang sedang dipilih?\n\nJika fitur ini memerlukan global filter, tambahkan catatan eksplisit dalam implementasi dan pastikan filter diterapkan secara konsisten di semua query yang relevan. Laporkan temuan ini sebelum melanjutkan implementasi task."
+  }
+}
