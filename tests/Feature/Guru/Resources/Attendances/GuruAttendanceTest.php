@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Guru\Resources\Attendances\AttendanceResource;
+use App\Filament\Guru\Resources\Kbms\Pages\InputKbmAttendance;
 use App\Filament\Guru\Resources\Kbms\Pages\ListKbms;
 use App\Models\Attendance;
 use App\Models\Kbm;
@@ -50,25 +51,15 @@ test('guru dapat melihat action "Input Absensi" di KBM table', function () {
         ->assertTableActionExists('input_absensi', record: $kbm);
 });
 
-test('guru dapat submit bulk attendance untuk KBM miliknya', function () {
+test('guru dapat akses halaman input absensi untuk KBM miliknya', function () {
     ['user' => $user, 'schoolClass' => $schoolClass, 'kbm' => $kbm] = createGuruWithKbm();
 
-    $students = Student::factory(3)->create(['class_id' => $schoolClass->id]);
+    Student::factory(3)->create(['class_id' => $schoolClass->id]);
 
     actingAs($user);
 
-    $formData = [
-        'students' => $students->map(fn (Student $student, int $index): array => [
-            'student_id' => $student->id,
-            'status' => 'HADIR',
-        ])->values()->all(),
-    ];
-
-    Livewire::test(ListKbms::class)
-        ->callTableAction('input_absensi', $kbm, data: $formData)
-        ->assertNotified();
-
-    expect(Attendance::where('kbm_id', $kbm->id)->count())->toBe(3);
+    Livewire::test(InputKbmAttendance::class, ['record' => $kbm->getRouteKey()])
+        ->assertSuccessful();
 });
 
 test('guru tidak dapat mengakses attendance KBM guru lain', function () {
@@ -92,23 +83,45 @@ test('guru tidak dapat mengakses attendance KBM guru lain', function () {
     expect($hasOtherTeacherRecords)->toBeFalse();
 });
 
-test('bulk attendance menampilkan success notification dengan jumlah records', function () {
+test('bulk set status semua siswa menyimpan absensi untuk seluruh siswa', function () {
     ['user' => $user, 'schoolClass' => $schoolClass, 'kbm' => $kbm] = createGuruWithKbm();
 
     $students = Student::factory(2)->create(['class_id' => $schoolClass->id]);
 
     actingAs($user);
 
-    $formData = [
-        'students' => $students->map(fn (Student $student): array => [
-            'student_id' => $student->id,
-            'status' => 'HADIR',
-        ])->values()->all(),
-    ];
+    Livewire::test(InputKbmAttendance::class, ['record' => $kbm->getRouteKey()])
+        ->call('setAllStatus', 'SAKIT')
+        ->assertNotified('Absensi berhasil diperbarui');
 
-    Livewire::test(ListKbms::class)
-        ->callTableAction('input_absensi', $kbm, data: $formData)
-        ->assertNotified('Absensi berhasil disimpan');
+    expect(Attendance::where('kbm_id', $kbm->id)->count())->toBe(2)
+        ->and(
+            Attendance::where('kbm_id', $kbm->id)
+                ->where('status', 'SAKIT')
+                ->count()
+        )->toBe(2);
+});
+
+test('guru dapat mengubah status siswa sebagai pengecualian dari status mayoritas', function () {
+    ['user' => $user, 'schoolClass' => $schoolClass, 'kbm' => $kbm] = createGuruWithKbm();
+    $students = Student::factory(3)->create(['class_id' => $schoolClass->id]);
+
+    actingAs($user);
+
+    Livewire::test(InputKbmAttendance::class, ['record' => $kbm->getRouteKey()])
+        ->call('setAllStatus', 'HADIR')
+        ->call('setStudentStatus', $students->first()->id, 'IZIN');
+
+    expect(
+        Attendance::where('kbm_id', $kbm->id)
+            ->where('status', 'HADIR')
+            ->count()
+    )->toBe(2)
+        ->and(
+            Attendance::where('kbm_id', $kbm->id)
+                ->where('status', 'IZIN')
+                ->count()
+        )->toBe(1);
 });
 
 test('kolom status absensi menampilkan progress yang benar', function () {
@@ -126,14 +139,13 @@ test('kolom status absensi menampilkan progress yang benar', function () {
         ->assertTableColumnStateSet('attendance_status', '2/3 diabsen', record: $kbm);
 });
 
-test('kelas kosong menampilkan pesan informatif di modal absensi', function () {
+test('kelas kosong menampilkan empty state informatif di halaman absensi', function () {
     ['user' => $user, 'kbm' => $kbm] = createGuruWithKbm();
     // No students in the class
 
     actingAs($user);
 
-    // The form should render without error and show the empty message placeholder
-    Livewire::test(ListKbms::class)
-        ->mountTableAction('input_absensi', $kbm)
-        ->assertSuccessful();
+    Livewire::test(InputKbmAttendance::class, ['record' => $kbm->getRouteKey()])
+        ->assertSuccessful()
+        ->assertSee('Tidak ada siswa di kelas ini');
 });

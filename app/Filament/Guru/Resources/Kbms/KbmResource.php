@@ -4,6 +4,7 @@ namespace App\Filament\Guru\Resources\Kbms;
 
 use App\Filament\Guru\Resources\Kbms\Pages\CreateKbm;
 use App\Filament\Guru\Resources\Kbms\Pages\EditKbm;
+use App\Filament\Guru\Resources\Kbms\Pages\InputKbmAttendance;
 use App\Filament\Guru\Resources\Kbms\Pages\ListKbms;
 use App\Filament\Guru\Resources\Kbms\Schemas\KbmForm;
 use App\Filament\Guru\Resources\Kbms\Tables\KbmsTable;
@@ -47,6 +48,7 @@ class KbmResource extends Resource
             'index' => ListKbms::route('/'),
             'create' => CreateKbm::route('/create'),
             'edit' => EditKbm::route('/{record}/edit'),
+            'attendance' => InputKbmAttendance::route('/{record}/attendance'),
         ];
     }
 

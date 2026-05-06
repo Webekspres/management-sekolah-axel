@@ -125,6 +125,6 @@ class LessonPlanForm
             return false;
         }
 
-        return $record->status === 'APPROVED';
+        return in_array($record->status, ['PENDING', 'APPROVED'], true);
     }
 }

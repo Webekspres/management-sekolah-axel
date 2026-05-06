@@ -19,7 +19,7 @@ class EditLessonPlan extends EditRecord
     {
         if (! in_array($this->record->status, ['DRAFT', 'REVISED'], true)) {
             throw ValidationException::withMessages([
-                'status' => 'RPP dengan status saat ini tidak dapat diubah.',
+                'status' => 'RPP hanya dapat diubah saat berstatus Draft atau Revisi.',
             ]);
         }
 

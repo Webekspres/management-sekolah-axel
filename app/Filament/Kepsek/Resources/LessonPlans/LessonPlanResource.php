@@ -2,7 +2,6 @@
 
 namespace App\Filament\Kepsek\Resources\LessonPlans;
 
-use App\Filament\Kepsek\Clusters\AcademicCluster;
 use App\Filament\Kepsek\Resources\LessonPlans\Pages\EditLessonPlan;
 use App\Filament\Kepsek\Resources\LessonPlans\Pages\ListLessonPlans;
 use App\Filament\Kepsek\Resources\LessonPlans\Schemas\LessonPlanForm;
@@ -14,6 +13,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class LessonPlanResource extends Resource
 {
@@ -21,7 +21,7 @@ class LessonPlanResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
-    protected static ?string $cluster = AcademicCluster::class;
+    protected static UnitEnum|string|null $navigationGroup = 'Akademik';
 
     protected static ?string $label = 'Approval RPP';
 

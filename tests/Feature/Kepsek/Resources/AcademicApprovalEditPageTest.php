@@ -1,16 +1,29 @@
 <?php
 
 use App\Filament\Kepsek\Resources\Kbms\Pages\EditKbm;
+use App\Filament\Kepsek\Resources\LessonPlans\LessonPlanResource;
 use App\Filament\Kepsek\Resources\LessonPlans\Pages\EditLessonPlan;
+use App\Models\Attendance;
 use App\Models\Kbm;
 use App\Models\LessonPlan;
+use App\Models\Student;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 beforeEach(function () {
     $this->actingAs(User::factory()->asKepalaSekolah()->create());
     Filament::setCurrentPanel(Filament::getPanel('kepsek'));
+});
+
+test('approval rpp kepsek tidak memakai path cluster academic', function () {
+    expect(Route::has('filament.kepsek.academic'))->toBeFalse()
+        ->and(Route::has('filament.kepsek.resources.lesson-plans.edit'))->toBeTrue();
+
+    $lessonPlan = LessonPlan::factory()->create(['status' => 'PENDING']);
+    $url = LessonPlanResource::getUrl('edit', ['record' => $lessonPlan], panel: 'kepsek');
+    expect($url)->not->toContain('/academic/');
 });
 
 test('kepsek dapat ubah status rpp menjadi revised lewat edit resource', function () {
@@ -83,4 +96,43 @@ test('kepsek dapat ubah status kbm dari revised menjadi approved lewat edit reso
 
     expect($kbm->refresh()->status)->toBe('APPROVED')
         ->and($kbm->revision_note)->toBeNull();
+});
+
+test('kepsek melihat ringkasan jumlah kehadiran pada form approval kbm', function () {
+    $kbm = Kbm::factory()->create([
+        'status' => 'PENDING',
+    ]);
+
+    $classId = $kbm->schedule->class_id;
+    $students = Student::factory(4)->create(['class_id' => $classId]);
+
+    Attendance::factory()->create([
+        'kbm_id' => $kbm->id,
+        'student_id' => $students[0]->id,
+        'status' => 'HADIR',
+    ]);
+    Attendance::factory()->create([
+        'kbm_id' => $kbm->id,
+        'student_id' => $students[1]->id,
+        'status' => 'SAKIT',
+    ]);
+    Attendance::factory()->create([
+        'kbm_id' => $kbm->id,
+        'student_id' => $students[2]->id,
+        'status' => 'IZIN',
+    ]);
+    Attendance::factory()->create([
+        'kbm_id' => $kbm->id,
+        'student_id' => $students[3]->id,
+        'status' => 'ALPA',
+    ]);
+
+    Livewire::test(EditKbm::class, ['record' => $kbm->getRouteKey()])
+        ->assertSee('Ringkasan Kehadiran')
+        ->assertSee('Total siswa')
+        ->assertSee('4')
+        ->assertSee('Hadir')
+        ->assertSee('Sakit')
+        ->assertSee('Izin')
+        ->assertSee('Alpa');
 });

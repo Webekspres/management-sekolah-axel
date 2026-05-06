@@ -127,7 +127,8 @@ class KbmsTable
                             ->content(fn (): string => RichText::display($record->revision_note)),
                     ]),
                 EditAction::make()
-                    ->label('Ubah Status'),
+                    ->label('Ubah Status')
+                    ->visible(fn (Kbm $record): bool => in_array($record->status, ['PENDING', 'REVISED'], true)),
             ]);
     }
 }

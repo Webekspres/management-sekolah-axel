@@ -64,10 +64,23 @@ test('kepsek dapat menyetujui rpp pending', function () {
     ]);
 });
 
-test('rpp tidak bisa disetujui jika status bukan pending', function () {
+test('kepsek dapat menyetujui rpp yang sudah direvisi', function () {
     $kepsek = User::factory()->asKepalaSekolah()->create();
     $lessonPlan = LessonPlan::factory()->create([
         'status' => 'REVISED',
+        'revision_note' => 'Catatan revisi sebelumnya',
+    ]);
+
+    $lessonPlan->approve($kepsek);
+
+    expect($lessonPlan->refresh()->status)->toBe('APPROVED')
+        ->and($lessonPlan->revision_note)->toBeNull();
+});
+
+test('rpp tidak bisa disetujui jika status masih draft', function () {
+    $kepsek = User::factory()->asKepalaSekolah()->create();
+    $lessonPlan = LessonPlan::factory()->create([
+        'status' => 'DRAFT',
     ]);
 
     expect(fn () => $lessonPlan->approve($kepsek))

@@ -76,8 +76,8 @@ class LessonPlan extends Model
 
     public function approve(User $actor): void
     {
-        if ($this->status !== 'PENDING') {
-            throw new DomainException('RPP hanya bisa disetujui dari status PENDING.');
+        if (! in_array($this->status, ['PENDING', 'REVISED'], true)) {
+            throw new DomainException('RPP hanya bisa disetujui dari status PENDING atau REVISED.');
         }
 
         $this->update([

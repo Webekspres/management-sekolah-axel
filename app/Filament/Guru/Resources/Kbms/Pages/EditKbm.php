@@ -17,9 +17,9 @@ class EditKbm extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if (! in_array($this->record->status, ['DRAFT', 'PENDING'], true)) {
+        if ($this->record->status !== 'DRAFT') {
             throw ValidationException::withMessages([
-                'status' => 'Laporan KBM dengan status saat ini tidak dapat diubah.',
+                'status' => 'Laporan KBM hanya dapat diubah saat masih berstatus Draft.',
             ]);
         }
 

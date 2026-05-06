@@ -20,51 +20,29 @@ class EditLessonPlan extends EditRecord
         $revisionNote = $data['revision_note'] ?? null;
 
         try {
-            if ($targetStatus === $record->status) {
-                if ($targetStatus === 'REVISED') {
-                    if (blank($revisionNote)) {
-                        throw ValidationException::withMessages([
-                            'revision_note' => 'Catatan perubahan wajib diisi ketika status revisi.',
-                        ]);
-                    }
-
-                    $record->update(['revision_note' => $revisionNote]);
-                }
-
-                return $record->refresh();
+            if (! in_array($record->status, ['PENDING', 'REVISED'], true)) {
+                throw ValidationException::withMessages([
+                    'status' => 'Kepsek hanya dapat menindaklanjuti RPP yang sudah diajukan (status Pending atau Revisi).',
+                ]);
             }
 
             if ($targetStatus === 'REVISED') {
                 if (blank($revisionNote)) {
                     throw ValidationException::withMessages([
-                        'revision_note' => 'Catatan perubahan wajib diisi ketika status revisi.',
+                        'revision_note' => 'Catatan perubahan wajib diisi ketika meminta revisi.',
                     ]);
                 }
 
-                if ($record->status === 'PENDING') {
-                    $record->markAsRevised(
-                        actor: auth()->user(),
-                        revisionNote: $revisionNote,
-                    );
-                } else {
-                    $record->update([
-                        'status' => 'REVISED',
-                        'revision_note' => $revisionNote,
-                    ]);
-                }
+                $record->markAsRevised(
+                    actor: auth()->user(),
+                    revisionNote: $revisionNote,
+                );
 
                 return $record->refresh();
             }
 
             if ($targetStatus === 'APPROVED') {
-                if ($record->status === 'PENDING') {
-                    $record->approve(auth()->user());
-                } else {
-                    $record->update([
-                        'status' => 'APPROVED',
-                        'revision_note' => null,
-                    ]);
-                }
+                $record->approve(auth()->user());
 
                 return $record->refresh();
             }

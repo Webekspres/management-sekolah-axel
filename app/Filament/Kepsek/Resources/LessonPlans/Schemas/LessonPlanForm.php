@@ -65,12 +65,11 @@ class LessonPlanForm
                         Select::make('status')
                             ->label('Status')
                             ->options([
-                                'DRAFT' => 'Draft',
                                 'PENDING' => 'Pending Approval',
                                 'REVISED' => 'Revisi',
                                 'APPROVED' => 'Approved',
                             ])
-                            ->disableOptionWhen(fn (string $value): bool => in_array($value, ['DRAFT', 'PENDING'], true))
+                            ->disableOptionWhen(fn (string $value): bool => $value === 'PENDING')
                             ->required()
                             ->native(false)
                             ->live(),
