@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Bento\BentoDashboard;
+use App\Http\Middleware\EnsureStudentAcademicLevel;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -38,6 +39,7 @@ class StudentPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->globalSearch(false)
             ->discoverResources(in: app_path('Filament/Student/Resources'), for: 'App\Filament\Student\Resources')
             ->discoverPages(in: app_path('Filament/Student/Pages'), for: 'App\Filament\Student\Pages')
             ->pages([
@@ -69,6 +71,7 @@ class StudentPanelProvider extends PanelProvider
                 PreventRequestForgery::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
+                EnsureStudentAcademicLevel::class,
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([

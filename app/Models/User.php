@@ -122,6 +122,17 @@ class User extends Authenticatable implements FilamentUser
         return $this->role;
     }
 
+    public function resolveStudentAcademicLevelId(): ?string
+    {
+        $student = Student::query()
+            ->withoutGlobalScopes()
+            ->with('schoolClass:id,level_id')
+            ->where('user_id', $this->id)
+            ->first();
+
+        return $student?->schoolClass?->level_id ? (string) $student->schoolClass->level_id : null;
+    }
+
     /**
      * Get the user's initials
      */
