@@ -26,13 +26,53 @@ class LearningAchievementsTable
                 TextColumn::make('academicYear.name')
                     ->label('Tahun Akademik')
                     ->sortable(),
+                TextColumn::make('material_coverage_status')
+                    ->label('Status Materi')
+                    ->sortable(),
+                TextColumn::make('achievement_status')
+                    ->label('Keterangan Capaian')
+                    ->limit(40),
                 TextColumn::make('topic_coverage')
-                    ->label('Pemaparan Materi')
+                    ->label('Pemaparan Materi (Detail)')
                     ->limit(60)
-                    ->tooltip(fn ($state) => $state),
+                    ->tooltip(fn ($state) => $state)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('notes')
                     ->label('Keterangan')
                     ->limit(40)
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('daily_assessment_predicate')
+                    ->label('PH')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'Sangat Baik' => 'success',
+                        'Baik' => 'info',
+                        'Cukup' => 'warning',
+                        'Kurang' => 'danger',
+                        default => 'gray',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('midterm_assessment_predicate')
+                    ->label('ATS')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'Sangat Baik' => 'success',
+                        'Baik' => 'info',
+                        'Cukup' => 'warning',
+                        'Kurang' => 'danger',
+                        default => 'gray',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('final_assessment_predicate')
+                    ->label('SAS')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'Sangat Baik' => 'success',
+                        'Baik' => 'info',
+                        'Cukup' => 'warning',
+                        'Kurang' => 'danger',
+                        default => 'gray',
+                    })
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('student.user.name', 'asc')

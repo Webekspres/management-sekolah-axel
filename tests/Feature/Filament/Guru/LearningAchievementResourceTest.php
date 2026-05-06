@@ -128,3 +128,100 @@ test('guru dapat edit capaian pembelajaran untuk jadwal miliknya', function () {
         'notes' => 'Catatan diperbarui',
     ]);
 });
+
+test('guru dapat input capaian pembelajaran dengan semua field baru terisi', function () {
+    Livewire::test(CreateLearningAchievement::class)
+        ->fillForm([
+            'student_id' => $this->student->id,
+            'subject_id' => $this->subject->id,
+            'academic_year_id' => $this->academicYear->id,
+            'topic_coverage' => 'Bab 2: Persamaan Linear',
+            'notes' => 'Catatan tambahan',
+            'material_coverage_status' => 'Terpenuhi',
+            'daily_assessment_predicate' => 'Baik',
+            'midterm_assessment_predicate' => 'Sangat Baik',
+            'final_assessment_predicate' => 'Cukup',
+            'achievement_status' => 'Terlampaui',
+        ])
+        ->call('create')
+        ->assertHasNoFormErrors()
+        ->assertNotified();
+
+    assertDatabaseHas(LearningAchievement::class, [
+        'student_id' => $this->student->id,
+        'subject_id' => $this->subject->id,
+        'academic_year_id' => $this->academicYear->id,
+        'material_coverage_status' => 'Terpenuhi',
+        'daily_assessment_predicate' => 'Baik',
+        'midterm_assessment_predicate' => 'Sangat Baik',
+        'final_assessment_predicate' => 'Cukup',
+        'achievement_status' => 'Terlampaui',
+    ]);
+});
+
+test('guru dapat input capaian pembelajaran tanpa field opsional baru', function () {
+    Livewire::test(CreateLearningAchievement::class)
+        ->fillForm([
+            'student_id' => $this->student->id,
+            'subject_id' => $this->subject->id,
+            'academic_year_id' => $this->academicYear->id,
+        ])
+        ->call('create')
+        ->assertHasNoFormErrors()
+        ->assertNotified();
+
+    assertDatabaseHas(LearningAchievement::class, [
+        'student_id' => $this->student->id,
+        'subject_id' => $this->subject->id,
+        'academic_year_id' => $this->academicYear->id,
+        'material_coverage_status' => null,
+        'daily_assessment_predicate' => null,
+        'midterm_assessment_predicate' => null,
+        'final_assessment_predicate' => null,
+        'achievement_status' => null,
+    ]);
+});
+
+test('guru dapat edit capaian pembelajaran lama tanpa kolom baru tanpa error', function () {
+    $record = LearningAchievement::factory()->create([
+        'student_id' => $this->student->id,
+        'subject_id' => $this->subject->id,
+        'academic_year_id' => $this->academicYear->id,
+        'topic_coverage' => 'Bab Lama',
+        'notes' => 'Catatan lama',
+        'material_coverage_status' => null,
+        'daily_assessment_predicate' => null,
+        'midterm_assessment_predicate' => null,
+        'final_assessment_predicate' => null,
+        'achievement_status' => null,
+    ]);
+
+    Livewire::test(EditLearningAchievement::class, ['record' => $record->id])
+        ->fillForm([
+            'topic_coverage' => 'Bab Lama (diperbarui)',
+            'achievement_status' => 'Berkembang',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors()
+        ->assertNotified();
+
+    assertDatabaseHas(LearningAchievement::class, [
+        'id' => $record->id,
+        'topic_coverage' => 'Bab Lama (diperbarui)',
+        'achievement_status' => 'Berkembang',
+    ]);
+});
+
+test('kolom material_coverage_status dan achievement_status tampil di tabel', function () {
+    $record = LearningAchievement::factory()->create([
+        'student_id' => $this->student->id,
+        'subject_id' => $this->subject->id,
+        'academic_year_id' => $this->academicYear->id,
+        'material_coverage_status' => 'Terpenuhi',
+        'achievement_status' => 'Terlampaui',
+    ]);
+
+    Livewire::test(ListLearningAchievements::class)
+        ->assertSuccessful()
+        ->assertCanSeeTableRecords([$record]);
+});

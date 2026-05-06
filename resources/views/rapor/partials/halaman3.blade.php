@@ -42,11 +42,11 @@
                 @endphp
                 <tr>
                     <td>{{ $la->subject->name ?? '—' }}</td>
-                    <td class="deskripsi-cell">{{ $la->topic_coverage ?? '—' }}</td>
-                    <td style="text-align: center;">{{ $phAvg }}</td>
-                    <td style="text-align: center;">{{ $subjectGrades['grades']['ATS'] ?? '—' }}</td>
-                    <td style="text-align: center;">{{ $subjectGrades['grades']['SAS'] ?? '—' }}</td>
-                    <td class="deskripsi-cell">{{ $la->notes ?? '—' }}</td>
+                    <td class="deskripsi-cell">{{ $la->material_coverage_status ?? $la->topic_coverage ?? '—' }}</td>
+                    <td style="text-align: center;">{{ $la->daily_assessment_predicate ?? $phAvg }}</td>
+                    <td style="text-align: center;">{{ $la->midterm_assessment_predicate ?? $subjectGrades['grades']['ATS'] ?? '—' }}</td>
+                    <td style="text-align: center;">{{ $la->final_assessment_predicate ?? $subjectGrades['grades']['SAS'] ?? '—' }}</td>
+                    <td class="deskripsi-cell">{{ $la->achievement_status ?? $la->notes ?? '—' }}</td>
                 </tr>
             @empty
                 {{-- Fallback jika kosong (Requirement 15.5) --}}
