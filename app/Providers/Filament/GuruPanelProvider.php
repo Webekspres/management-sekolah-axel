@@ -51,6 +51,7 @@ class GuruPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->globalSearch(false)
             ->resources([
                 AnnouncementResource::class,
                 // Resource yang bisa di-assign via Akses Sementara.
