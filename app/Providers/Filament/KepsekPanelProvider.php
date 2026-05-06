@@ -35,7 +35,8 @@ class KepsekPanelProvider extends PanelProvider
         $panel = $panel
             ->id('kepsek')
             ->path('kepsek')
-            ->resourceCreatePageRedirect('index');
+            ->resourceCreatePageRedirect('index')
+            ->resourceEditPageRedirect('index');
 
         if (! app()->runningUnitTests()) {
             $panel = $panel->spa();

@@ -27,7 +27,8 @@ class StudentPanelProvider extends PanelProvider
         $panel = $panel
             ->id('student')
             ->path('student')
-            ->resourceCreatePageRedirect('index');
+            ->resourceCreatePageRedirect('index')
+            ->resourceEditPageRedirect('index');
 
         if (! app()->runningUnitTests()) {
             $panel = $panel->spa();

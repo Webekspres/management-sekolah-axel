@@ -35,7 +35,8 @@ class GuruPanelProvider extends PanelProvider
         $panel = $panel
             ->id('guru')
             ->path('guru')
-            ->resourceCreatePageRedirect('index');
+            ->resourceCreatePageRedirect('index')
+            ->resourceEditPageRedirect('index');
 
         if (! app()->runningUnitTests()) {
             $panel = $panel

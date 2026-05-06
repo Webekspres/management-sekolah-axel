@@ -29,7 +29,8 @@ class AdminPanelProvider extends PanelProvider
         $panel = $panel
             ->id('admin')
             ->path('admin')
-            ->resourceCreatePageRedirect('index');
+            ->resourceCreatePageRedirect('index')
+            ->resourceEditPageRedirect('index');
 
         if (! app()->runningUnitTests()) {
             $panel = $panel->spa();
