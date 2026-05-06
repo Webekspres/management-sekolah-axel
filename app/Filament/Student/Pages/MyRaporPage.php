@@ -2,19 +2,26 @@
 
 namespace App\Filament\Student\Pages;
 
+use App\Filament\Student\Widgets\RaporStatsWidget;
 use App\Models\Rapor;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
 
-class MyRaporPage extends Page
+class MyRaporPage extends Page implements HasTable
 {
+    use InteractsWithTable;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
     protected static UnitEnum|string|null $navigationGroup = 'Akademik';
@@ -27,10 +34,12 @@ class MyRaporPage extends Page
 
     protected string $view = 'filament.student.pages.my-rapor-page';
 
-    /** @var Collection<int, Rapor> */
-    public Collection $rapors;
-
     public bool $hasStudentProfile = false;
+
+    public function getHeaderWidgets(): array
+    {
+        return [RaporStatsWidget::class];
+    }
 
     public function mount(): void
     {
@@ -40,17 +49,66 @@ class MyRaporPage extends Page
 
         if (! $student) {
             $this->hasStudentProfile = false;
-            $this->rapors = collect();
 
             return;
         }
 
         $this->hasStudentProfile = true;
+    }
 
-        $this->rapors = Rapor::where('student_id', $student->id)
-            ->with('academicYear')
-            ->orderByDesc('academic_year_id')
-            ->get();
+    public function table(Table $table): Table
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        $studentId = $user->student?->id;
+
+        return $table
+            ->query(
+                Rapor::query()
+                    ->where('student_id', $studentId)
+                    ->with('academicYear')
+                    ->orderByDesc('academic_year_id')
+            )
+            ->columns([
+                TextColumn::make('academicYear.name')
+                    ->label('Tahun Akademik')
+                    ->sortable()
+                    ->weight('semibold'),
+                TextColumn::make('academicYear.semester')
+                    ->label('Semester')
+                    ->alignCenter(),
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->alignCenter()
+                    ->color(fn (string $state): string => match ($state) {
+                        'APPROVED' => 'success',
+                        'FINALIZED' => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'APPROVED' => 'Disetujui',
+                        'FINALIZED' => 'Terfinalisasi',
+                        default => 'Draft',
+                    }),
+                TextColumn::make('approved_at')
+                    ->label('Tanggal Disetujui')
+                    ->dateTime('d M Y')
+                    ->placeholder('—')
+                    ->alignCenter(),
+            ])
+            ->recordActions([
+                Action::make('download')
+                    ->label('Download')
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->color('primary')
+                    ->visible(fn (Rapor $record): bool => $record->isApproved() && filled($record->file_path))
+                    ->action(fn (Rapor $record) => $this->downloadRapor($record->id)),
+            ])
+            ->emptyStateHeading('Belum ada rapor')
+            ->emptyStateDescription('Rapor Anda belum tersedia.')
+            ->emptyStateIcon(Heroicon::OutlinedDocumentText)
+            ->paginated(false);
     }
 
     public function downloadRapor(string $raporId): StreamedResponse|RedirectResponse
