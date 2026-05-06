@@ -72,6 +72,15 @@ class SchoolClassForm
                             ->required(false)
                             ->rules(['required'])
                             ->markAsRequired(),
+                        TextInput::make('kkm')
+                            ->label('KKM')
+                            ->helperText('Kosongkan jika menggunakan KKM default per mata pelajaran. Default: 70')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->step(0.01)
+                            ->nullable()
+                            ->placeholder('Contoh: 75.00'),
                     ]),
             ]);
     }

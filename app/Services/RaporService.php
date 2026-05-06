@@ -9,6 +9,7 @@ use App\Models\LearningAchievement;
 use App\Models\PersonalityScore;
 use App\Models\Rapor;
 use App\Models\Schedule;
+use App\Models\SchoolClass;
 use App\Models\SubjectKkm;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
@@ -348,8 +349,7 @@ class RaporService
                 ->with('subject')
                 ->get()
                 ->map(function ($ks) use ($schoolClass) {
-                    $levelId = $schoolClass?->level_id;
-                    $ks->kkm = $levelId ? SubjectKkm::getKkm($ks->subject_id, $levelId) : 70.0;
+                    $ks->kkm = $this->resolveKkm($schoolClass, $ks->subject_id);
 
                     return $ks;
                 });
@@ -399,7 +399,7 @@ class RaporService
 
             $waliKelasName = $schoolClass?->homeroomTeacher?->user?->name;
 
-            $pdf = Pdf::loadView('rapor.pdf', compact(
+            $pdf = Pdf::loadView('rapor.pdf_v2', compact(
                 'rapor',
                 'student',
                 'academicYear',
@@ -436,5 +436,32 @@ class RaporService
 
             throw new \RuntimeException("Gagal generate PDF rapor: {$e->getMessage()}", 0, $e);
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // KKM Resolution
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Resolve the applicable KKM for a subject in a given school class.
+     *
+     * Priority:
+     *   1. schoolClass->kkm if not null (KKM per kelas)
+     *   2. SubjectKkm::getKkm($subjectId, $levelId) (KKM per mata pelajaran per jenjang)
+     *   3. 70.0 as final fallback (handled inside SubjectKkm::getKkm)
+     */
+    public function resolveKkm(?SchoolClass $schoolClass, string $subjectId): float
+    {
+        if ($schoolClass !== null && $schoolClass->kkm !== null) {
+            return (float) $schoolClass->kkm;
+        }
+
+        $levelId = $schoolClass?->level_id;
+
+        if ($levelId !== null) {
+            return SubjectKkm::getKkm($subjectId, $levelId);
+        }
+
+        return 70.0;
     }
 }

@@ -21,7 +21,12 @@ class SchoolClass extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['name', 'level_id', 'teacher_id', 'academic_year_id'];
+    protected $fillable = ['name', 'level_id', 'teacher_id', 'academic_year_id', 'kkm'];
+
+    protected function casts(): array
+    {
+        return ['kkm' => 'decimal:2'];
+    }
 
     public function level(): BelongsTo
     {

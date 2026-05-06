@@ -1,0 +1,12 @@
+{
+    "courgette": {
+        "normal": "courgette_normal_894023e7c8740c3b4aca1bfa32c3f47a"
+    },
+    "calibri": {
+        "normal": "C:\\laragon\\www\\axel-manajemen-sekolah\\storage\\fonts\/calibri_normal_9a5f56f4bc77c174afc6119acffbd78a",
+        "bold": "calibri_bold_9bd81918686b4ddbdd57392bdc41fb4a"
+    },
+    "times new roman": {
+        "normal": "times_new_roman_normal_fa69435e188df48b0d9d2396c0e383e9"
+    }
+}
