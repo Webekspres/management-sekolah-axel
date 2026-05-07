@@ -25,6 +25,8 @@ class RaporResource extends Resource
 
     protected static UnitEnum|string|null $navigationGroup = null;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $label = 'Rapor';
 
     protected static ?string $pluralLabel = 'Data Rapor';

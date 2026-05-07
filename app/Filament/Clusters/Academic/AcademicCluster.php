@@ -14,4 +14,6 @@ class AcademicCluster extends Cluster
     protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
 
     protected static ?string $title = 'Akademik';
+
+    protected static bool $shouldRegisterNavigation = false;
 }

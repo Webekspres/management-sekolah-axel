@@ -27,6 +27,8 @@ class SubjectKkmResource extends Resource
 
     protected static UnitEnum|string|null $navigationGroup = null;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $label = 'KKM Mata Pelajaran';
 
     protected static ?string $pluralLabel = 'KKM Mata Pelajaran';

@@ -28,6 +28,8 @@ class GradeResource extends Resource
 
     protected static UnitEnum|string|null $navigationGroup = null;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $label = 'Nilai';
 
     protected static ?string $pluralLabel = 'Data Nilai';
