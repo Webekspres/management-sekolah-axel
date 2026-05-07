@@ -15,17 +15,22 @@ class ActivityLog extends Model
 
     public $incrementing = false;
 
-    public $timestamps = false;
+    public $timestamps = true;
 
-    protected $fillable = ['user_id', 'action', 'entity_type', 'entity_id', 'description'];
+    const UPDATED_AT = null;
+
+    protected $fillable = ['user_id', 'action', 'entity_type', 'entity_id', 'log_name', 'description', 'properties'];
 
     protected function casts(): array
     {
-        return ['created_at' => 'datetime'];
+        return [
+            'created_at' => 'datetime',
+            'properties' => 'array',
+        ];
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withDefault();
     }
 }

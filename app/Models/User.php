@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\HasUlid;
+use App\Models\Traits\LogsActivity;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -33,7 +34,12 @@ use Illuminate\Support\Str;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
-    use HasFactory, HasUlid, Notifiable;
+    use HasFactory, HasUlid, LogsActivity, Notifiable;
+
+    public static function getActivityLogName(): string
+    {
+        return 'user';
+    }
 
     protected $keyType = 'string';
 

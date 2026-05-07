@@ -11,12 +11,17 @@ class ActivityLogFactory extends Factory
     {
         $entities = ['User', 'Student', 'Teacher', 'Invoice', 'Payment', 'Grade', 'Attendance', 'LessonPlan', 'Kbm'];
 
+        $logNames = ['auth', 'spp', 'absensi', 'rpp', 'rapor', 'jadwal', 'user', 'siswa', 'guru', 'general'];
+
         return [
-            'user_id' => User::factory(),
-            'action' => fake()->randomElement(['create', 'update', 'delete', 'login', 'logout', 'approve', 'reject']),
+            'user_id' => fake()->boolean(80) ? User::factory() : null,
+            'action' => fake()->randomElement(['created', 'updated', 'deleted', 'login', 'logout', 'approved', 'downloaded', 'generated']),
             'entity_type' => fake()->randomElement($entities),
             'entity_id' => fake()->uuid(),
+            'log_name' => fake()->randomElement($logNames),
             'description' => fake()->sentence(),
+            'properties' => null,
+            'created_at' => now(),
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\HasUlid;
 use App\Models\Traits\HasScheduleWithAcademicLevel;
+use App\Models\Traits\LogsActivity;
 use DomainException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Kbm extends Model
 {
-    use HasFactory, HasScheduleWithAcademicLevel, HasUlid;
+    use HasFactory, HasScheduleWithAcademicLevel, HasUlid, LogsActivity;
+
+    public static function getActivityLogName(): string
+    {
+        return 'kbm';
+    }
 
     protected $keyType = 'string';
 

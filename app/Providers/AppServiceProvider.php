@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Responses\LoginResponse;
+use App\Listeners\AuthActivityListener;
 use App\Models\AttitudeScore;
 use App\Models\Grade;
 use App\Models\KnowledgeSkillScore;
@@ -19,6 +20,8 @@ use App\Policies\RaporPolicy;
 use App\Policies\SubjectKkmPolicy;
 use App\Support\ForeignKeyDeleteGuard;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->registerGlobalDeletionValidation();
         $this->registerPolicies();
+        $this->registerActivityLogListeners();
     }
 
     /**
@@ -96,5 +100,18 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(LearningAchievement::class, LearningAchievementPolicy::class);
         Gate::policy(PersonalityScore::class, PersonalityScorePolicy::class);
         Gate::policy(SubjectKkm::class, SubjectKkmPolicy::class);
+    }
+
+    protected function registerActivityLogListeners(): void
+    {
+        Event::listen(
+            Login::class,
+            [AuthActivityListener::class, 'handleLogin'],
+        );
+
+        Event::listen(
+            Logout::class,
+            [AuthActivityListener::class, 'handleLogout'],
+        );
     }
 }

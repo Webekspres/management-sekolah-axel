@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\HasUlid;
 use App\Models\Traits\HasClassWithAcademicLevel;
+use App\Models\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Schedule extends Model
 {
-    use HasClassWithAcademicLevel, HasFactory, HasUlid;
+    use HasClassWithAcademicLevel, HasFactory, HasUlid, LogsActivity;
+
+    public static function getActivityLogName(): string
+    {
+        return 'jadwal';
+    }
 
     protected $keyType = 'string';
 

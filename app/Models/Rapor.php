@@ -4,13 +4,19 @@ namespace App\Models;
 
 use App\HasUlid;
 use App\Models\Traits\HasStudentWithAcademicLevel;
+use App\Models\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Rapor extends Model
 {
-    use HasFactory, HasStudentWithAcademicLevel, HasUlid;
+    use HasFactory, HasStudentWithAcademicLevel, HasUlid, LogsActivity;
+
+    public static function getActivityLogName(): string
+    {
+        return 'rapor';
+    }
 
     protected $keyType = 'string';
 

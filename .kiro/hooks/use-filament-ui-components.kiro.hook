@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Use Filament UI Components",
+  "description": "Reminds the agent to always use Filament components when creating or modifying UI elements",
+  "version": "1",
+  "when": {
+    "type": "preTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Sebelum membuat atau memodifikasi UI apapun, pastikan kamu selalu menggunakan komponen Filament (seperti TextInput, Select, Section, Grid, TextColumn, Action, dll dari namespace Filament). Jangan membuat UI dengan HTML/Blade biasa atau komponen Livewire custom jika sudah tersedia komponen Filament yang sesuai. Gunakan `search-docs` untuk menemukan komponen Filament yang tepat jika belum yakin."
+  }
+}

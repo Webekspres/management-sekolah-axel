@@ -3,13 +3,19 @@
 namespace App\Models;
 
 use App\HasUlid;
+use App\Models\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
-    use HasFactory, HasUlid;
+    use HasFactory, HasUlid, LogsActivity;
+
+    public static function getActivityLogName(): string
+    {
+        return 'spp';
+    }
 
     protected $keyType = 'string';
 
