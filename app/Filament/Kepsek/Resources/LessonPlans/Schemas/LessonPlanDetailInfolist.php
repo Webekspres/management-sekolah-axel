@@ -2,7 +2,9 @@
 
 namespace App\Filament\Kepsek\Resources\LessonPlans\Schemas;
 
+use App\Models\LessonPlanMaterial;
 use App\Support\PublicStorageUrl;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -48,6 +50,21 @@ class LessonPlanDetailInfolist
                             ->label('')
                             ->formatStateUsing(fn (string $state): string => basename($state))
                             ->url(fn ($record): string => PublicStorageUrl::fromPublicDiskPath($record->file_path), shouldOpenInNewTab: true)
+                            ->columnSpanFull(),
+                    ]),
+                Section::make('Materi Pembelajaran')
+                    ->schema([
+                        RepeatableEntry::make('materials')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('original_filename')
+                                    ->label('Nama File')
+                                    ->url(
+                                        fn (LessonPlanMaterial $record): string => PublicStorageUrl::fromPublicDiskPath($record->file_path),
+                                        shouldOpenInNewTab: true
+                                    ),
+                            ])
+                            ->emptyLabel('Tidak ada materi yang dilampirkan.')
                             ->columnSpanFull(),
                     ]),
             ]);

@@ -75,11 +75,6 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(ActivityLog::class);
     }
 
-    public function schoolNotifications(): HasMany
-    {
-        return $this->hasMany(Notification::class);
-    }
-
     public function temporaryPolicyGrants(): HasMany
     {
         return $this->hasMany(TemporaryPolicyGrant::class);

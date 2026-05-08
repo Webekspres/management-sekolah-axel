@@ -22,10 +22,7 @@ class GuruWeeklyTeachingLoadChart extends ChartWidget
     /**
      * @var int | string | array<string, int | string | null>
      */
-    protected int|string|array $columnSpan = [
-        'default' => 'full',
-        'lg' => 6,
-    ];
+    protected int|string|array $columnSpan = 1;
 
     public static function canView(): bool
     {

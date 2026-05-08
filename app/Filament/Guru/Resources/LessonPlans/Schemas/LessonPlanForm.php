@@ -5,10 +5,12 @@ namespace App\Filament\Guru\Resources\LessonPlans\Schemas;
 use App\Models\LessonPlan;
 use App\Models\SchoolClass;
 use App\Support\PublicStorageUrl;
+use Filament\Actions\Action;
 use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -116,10 +118,61 @@ class LessonPlanForm
                             ->hiddenOn('create')
                             ->columnSpanFull(),
                     ]),
+                Section::make('Materi Pembelajaran')
+                    ->description('Upload file materi yang akan dibagikan ke siswa setelah RPP disetujui.')
+                    ->schema([
+                        Repeater::make('materials')
+                            ->relationship()
+                            ->label('File Materi')
+                            ->defaultItems(0)
+                            ->schema([
+                                FileUpload::make('file_path')
+                                    ->label('File')
+                                    ->acceptedFileTypes([
+                                        'application/pdf',
+                                        'application/vnd.ms-powerpoint',
+                                        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                                        'application/vnd.ms-excel',
+                                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                        'application/msword',
+                                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                    ])
+                                    ->disk('public')
+                                    ->directory('lesson-plan-materials')
+                                    ->visibility('public')
+                                    ->preserveFilenames()
+                                    ->storeFileNamesIn('original_filename')
+                                    ->downloadable()
+                                    ->openable()
+                                    ->getDownloadableFileUrlUsing(
+                                        static fn (string $file): string => PublicStorageUrl::fromPublicDiskPath($file)
+                                    )
+                                    ->getOpenableFileUrlUsing(
+                                        static fn (string $file): string => PublicStorageUrl::fromPublicDiskPath($file)
+                                    )
+                                    ->columnSpanFull(),
+                            ])
+                            ->addActionLabel('Tambah Materi')
+                            ->disabled(fn (?LessonPlan $record): bool => self::isMaterialLocked($record))
+                            ->deleteAction(
+                                fn (Action $action, ?LessonPlan $record) => $action
+                                    ->hidden(fn (): bool => self::isMaterialLocked($record))
+                            )
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 
     private static function isContentLocked(?LessonPlan $record): bool
+    {
+        if (! $record) {
+            return false;
+        }
+
+        return in_array($record->status, ['PENDING', 'APPROVED'], true);
+    }
+
+    private static function isMaterialLocked(?LessonPlan $record): bool
     {
         if (! $record) {
             return false;

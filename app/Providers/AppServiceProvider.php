@@ -4,13 +4,22 @@ namespace App\Providers;
 
 use App\Http\Responses\LoginResponse;
 use App\Listeners\AuthActivityListener;
+use App\Models\Announcement;
 use App\Models\AttitudeScore;
 use App\Models\Grade;
+use App\Models\Kbm;
 use App\Models\KnowledgeSkillScore;
 use App\Models\LearningAchievement;
+use App\Models\LessonPlan;
+use App\Models\LessonPlanMaterial;
 use App\Models\PersonalityScore;
 use App\Models\Rapor;
 use App\Models\SubjectKkm;
+use App\Observers\AnnouncementObserver;
+use App\Observers\KbmObserver;
+use App\Observers\LessonPlanMaterialObserver;
+use App\Observers\LessonPlanObserver;
+use App\Observers\RaporObserver;
 use App\Policies\AttitudeScorePolicy;
 use App\Policies\GradePolicy;
 use App\Policies\KnowledgeSkillScorePolicy;
@@ -54,6 +63,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerGlobalDeletionValidation();
         $this->registerPolicies();
         $this->registerActivityLogListeners();
+        $this->registerObservers();
     }
 
     /**
@@ -113,5 +123,14 @@ class AppServiceProvider extends ServiceProvider
             Logout::class,
             [AuthActivityListener::class, 'handleLogout'],
         );
+    }
+
+    protected function registerObservers(): void
+    {
+        LessonPlan::observe(LessonPlanObserver::class);
+        Kbm::observe(KbmObserver::class);
+        Rapor::observe(RaporObserver::class);
+        Announcement::observe(AnnouncementObserver::class);
+        LessonPlanMaterial::observe(LessonPlanMaterialObserver::class);
     }
 }

@@ -22,11 +22,7 @@ class AdminFinanceSnapshot extends StatsOverviewWidget
     /**
      * @var int | string | array<string, int | string | null>
      */
-    protected int|string|array $columnSpan = [
-        'default' => 'full',
-        'lg' => 7,
-        'xl' => 7,
-    ];
+    protected int|string|array $columnSpan = 1;
 
     public static function canView(): bool
     {

@@ -16,15 +16,15 @@ class StudentAttendanceSummaryWidget extends StatsOverviewWidget
     /**
      * @var int | string | array<string, int | string | null>
      */
-    protected int|string|array $columnSpan = [
-        'default' => 'full',
-        'lg' => 6,
-    ];
+    protected int|string|array $columnSpan = 'full';
 
     /**
      * @var int | array<string, ?int> | null
      */
-    protected int|array|null $columns = 2;
+    protected int|array|null $columns = [
+        'default' => 2,
+        'lg' => 5,
+    ];
 
     public static function canView(): bool
     {

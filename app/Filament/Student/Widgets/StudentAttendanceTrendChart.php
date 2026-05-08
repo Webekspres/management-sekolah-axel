@@ -20,10 +20,7 @@ class StudentAttendanceTrendChart extends ChartWidget
     /**
      * @var int | string | array<string, int | string | null>
      */
-    protected int|string|array $columnSpan = [
-        'default' => 'full',
-        'lg' => 12,
-    ];
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?int $sort = 20;
 

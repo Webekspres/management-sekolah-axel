@@ -119,9 +119,21 @@ class LessonPlan extends Model
         return $this->belongsTo(SchoolClass::class, 'class_id');
     }
 
+    public function materials(): HasMany
+    {
+        return $this->hasMany(LessonPlanMaterial::class);
+    }
+
     public function kbms(): HasMany
     {
         return $this->hasMany(Kbm::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (LessonPlan $lessonPlan): void {
+            $lessonPlan->materials->each->delete();
+        });
     }
 
     private function recordActivity(User $actor, string $action, string $description): void

@@ -22,11 +22,7 @@ class AdminOverviewStats extends StatsOverviewWidget
     /**
      * @var int | string | array<string, int | string | null>
      */
-    protected int|string|array $columnSpan = [
-        'default' => 'full',
-        'lg' => 5,
-        'xl' => 5,
-    ];
+    protected int|string|array $columnSpan = 1;
 
     /**
      * @var int | array<string, ?int> | null

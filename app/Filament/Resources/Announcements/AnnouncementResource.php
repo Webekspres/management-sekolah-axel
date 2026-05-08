@@ -53,7 +53,9 @@ class AnnouncementResource extends Resource
         $query = parent::getEloquentQuery();
         $role = $user->effectiveRole();
 
-        if ($role === 'super_admin') {
+        // super_admin, kepala_sekolah, dan guru dapat melihat semua pengumuman
+        // karena mereka adalah pembuat pengumuman dan perlu melihat semua yang ada
+        if (in_array($role, ['super_admin', 'kepala_sekolah', 'guru'], true)) {
             return $query;
         }
 

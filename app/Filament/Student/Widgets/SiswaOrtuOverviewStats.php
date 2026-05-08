@@ -2,16 +2,14 @@
 
 namespace App\Filament\Student\Widgets;
 
-use App\Models\Announcement;
-use App\Models\Attendance;
+use App\Models\AcademicYear;
+use App\Models\Grade;
 use App\Models\Invoice;
-use App\Models\Kbm;
-use App\Models\Notification;
-use App\Models\Schedule;
+use App\Models\Rapor;
+use App\Services\RaporService;
 use App\Support\DashboardAcademicContext;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class SiswaOrtuOverviewStats extends StatsOverviewWidget
@@ -31,7 +29,7 @@ class SiswaOrtuOverviewStats extends StatsOverviewWidget
     protected int|array|null $columns = [
         'default' => 1,
         'sm' => 2,
-        'lg' => 3,
+        'lg' => 4,
     ];
 
     public static function canView(): bool
@@ -46,7 +44,7 @@ class SiswaOrtuOverviewStats extends StatsOverviewWidget
 
         if ($user === null || $student === null) {
             return [
-                Stat::make('Jadwal Hari Ini', '0')
+                Stat::make('Tagihan Aktif', '0')
                     ->description('Akun belum terhubung ke data siswa')
                     ->color('gray'),
             ];
@@ -54,73 +52,47 @@ class SiswaOrtuOverviewStats extends StatsOverviewWidget
 
         $ctx = DashboardAcademicContext::statsSuffix();
 
-        $todayIndex = now()->dayOfWeekIso;
-
-        $scheduleTodayCount = Schedule::query()
-            ->where('class_id', $student->class_id)
-            ->where('day_of_week', $todayIndex)
-            ->count();
-
-        $approvedKbmThisWeek = Kbm::query()
-            ->whereHas('schedule', function (Builder $query) use ($student): void {
-                $query->where('class_id', $student->class_id);
-            })
-            ->where('status', 'APPROVED')
-            ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
-            ->count();
-
-        $latestAnnouncement = Announcement::query()
-            ->whereJsonContains('target_role', 'siswa_ortu')
-            ->orderByDesc('created_at')
-            ->first();
-
-        $attendanceThisMonthQuery = Attendance::query()
-            ->where('student_id', $student->id)
-            ->whereHas('kbm', function (Builder $query): void {
-                $query
-                    ->where('status', 'APPROVED')
-                    ->whereBetween('date', [now()->startOfMonth(), now()->endOfMonth()]);
-            });
-
-        $attendanceThisMonthCount = (clone $attendanceThisMonthQuery)->count();
-        $hadirThisMonthCount = (clone $attendanceThisMonthQuery)
-            ->where('status', 'HADIR')
-            ->count();
-
         $activeInvoiceCount = Invoice::query()
             ->where('student_id', $student->id)
             ->whereIn('status', ['UNPAID', 'PENDING'])
             ->count();
 
-        $unreadNotificationCount = Notification::query()
-            ->where('user_id', $user->id)
-            ->where('is_read', false)
-            ->count();
+        $rapors = Rapor::where('student_id', $student->id)->get();
+        $approvedRaporCount = $rapors->filter(fn (Rapor $rapor): bool => $rapor->isApproved())->count();
 
-        $announcementValue = $latestAnnouncement?->title ?? 'Belum Ada';
-        $announcementDescription = $latestAnnouncement
-            ? 'Dipublikasikan '.$latestAnnouncement->created_at?->format('d M Y H:i')
-            : 'Belum ada pengumuman terbaru';
+        $academicYear = AcademicYear::where('is_active', true)->first();
+        $avgRapor = 0.0;
+        $belowKkmCount = 0;
+
+        if ($academicYear !== null) {
+            $grades = Grade::where('student_id', $student->id)
+                ->where('academic_year_id', $academicYear->id)
+                ->where('grade_type', 'RAPOR')
+                ->with('subject')
+                ->get();
+
+            $avgRapor = $grades->isNotEmpty() ? (float) $grades->avg('score') : 0.0;
+
+            $belowKkmCount = $grades->filter(function (Grade $grade) use ($student): bool {
+                $kkm = app(RaporService::class)->resolveKkm($student->schoolClass, $grade->subject_id);
+
+                return (float) $grade->score < $kkm;
+            })->count();
+        }
 
         return [
-            Stat::make('Jadwal Hari Ini', number_format($scheduleTodayCount))
-                ->description('Sesi belajar sesuai kelas saat ini'.$ctx)
-                ->color('info'),
-            Stat::make('Pengumuman Terbaru', $announcementValue)
-                ->description($announcementDescription.$ctx)
-                ->color('success'),
-            Stat::make('Ringkasan Kehadiran Saya', number_format($attendanceThisMonthCount))
-                ->description("Bulan ini (APPROVED), HADIR: {$hadirThisMonthCount}{$ctx}")
-                ->color('success'),
             Stat::make('Tagihan Aktif', number_format($activeInvoiceCount))
                 ->description('Status UNPAID dan PENDING'.$ctx)
                 ->color('warning'),
-            Stat::make('KBM Approved Minggu Ini', number_format($approvedKbmThisWeek))
-                ->description('Laporan yang sudah disetujui Kepsek'.$ctx)
+            Stat::make('Rapor Siap Diunduh', number_format($approvedRaporCount))
+                ->description('Rapor dengan status APPROVED')
                 ->color('success'),
-            Stat::make('Notifikasi Belum Dibaca', number_format($unreadNotificationCount))
-                ->description('Informasi terbaru untuk siswa/orang tua'.$ctx)
-                ->color('danger'),
+            Stat::make('Rata-rata RAPOR', number_format($avgRapor, 2))
+                ->description('Rata-rata nilai RAPOR keseluruhan'.$ctx)
+                ->color('info'),
+            Stat::make('Di Bawah KKM', number_format($belowKkmCount))
+                ->description('Mata pelajaran dengan RAPOR di bawah KKM'.$ctx)
+                ->color($belowKkmCount > 0 ? 'danger' : 'success'),
         ];
     }
 }
