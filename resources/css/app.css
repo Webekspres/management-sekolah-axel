@@ -1,7 +1,9 @@
 @import "tailwindcss";
+@import '/vendor/guava/calendar/resources/css/theme.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../../../vendor/guava/calendar/resources/**/*';
 
 @theme {
     --font-sans:

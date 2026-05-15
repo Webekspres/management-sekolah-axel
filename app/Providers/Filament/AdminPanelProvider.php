@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Bento\BentoDashboard;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -39,6 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->defaultThemeMode(ThemeMode::Dark)
             ->globalSearch(false)
             ->databaseNotifications()
             ->databaseNotificationsPolling('15s')
