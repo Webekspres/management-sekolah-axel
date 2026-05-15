@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
     'email',
     'password',
     'role',
+    'nip',
     'gender',
     'phone_number',
     'address_id',

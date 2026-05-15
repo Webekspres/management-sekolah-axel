@@ -12,7 +12,6 @@ use App\Models\Invoice;
 use App\Models\Kbm;
 use App\Models\LessonPlan;
 use App\Models\Level;
-use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\Rapor;
 use App\Models\Schedule;
@@ -72,30 +71,30 @@ class DatabaseSeeder extends Seeder
         $demoUsers = [
             [
                 'name' => 'Super Admin',
-                'email' => 'admin@example.com',
+                'email' => 'admin@hstkb.sch.id',
                 'role' => 'super_admin',
-                'password' => Hash::make('admin123'),
+                'password' => Hash::make('adminportal2026'),
                 'gender' => 'L',
             ],
             [
                 'name' => 'Kepala Sekolah',
-                'email' => 'kepsek@example.com',
+                'email' => 'kepsek@hstkb.sch.id',
                 'role' => 'kepala_sekolah',
-                'password' => Hash::make('kepsek123'),
+                'password' => Hash::make('kepsekportal2026'),
                 'gender' => 'L',
             ],
             [
                 'name' => 'Guru Demo',
-                'email' => 'guru@example.com',
+                'email' => 'guru@hstkb.sch.id',
                 'role' => 'guru',
-                'password' => Hash::make('guru123'),
+                'password' => Hash::make('guruportal2026'),
                 'gender' => 'L',
             ],
             [
                 'name' => 'Siswa Demo',
-                'email' => 'siswa@example.com',
+                'email' => 'siswa@hstkb.sch.id',
                 'role' => 'siswa_ortu',
-                'password' => Hash::make('siswa123'),
+                'password' => Hash::make('siswaportal2026'),
                 'gender' => 'L',
             ],
         ];
@@ -238,11 +237,6 @@ class DatabaseSeeder extends Seeder
         // --- 14. Pengumuman ---
         Announcement::factory(5)->forGuru()->create();
         Announcement::factory(5)->forSiswa()->create();
-
-        // --- 15. Notifikasi per user ---
-        User::all()->each(
-            fn (User $user) => Notification::factory(3)->unread()->create(['user_id' => $user->id])
-        );
 
         // --- 16. Log Aktivitas (Baru) ---
         $allUsers = User::all();

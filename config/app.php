@@ -118,6 +118,20 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Deploy Secret (Web-Based Artisan)
+    |--------------------------------------------------------------------------
+    |
+    | A secret token to protect the /deploy/{token}/* routes used for
+    | running migrations, seeders, and other artisan commands via browser
+    | when terminal access is not available (e.g. shared hosting / cPanel).
+    | Remove or change this value after deployment is complete!
+    |
+    */
+
+    'deploy_secret' => env('DEPLOY_SECRET'),
+
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
