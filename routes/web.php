@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PersonaliaImportTemplateController;
 use App\Models\Rapor;
 use App\Models\SchoolClass;
 use App\Models\User;
@@ -27,6 +28,9 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/personalia/import-template/{type}', PersonaliaImportTemplateController::class)
+        ->name('personalia.import-template');
+
     Route::get('/rapor/{rapor}/download', function (Rapor $rapor) {
         /** @var User $user */
         $user = auth()->user();
@@ -76,10 +80,13 @@ Route::middleware(['auth'])->group(function () {
             '--force' => true,
         ]);
 
+        Artisan::call('personalia:cache-import-templates');
+
         return response()->json([
             'status' => 'ok',
             'message' => 'Seeder wilayah dijalankan.',
             'output' => trim(Artisan::output()),
+            'templates' => 'Template impor personalia di-cache ulang.',
         ]);
     })->middleware('throttle:1,1')->name('seed.wilayah');
 });

@@ -37,6 +37,11 @@ test('wilayah seeder runs for super admin', function () {
         ])
         ->andReturn(0);
 
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('personalia:cache-import-templates')
+        ->andReturn(0);
+
     Artisan::shouldReceive('output')
         ->once()
         ->andReturn('OK');
@@ -69,8 +74,13 @@ test('deploy seed wilayah runs with valid token', function () {
         ])
         ->andReturn(0);
 
-    Artisan::shouldReceive('output')
+    Artisan::shouldReceive('call')
         ->once()
+        ->with('personalia:cache-import-templates')
+        ->andReturn(0);
+
+    Artisan::shouldReceive('output')
+        ->twice()
         ->andReturn('OK');
 
     $this->get('/deploy/deploy-token/seed-wilayah')
@@ -79,5 +89,33 @@ test('deploy seed wilayah runs with valid token', function () {
             'status' => 'success',
             'command' => 'db:seed --class=IndonesianRegionSeeder',
             'output' => 'OK',
+        ]);
+});
+
+test('deploy cache import templates is forbidden with invalid token', function () {
+    config()->set('app.deploy_secret', 'deploy-token');
+
+    $this->get('/deploy/invalid-token/cache-import-templates')
+        ->assertForbidden();
+});
+
+test('deploy cache import templates runs with valid token', function () {
+    config()->set('app.deploy_secret', 'deploy-token');
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('personalia:cache-import-templates')
+        ->andReturn(0);
+
+    Artisan::shouldReceive('output')
+        ->once()
+        ->andReturn('Template impor tersimpan.');
+
+    $this->get('/deploy/deploy-token/cache-import-templates')
+        ->assertSuccessful()
+        ->assertJson([
+            'status' => 'success',
+            'command' => 'personalia:cache-import-templates',
+            'output' => 'Template impor tersimpan.',
         ]);
 });

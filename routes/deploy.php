@@ -5,7 +5,8 @@
  *
  * Usage (from browser):
  *   - Migrate:       https://yourdomain.com/deploy/{token}/migrate
- *   - Seed:          https://yourdomain.com/deploy/{token}/seed
+ *   - Seed wilayah:  https://yourdomain.com/deploy/{token}/seed-wilayah
+ *   - Cache template impor: https://yourdomain.com/deploy/{token}/cache-import-templates
  *   - Migrate+Seed:  https://yourdomain.com/deploy/{token}/migrate-seed
  *   - Create user:   https://yourdomain.com/deploy/{token}/create-user?name=Admin&email=admin@hstkb.sch.id&password=secret123&role=super_admin
  *   - Link storage:  https://yourdomain.com/deploy/{token}/storage-link
@@ -61,9 +62,30 @@ Route::prefix('deploy/{token}')->group(function () {
         ]);
         $output = Artisan::output();
 
+        $cacheExit = Artisan::call('personalia:cache-import-templates');
+        $cacheOutput = Artisan::output();
+
+        return response()->json([
+            'status' => ($exitCode === 0 && $cacheExit === 0) ? 'success' : 'error',
+            'command' => 'db:seed --class=IndonesianRegionSeeder',
+            'output' => $output,
+            'cache_import_templates' => [
+                'exit_code' => $cacheExit,
+                'command' => 'personalia:cache-import-templates',
+                'output' => $cacheOutput,
+            ],
+        ]);
+    });
+
+    Route::get('/cache-import-templates', function (string $token) {
+        abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
+
+        $exitCode = Artisan::call('personalia:cache-import-templates');
+        $output = Artisan::output();
+
         return response()->json([
             'status' => $exitCode === 0 ? 'success' : 'error',
-            'command' => 'db:seed --class=IndonesianRegionSeeder',
+            'command' => 'personalia:cache-import-templates',
             'output' => $output,
         ]);
     });
