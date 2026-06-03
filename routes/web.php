@@ -3,6 +3,9 @@
 use App\Models\Rapor;
 use App\Models\SchoolClass;
 use App\Models\User;
+use Database\Seeders\IndonesianRegionSeeder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -55,4 +58,28 @@ Route::middleware(['auth'])->group(function () {
                 ->toString()
         );
     })->name('rapor.download');
+
+    Route::get('/internal/seed/wilayah', function (Request $request) {
+        /** @var User|null $user */
+        $user = $request->user();
+
+        $expectedToken = (string) config('app.deploy_secret');
+        $token = (string) $request->query('token', '');
+
+        abort_unless($expectedToken !== '', 500, 'Deploy token belum dikonfigurasi.');
+        abort_unless(hash_equals($expectedToken, $token), 403, 'Invalid token.');
+
+        abort_unless($user?->role === 'super_admin', 403);
+
+        Artisan::call('db:seed', [
+            '--class' => IndonesianRegionSeeder::class,
+            '--force' => true,
+        ]);
+
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'Seeder wilayah dijalankan.',
+            'output' => trim(Artisan::output()),
+        ]);
+    })->middleware('throttle:1,1')->name('seed.wilayah');
 });

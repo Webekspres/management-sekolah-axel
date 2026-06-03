@@ -16,6 +16,7 @@
  */
 
 use App\Models\User;
+use Database\Seeders\IndonesianRegionSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,22 @@ Route::prefix('deploy/{token}')->group(function () {
         return response()->json([
             'status' => $exitCode === 0 ? 'success' : 'error',
             'command' => 'db:seed --class=ProductionSeeder',
+            'output' => $output,
+        ]);
+    });
+
+    Route::get('/seed-wilayah', function (string $token) {
+        abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
+
+        $exitCode = Artisan::call('db:seed', [
+            '--class' => IndonesianRegionSeeder::class,
+            '--force' => true,
+        ]);
+        $output = Artisan::output();
+
+        return response()->json([
+            'status' => $exitCode === 0 ? 'success' : 'error',
+            'command' => 'db:seed --class=IndonesianRegionSeeder',
             'output' => $output,
         ]);
     });
