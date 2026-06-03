@@ -10,6 +10,7 @@ use App\Filament\Guru\Resources\Kbms\Schemas\KbmForm;
 use App\Filament\Guru\Resources\Kbms\Tables\KbmsTable;
 use App\Models\Kbm;
 use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -52,12 +53,33 @@ class KbmResource extends Resource
         ];
     }
 
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->role === 'guru') {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', Kbm::class);
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
 
         /** @var User $user */
         $user = auth()->user();
+
+        if (app(TemporaryAccessManager::class)->hasTemporaryPolicyGrant($user, 'viewAny', Kbm::class)) {
+            return $query;
+        }
 
         if (! $user->teacher) {
             return $query->whereRaw('1 = 0');

@@ -1,131 +1,130 @@
 # Implementation Plan
 
-- [ ] 1. Write bug condition exploration test
-  - **Property 1: Bug Condition** - Panel Access Blocked & Query Empty for Temporary Access Users
-  - **CRITICAL**: This test MUST FAIL on unfixed code — failure confirms the bug exists
-  - **DO NOT attempt to fix the test or the code when it fails**
-  - **NOTE**: This test encodes the expected behavior — it will validate the fix when it passes after implementation
-  - **GOAL**: Surface counterexamples that demonstrate the bugs exist
-  - **Scoped PBT Approach**: Scope the property to concrete failing cases — user `siswa_ortu` dengan active `UserPolicyAbility` untuk policy KBM/LessonPlan/Announcement
-  - Create test file: `tests/Feature/TemporaryAccessVisibilityTest.php`
-  - Create test file: `tests/Unit/TemporaryAccessManagerPanelAccessTest.php`
-  - Test 1 — Panel guru ditolak meski ada active grant KBM: buat user `siswa_ortu`, buat `AccessPolicy` dengan `permanent_roles = ['guru']` dan `target_model = Kbm::class`, assign `UserPolicyAbility` (not expired, `is_inherited = false`), assert `$user->canAccessPanel($guruPanel) === false` (LULUS pada unfixed code)
-  - Test 2 — Panel guru ditolak meski ada active grant LessonPlan: identik dengan Test 1 tapi untuk `LessonPlan::class`, assert `canAccessPanel('guru') === false` (LULUS pada unfixed code)
-  - Test 3 — KBM query kosong untuk user tanpa relasi teacher: buat user `siswa_ortu` tanpa relasi teacher, acting as user, assert `KbmResource::getEloquentQuery()->toSql()` mengandung `1 = 0` (LULUS pada unfixed code)
-  - Test 4 — LessonPlan query kosong untuk user tanpa relasi teacher: identik dengan Test 3 tapi untuk `LessonPlanResource`, assert query mengandung `1 = 0` (LULUS pada unfixed code)
-  - Test 5 — Announcement query difilter meski ada active grant: buat user `guru` dengan active `UserPolicyAbility` untuk policy Announcement, acting as user, assert `AnnouncementResource::getEloquentQuery()->toSql()` mengandung `whereJsonContains` / `target_role` (LULUS pada unfixed code)
-  - Run tests on UNFIXED code — **EXPECTED OUTCOME**: All tests PASS (confirms bugs exist)
-  - Document counterexamples found (e.g., "`canAccessPanel('guru')` mengembalikan `false` untuk user dengan active grant", "`getEloquentQuery()` mengembalikan `whereRaw('1 = 0')` karena `$user->teacher === null`")
-  - Mark task complete when tests are written, run, and all pass on unfixed code
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
+- [x]   1. Write bug condition exploration test
+    - **Property 1: Bug Condition** - Panel Access Blocked & Query Empty for Temporary Access Users
+    - **CRITICAL**: This test MUST FAIL on unfixed code — failure confirms the bug exists
+    - **DO NOT attempt to fix the test or the code when it fails**
+    - **NOTE**: This test encodes the expected behavior — it will validate the fix when it passes after implementation
+    - **GOAL**: Surface counterexamples that demonstrate the bugs exist
+    - **Scoped PBT Approach**: Scope the property to concrete failing cases — user `siswa_ortu` dengan active `UserPolicyAbility` untuk policy KBM/LessonPlan/Announcement
+    - Create test file: `tests/Feature/TemporaryAccessVisibilityTest.php`
+    - Create test file: `tests/Unit/TemporaryAccessManagerPanelAccessTest.php`
+    - Test 1 — Panel guru ditolak meski ada active grant KBM: buat user `siswa_ortu`, buat `AccessPolicy` dengan `permanent_roles = ['guru']` dan `target_model = Kbm::class`, assign `UserPolicyAbility` (not expired, `is_inherited = false`), assert `$user->canAccessPanel($guruPanel) === false` (LULUS pada unfixed code)
+    - Test 2 — Panel guru ditolak meski ada active grant LessonPlan: identik dengan Test 1 tapi untuk `LessonPlan::class`, assert `canAccessPanel('guru') === false` (LULUS pada unfixed code)
+    - Test 3 — KBM query kosong untuk user tanpa relasi teacher: buat user `siswa_ortu` tanpa relasi teacher, acting as user, assert `KbmResource::getEloquentQuery()->toSql()` mengandung `1 = 0` (LULUS pada unfixed code)
+    - Test 4 — LessonPlan query kosong untuk user tanpa relasi teacher: identik dengan Test 3 tapi untuk `LessonPlanResource`, assert query mengandung `1 = 0` (LULUS pada unfixed code)
+    - Test 5 — Announcement query difilter meski ada active grant: buat user `guru` dengan active `UserPolicyAbility` untuk policy Announcement, acting as user, assert `AnnouncementResource::getEloquentQuery()->toSql()` mengandung `whereJsonContains` / `target_role` (LULUS pada unfixed code)
+    - Run tests on UNFIXED code — **EXPECTED OUTCOME**: All tests PASS (confirms bugs exist)
+    - Document counterexamples found (e.g., "`canAccessPanel('guru')` mengembalikan `false` untuk user dengan active grant", "`getEloquentQuery()` mengembalikan `whereRaw('1 = 0')` karena `$user->teacher === null`")
+    - Mark task complete when tests are written, run, and all pass on unfixed code
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fix)
-  - **Property 2: Preservation** - Normal Role Behavior Unchanged After Fix
-  - **IMPORTANT**: Follow observation-first methodology
-  - Observe: user `role = 'guru'` tanpa temporary access → `canAccessPanel('guru')` = `true`, query KBM difilter by `teacher_id`
-  - Observe: user `role = 'kepala_sekolah'` → `canAccessPanel('kepsek')` = `true`
-  - Observe: user `role = 'siswa_ortu'` tanpa grant → `canAccessPanel('guru')` = `false`
-  - Observe: user `role = 'super_admin'` → `canAccessPanel('admin')` = `true`, query Announcement tanpa filter
-  - Observe: user `is_active = false` → semua panel ditolak
-  - Observe: user dengan `UserPolicyAbility` expired → `canAccessPanel('guru')` = `false`
-  - Create test file: `tests/Feature/TemporaryAccessVisibilityTest.php` (tambah describe block `Preservation`)
-  - Test 1 — Guru normal tetap bisa akses panel guru: user `role = 'guru'` tanpa grant, assert `canAccessPanel('guru') === true`
-  - Test 2 — Guru normal query KBM tetap filter by teacher_id: user `role = 'guru'` dengan relasi teacher, acting as user, assert `KbmResource::getEloquentQuery()->toSql()` mengandung `teacher_id`
-  - Test 3 — Guru normal query LessonPlan tetap filter by teacher_id: identik dengan Test 2 tapi untuk `LessonPlanResource`
-  - Test 4 — Kepsek normal tetap bisa akses panel kepsek: user `role = 'kepala_sekolah'`, assert `canAccessPanel('kepsek') === true`
-  - Test 5 — Siswa tanpa grant tetap ditolak di panel guru: user `role = 'siswa_ortu'` tanpa grant, assert `canAccessPanel('guru') === false`
-  - Test 6 — Super admin tetap bisa akses semua panel: user `role = 'super_admin'`, assert `canAccessPanel('admin') === true`
-  - Test 7 — User tidak aktif tetap ditolak: user `is_active = false`, assert `canAccessPanel('guru') === false`
-  - Test 8 — Expired grant tetap ditolak: user `siswa_ortu` dengan `UserPolicyAbility` `expires_at` di masa lalu, assert `canAccessPanel('guru') === false`
-  - Test 9 — Siswa tanpa grant query Announcement tetap difilter: user `siswa_ortu` tanpa grant, acting as user, assert query Announcement mengandung `target_role`
-  - Run tests on UNFIXED code — **EXPECTED OUTCOME**: All tests PASS (confirms baseline behavior to preserve)
-  - Mark task complete when tests are written, run, and passing on unfixed code
-  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
+- [x]   2. Write preservation property tests (BEFORE implementing fix)
+    - **Property 2: Preservation** - Normal Role Behavior Unchanged After Fix
+    - **IMPORTANT**: Follow observation-first methodology
+    - Observe: user `role = 'guru'` tanpa temporary access → `canAccessPanel('guru')` = `true`, query KBM difilter by `teacher_id`
+    - Observe: user `role = 'kepala_sekolah'` → `canAccessPanel('kepsek')` = `true`
+    - Observe: user `role = 'siswa_ortu'` tanpa grant → `canAccessPanel('guru')` = `false`
+    - Observe: user `role = 'super_admin'` → `canAccessPanel('admin')` = `true`, query Announcement tanpa filter
+    - Observe: user `is_active = false` → semua panel ditolak
+    - Observe: user dengan `UserPolicyAbility` expired → `canAccessPanel('guru')` = `false`
+    - Create test file: `tests/Feature/TemporaryAccessVisibilityTest.php` (tambah describe block `Preservation`)
+    - Test 1 — Guru normal tetap bisa akses panel guru: user `role = 'guru'` tanpa grant, assert `canAccessPanel('guru') === true`
+    - Test 2 — Guru normal query KBM tetap filter by teacher_id: user `role = 'guru'` dengan relasi teacher, acting as user, assert `KbmResource::getEloquentQuery()->toSql()` mengandung `teacher_id`
+    - Test 3 — Guru normal query LessonPlan tetap filter by teacher_id: identik dengan Test 2 tapi untuk `LessonPlanResource`
+    - Test 4 — Kepsek normal tetap bisa akses panel kepsek: user `role = 'kepala_sekolah'`, assert `canAccessPanel('kepsek') === true`
+    - Test 5 — Siswa tanpa grant tetap ditolak di panel guru: user `role = 'siswa_ortu'` tanpa grant, assert `canAccessPanel('guru') === false`
+    - Test 6 — Super admin tetap bisa akses semua panel: user `role = 'super_admin'`, assert `canAccessPanel('admin') === true`
+    - Test 7 — User tidak aktif tetap ditolak: user `is_active = false`, assert `canAccessPanel('guru') === false`
+    - Test 8 — Expired grant tetap ditolak: user `siswa_ortu` dengan `UserPolicyAbility` `expires_at` di masa lalu, assert `canAccessPanel('guru') === false`
+    - Test 9 — Siswa tanpa grant query Announcement tetap difilter: user `siswa_ortu` tanpa grant, acting as user, assert query Announcement mengandung `target_role`
+    - Run tests on UNFIXED code — **EXPECTED OUTCOME**: All tests PASS (confirms baseline behavior to preserve)
+    - Mark task complete when tests are written, run, and passing on unfixed code
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
 
-- [ ] 3. Fix temporary access visibility
+- [x]   3. Fix temporary access visibility
+    - [x] 3.1 Tambah method `hasTemporaryAccessToPanel()` di `TemporaryAccessManager`
+        - Tambah method `hasTemporaryAccessToPanel(User $user, string $panelId): bool`
+        - Resolve target roles dari panel ID: `'guru'` → `['guru']`, `'kepsek'` → `['kepala_sekolah']`, default → `[]`
+        - Return `false` jika `$targetRoles` kosong
+        - Query `UserPolicyAbility::query()->forUser($user->id)->direct()->notExpired()->whereHas('accessPolicy', fn($q) => $q->where('is_active', true)->whereJsonContains('permanent_roles', $role))->exists()` untuk setiap role
+        - Return `true` jika ada grant yang cocok, `false` jika tidak ada
+        - _Bug_Condition: isBugCondition(input) where input.user memiliki active direct UserPolicyAbility untuk policy dengan permanent_roles mengandung role target panel_
+        - _Expected_Behavior: hasTemporaryAccessToPanel() returns true untuk user dengan active grant yang relevan_
+        - _Preservation: method hanya mengecek direct, not-expired abilities — tidak mempengaruhi user tanpa grant_
+        - _Requirements: 2.1, 2.2_
 
-  - [ ] 3.1 Tambah method `hasTemporaryAccessToPanel()` di `TemporaryAccessManager`
-    - Tambah method `hasTemporaryAccessToPanel(User $user, string $panelId): bool`
-    - Resolve target roles dari panel ID: `'guru'` → `['guru']`, `'kepsek'` → `['kepala_sekolah']`, default → `[]`
-    - Return `false` jika `$targetRoles` kosong
-    - Query `UserPolicyAbility::query()->forUser($user->id)->direct()->notExpired()->whereHas('accessPolicy', fn($q) => $q->where('is_active', true)->whereJsonContains('permanent_roles', $role))->exists()` untuk setiap role
-    - Return `true` jika ada grant yang cocok, `false` jika tidak ada
-    - _Bug_Condition: isBugCondition(input) where input.user memiliki active direct UserPolicyAbility untuk policy dengan permanent_roles mengandung role target panel_
-    - _Expected_Behavior: hasTemporaryAccessToPanel() returns true untuk user dengan active grant yang relevan_
-    - _Preservation: method hanya mengecek direct, not-expired abilities — tidak mempengaruhi user tanpa grant_
-    - _Requirements: 2.1, 2.2_
+    - [x] 3.2 Update `canAccessPanel()` di `User` model
+        - Tambah `use App\Support\TemporaryAccessManager;` di imports
+        - Refactor `canAccessPanel()`: simpan hasil match ke `$allowedByRole`, return `true` jika `$allowedByRole`
+        - Setelah role check gagal, cek `in_array($panel->getId(), ['guru', 'kepsek'], true)` → panggil `app(TemporaryAccessManager::class)->hasTemporaryAccessToPanel($this, $panel->getId())`
+        - Return `false` untuk semua kasus lainnya
+        - Guard `if (! $this->is_active)` tetap di awal method
+        - _Bug_Condition: isBugCondition(input) where input.user.role tidak diizinkan oleh canAccessPanelByRole() tapi punya active direct UserPolicyAbility_
+        - _Expected_Behavior: canAccessPanel() returns true untuk user dengan active temporary grant yang relevan_
+        - _Preservation: user dengan role permanen yang sudah cukup tidak terpengaruh; user tidak aktif tetap ditolak_
+        - _Requirements: 2.1, 2.2, 3.5, 3.6, 3.7, 3.8_
 
-  - [ ] 3.2 Update `canAccessPanel()` di `User` model
-    - Tambah `use App\Support\TemporaryAccessManager;` di imports
-    - Refactor `canAccessPanel()`: simpan hasil match ke `$allowedByRole`, return `true` jika `$allowedByRole`
-    - Setelah role check gagal, cek `in_array($panel->getId(), ['guru', 'kepsek'], true)` → panggil `app(TemporaryAccessManager::class)->hasTemporaryAccessToPanel($this, $panel->getId())`
-    - Return `false` untuk semua kasus lainnya
-    - Guard `if (! $this->is_active)` tetap di awal method
-    - _Bug_Condition: isBugCondition(input) where input.user.role tidak diizinkan oleh canAccessPanelByRole() tapi punya active direct UserPolicyAbility_
-    - _Expected_Behavior: canAccessPanel() returns true untuk user dengan active temporary grant yang relevan_
-    - _Preservation: user dengan role permanen yang sudah cukup tidak terpengaruh; user tidak aktif tetap ditolak_
-    - _Requirements: 2.1, 2.2, 3.5, 3.6, 3.7, 3.8_
+    - [x] 3.3 Update `KbmResource` di panel Guru — tambah `canAccess()` dan update `getEloquentQuery()`
+        - Tambah `use App\Support\TemporaryAccessManager;` di imports
+        - Tambah method `canAccess(): bool`: return `true` jika `auth()->user()->role === 'guru'`, atau jika `app(TemporaryAccessManager::class)->hasTemporaryPolicyGrant($user, 'viewAny', Kbm::class)`
+        - Update `getEloquentQuery()`: tambah guard di awal — jika `hasTemporaryPolicyGrant($user, 'viewAny', Kbm::class)` return `$query` tanpa filter
+        - Pertahankan guard `if (! $user->teacher) { return $query->whereRaw('1 = 0'); }` untuk user non-guru tanpa grant
+        - Pertahankan filter `whereHas('schedule', ...)` untuk guru normal
+        - _Bug_Condition: isBugCondition(input) where input.user tidak punya relasi teacher tapi punya active viewAny grant untuk KBM_
+        - _Expected_Behavior: getEloquentQuery() returns query tanpa teacher filter; canAccess() returns true_
+        - _Preservation: guru normal tetap hanya melihat KBM miliknya; user tanpa grant tetap mendapat empty query_
+        - _Requirements: 2.3, 3.1_
 
-  - [ ] 3.3 Update `KbmResource` di panel Guru — tambah `canAccess()` dan update `getEloquentQuery()`
-    - Tambah `use App\Support\TemporaryAccessManager;` di imports
-    - Tambah method `canAccess(): bool`: return `true` jika `auth()->user()->role === 'guru'`, atau jika `app(TemporaryAccessManager::class)->hasTemporaryPolicyGrant($user, 'viewAny', Kbm::class)`
-    - Update `getEloquentQuery()`: tambah guard di awal — jika `hasTemporaryPolicyGrant($user, 'viewAny', Kbm::class)` return `$query` tanpa filter
-    - Pertahankan guard `if (! $user->teacher) { return $query->whereRaw('1 = 0'); }` untuk user non-guru tanpa grant
-    - Pertahankan filter `whereHas('schedule', ...)` untuk guru normal
-    - _Bug_Condition: isBugCondition(input) where input.user tidak punya relasi teacher tapi punya active viewAny grant untuk KBM_
-    - _Expected_Behavior: getEloquentQuery() returns query tanpa teacher filter; canAccess() returns true_
-    - _Preservation: guru normal tetap hanya melihat KBM miliknya; user tanpa grant tetap mendapat empty query_
-    - _Requirements: 2.3, 3.1_
+    - [x] 3.4 Update `LessonPlanResource` di panel Guru — tambah `canAccess()` dan update `getEloquentQuery()`
+        - Tambah `use App\Support\TemporaryAccessManager;` di imports
+        - Tambah method `canAccess(): bool`: identik dengan Fix 3.3 tapi untuk `LessonPlan::class`
+        - Update `getEloquentQuery()`: tambah guard di awal — jika `hasTemporaryPolicyGrant($user, 'viewAny', LessonPlan::class)` return `$query` tanpa filter
+        - Pertahankan guard `if (! $user->teacher)` dan filter `where('teacher_id', ...)` untuk guru normal
+        - _Bug_Condition: isBugCondition(input) where input.user tidak punya relasi teacher tapi punya active viewAny grant untuk LessonPlan_
+        - _Expected_Behavior: getEloquentQuery() returns query tanpa teacher filter; canAccess() returns true_
+        - _Preservation: guru normal tetap hanya melihat LessonPlan miliknya; user tanpa grant tetap mendapat empty query_
+        - _Requirements: 2.4, 3.2_
 
-  - [ ] 3.4 Update `LessonPlanResource` di panel Guru — tambah `canAccess()` dan update `getEloquentQuery()`
-    - Tambah `use App\Support\TemporaryAccessManager;` di imports
-    - Tambah method `canAccess(): bool`: identik dengan Fix 3.3 tapi untuk `LessonPlan::class`
-    - Update `getEloquentQuery()`: tambah guard di awal — jika `hasTemporaryPolicyGrant($user, 'viewAny', LessonPlan::class)` return `$query` tanpa filter
-    - Pertahankan guard `if (! $user->teacher)` dan filter `where('teacher_id', ...)` untuk guru normal
-    - _Bug_Condition: isBugCondition(input) where input.user tidak punya relasi teacher tapi punya active viewAny grant untuk LessonPlan_
-    - _Expected_Behavior: getEloquentQuery() returns query tanpa teacher filter; canAccess() returns true_
-    - _Preservation: guru normal tetap hanya melihat LessonPlan miliknya; user tanpa grant tetap mendapat empty query_
-    - _Requirements: 2.4, 3.2_
+    - [x] 3.5 Update `AnnouncementResource` di panel Guru/Admin — bypass role filter saat ada temporary access
+        - Tambah `use App\Support\TemporaryAccessManager;` di imports
+        - Update `getEloquentQuery()`: setelah guard `super_admin`, tambah cek `hasTemporaryPolicyGrant($user, 'viewAny', Announcement::class)` → return `$query` tanpa filter
+        - Pertahankan `whereJsonContains('target_role', $role)` untuk user tanpa grant
+        - File: `app/Filament/Resources/Announcements/AnnouncementResource.php`
+        - _Bug_Condition: isBugCondition(input) where input.user punya active viewAny grant untuk Announcement tapi query masih difilter by target_role_
+        - _Expected_Behavior: getEloquentQuery() returns query tanpa target_role filter_
+        - _Preservation: user tanpa grant tetap hanya melihat announcement sesuai role-nya_
+        - _Requirements: 2.5, 3.3, 3.4_
 
-  - [ ] 3.5 Update `AnnouncementResource` di panel Guru/Admin — bypass role filter saat ada temporary access
-    - Tambah `use App\Support\TemporaryAccessManager;` di imports
-    - Update `getEloquentQuery()`: setelah guard `super_admin`, tambah cek `hasTemporaryPolicyGrant($user, 'viewAny', Announcement::class)` → return `$query` tanpa filter
-    - Pertahankan `whereJsonContains('target_role', $role)` untuk user tanpa grant
-    - File: `app/Filament/Resources/Announcements/AnnouncementResource.php`
-    - _Bug_Condition: isBugCondition(input) where input.user punya active viewAny grant untuk Announcement tapi query masih difilter by target_role_
-    - _Expected_Behavior: getEloquentQuery() returns query tanpa target_role filter_
-    - _Preservation: user tanpa grant tetap hanya melihat announcement sesuai role-nya_
-    - _Requirements: 2.5, 3.3, 3.4_
+    - [x] 3.6 Update `AnnouncementResource` di panel Student — bypass role filter saat ada temporary access
+        - Identik dengan Fix 3.5 tapi untuk `app/Filament/Student/Resources/Announcements/AnnouncementResource.php`
+        - Tambah `use App\Support\TemporaryAccessManager;` di imports
+        - Update `getEloquentQuery()`: tambah cek `hasTemporaryPolicyGrant($user, 'viewAny', Announcement::class)` → return `$query` tanpa filter
+        - Pertahankan `whereJsonContains('target_role', $role)` untuk user tanpa grant
+        - _Bug_Condition: isBugCondition(input) where input.user punya active viewAny grant untuk Announcement di panel student_
+        - _Expected_Behavior: getEloquentQuery() returns query tanpa target_role filter_
+        - _Preservation: siswa tanpa grant tetap hanya melihat announcement dengan target_role = 'siswa_ortu'_
+        - _Requirements: 2.5, 3.3_
 
-  - [ ] 3.6 Update `AnnouncementResource` di panel Student — bypass role filter saat ada temporary access
-    - Identik dengan Fix 3.5 tapi untuk `app/Filament/Student/Resources/Announcements/AnnouncementResource.php`
-    - Tambah `use App\Support\TemporaryAccessManager;` di imports
-    - Update `getEloquentQuery()`: tambah cek `hasTemporaryPolicyGrant($user, 'viewAny', Announcement::class)` → return `$query` tanpa filter
-    - Pertahankan `whereJsonContains('target_role', $role)` untuk user tanpa grant
-    - _Bug_Condition: isBugCondition(input) where input.user punya active viewAny grant untuk Announcement di panel student_
-    - _Expected_Behavior: getEloquentQuery() returns query tanpa target_role filter_
-    - _Preservation: siswa tanpa grant tetap hanya melihat announcement dengan target_role = 'siswa_ortu'_
-    - _Requirements: 2.5, 3.3_
+    - [x] 3.7 Verify bug condition exploration test now passes
+        - **Property 1: Expected Behavior** - Panel Access Granted & Query Unrestricted for Temporary Access Users
+        - **IMPORTANT**: Re-run the SAME tests from task 1 — do NOT write new tests
+        - The tests from task 1 encode the expected behavior
+        - When these tests pass, it confirms the expected behavior is satisfied
+        - Run bug condition exploration tests from step 1
+        - **EXPECTED OUTCOME**: All tests FAIL (confirms bugs are fixed — tests now assert `canAccessPanel === true` dan query tanpa filter)
+        - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ] 3.7 Verify bug condition exploration test now passes
-    - **Property 1: Expected Behavior** - Panel Access Granted & Query Unrestricted for Temporary Access Users
-    - **IMPORTANT**: Re-run the SAME tests from task 1 — do NOT write new tests
-    - The tests from task 1 encode the expected behavior
-    - When these tests pass, it confirms the expected behavior is satisfied
-    - Run bug condition exploration tests from step 1
-    - **EXPECTED OUTCOME**: All tests FAIL (confirms bugs are fixed — tests now assert `canAccessPanel === true` dan query tanpa filter)
-    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+    - [x] 3.8 Verify preservation tests still pass
+        - **Property 2: Preservation** - Normal Role Behavior Unchanged
+        - **IMPORTANT**: Re-run the SAME tests from task 2 — do NOT write new tests
+        - Run preservation property tests from step 2
+        - **EXPECTED OUTCOME**: All tests PASS (confirms no regressions)
+        - Confirm guru normal masih hanya melihat KBM/LessonPlan miliknya, siswa tanpa grant masih ditolak di panel guru, expired grant masih ditolak
 
-  - [ ] 3.8 Verify preservation tests still pass
-    - **Property 2: Preservation** - Normal Role Behavior Unchanged
-    - **IMPORTANT**: Re-run the SAME tests from task 2 — do NOT write new tests
-    - Run preservation property tests from step 2
-    - **EXPECTED OUTCOME**: All tests PASS (confirms no regressions)
-    - Confirm guru normal masih hanya melihat KBM/LessonPlan miliknya, siswa tanpa grant masih ditolak di panel guru, expired grant masih ditolak
-
-- [ ] 4. Checkpoint — Ensure all tests pass
-  - Jalankan seluruh test suite: `php artisan test --compact`
-  - Pastikan semua test di `TemporaryAccessVisibilityTest` dan `TemporaryAccessManagerPanelAccessTest` lulus
-  - Pastikan tidak ada regresi di test lain yang sudah ada
-  - Jalankan `vendor/bin/pint --dirty --format agent` untuk memastikan code style konsisten
-  - Tanya user jika ada pertanyaan atau ambiguitas yang muncul selama implementasi
+- [x]   4. Checkpoint — Ensure all tests pass
+    - Jalankan seluruh test suite: `php artisan test --compact`
+    - Pastikan semua test di `TemporaryAccessVisibilityTest` dan `TemporaryAccessManagerPanelAccessTest` lulus
+    - Pastikan tidak ada regresi di test lain yang sudah ada
+    - Jalankan `vendor/bin/pint --dirty --format agent` untuk memastikan code style konsisten
+    - Tanya user jika ada pertanyaan atau ambiguitas yang muncul selama implementasi

@@ -8,6 +8,7 @@ use App\Filament\Resources\Announcements\Pages\ListAnnouncements;
 use App\Filament\Resources\Announcements\Schemas\AnnouncementForm;
 use App\Filament\Resources\Announcements\Tables\AnnouncementsTable;
 use App\Models\Announcement;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -56,6 +57,10 @@ class AnnouncementResource extends Resource
         // super_admin, kepala_sekolah, dan guru dapat melihat semua pengumuman
         // karena mereka adalah pembuat pengumuman dan perlu melihat semua yang ada
         if (in_array($role, ['super_admin', 'kepala_sekolah', 'guru'], true)) {
+            return $query;
+        }
+
+        if (app(TemporaryAccessManager::class)->hasTemporaryPolicyGrant($user, 'viewAny', Announcement::class)) {
             return $query;
         }
 

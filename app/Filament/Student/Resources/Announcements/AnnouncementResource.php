@@ -7,6 +7,7 @@ use App\Filament\Student\Resources\Announcements\Pages\ViewAnnouncement;
 use App\Filament\Student\Resources\Announcements\Schemas\AnnouncementInfolist;
 use App\Filament\Student\Resources\Announcements\Tables\AnnouncementsTable;
 use App\Models\Announcement;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -49,6 +50,10 @@ class AnnouncementResource extends Resource
         $role = $user->effectiveRole();
 
         if ($role === 'super_admin') {
+            return $query;
+        }
+
+        if (app(TemporaryAccessManager::class)->hasTemporaryPolicyGrant($user, 'viewAny', Announcement::class)) {
             return $query;
         }
 

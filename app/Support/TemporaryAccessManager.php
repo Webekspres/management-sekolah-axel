@@ -18,6 +18,41 @@ class TemporaryAccessManager
     }
 
     /**
+     * Check if user has any active direct ability for policies relevant to a Filament panel.
+     * Panel relevance is determined by matching permanent_roles of the policy.
+     */
+    public function hasTemporaryAccessToPanel(User $user, string $panelId): bool
+    {
+        $targetRoles = match ($panelId) {
+            'guru' => ['guru'],
+            'kepsek' => ['kepala_sekolah'],
+            default => [],
+        };
+
+        if ($targetRoles === []) {
+            return false;
+        }
+
+        foreach ($targetRoles as $role) {
+            $hasGrant = UserPolicyAbility::query()
+                ->forUser($user->id)
+                ->direct()
+                ->notExpired()
+                ->whereHas('accessPolicy', function ($q) use ($role): void {
+                    $q->where('is_active', true)
+                        ->whereJsonContains('permanent_roles', $role);
+                })
+                ->exists();
+
+            if ($hasGrant) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Check if user has temporary policy grant for a given ability and target model.
      * Checks both TemporaryPolicyGrant (legacy) and UserPolicyAbility (direct, not-expired).
      * If $levelId is provided, only grants scoped to that level (or unscoped) are considered.

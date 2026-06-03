@@ -9,6 +9,7 @@ use App\Filament\Guru\Resources\LessonPlans\Schemas\LessonPlanForm;
 use App\Filament\Guru\Resources\LessonPlans\Tables\LessonPlansTable;
 use App\Models\LessonPlan;
 use App\Models\User;
+use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -66,6 +67,23 @@ class LessonPlanResource extends Resource
         ];
     }
 
+    public static function canAccess(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->role === 'guru') {
+            return true;
+        }
+
+        return app(TemporaryAccessManager::class)
+            ->hasTemporaryPolicyGrant($user, 'viewAny', LessonPlan::class);
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
@@ -73,6 +91,10 @@ class LessonPlanResource extends Resource
 
         /** @var User $user */
         $user = auth()->user();
+
+        if (app(TemporaryAccessManager::class)->hasTemporaryPolicyGrant($user, 'viewAny', LessonPlan::class)) {
+            return $query;
+        }
 
         if (! $user->teacher) {
             return $query->whereRaw('1 = 0');

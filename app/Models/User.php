@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\HasUlid;
 use App\Models\Traits\LogsActivity;
+use App\Support\TemporaryAccessManager;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -109,7 +110,7 @@ class User extends Authenticatable implements FilamentUser
 
         $effectiveRole = $this->effectiveRole();
 
-        return match ($panel->getId()) {
+        $allowedByRole = match ($panel->getId()) {
             'auth' => true,
             'admin' => $effectiveRole === 'super_admin',
             'kepsek' => in_array($effectiveRole, ['super_admin', 'kepala_sekolah'], true),
@@ -117,6 +118,17 @@ class User extends Authenticatable implements FilamentUser
             'student' => $effectiveRole === 'siswa_ortu',
             default => false,
         };
+
+        if ($allowedByRole) {
+            return true;
+        }
+
+        if (in_array($panel->getId(), ['guru', 'kepsek'], true)) {
+            return app(TemporaryAccessManager::class)
+                ->hasTemporaryAccessToPanel($this, $panel->getId());
+        }
+
+        return false;
     }
 
     public function effectiveRole(): string
