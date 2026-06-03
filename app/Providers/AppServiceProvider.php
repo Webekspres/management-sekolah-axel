@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGateway;
 use App\Http\Responses\LoginResponse;
 use App\Listeners\AuthActivityListener;
 use App\Models\Announcement;
@@ -27,6 +28,7 @@ use App\Policies\LearningAchievementPolicy;
 use App\Policies\PersonalityScorePolicy;
 use App\Policies\RaporPolicy;
 use App\Policies\SubjectKkmPolicy;
+use App\Services\PaymentGateways\LogPaymentGateway;
 use App\Support\ForeignKeyDeleteGuard;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
@@ -52,6 +54,13 @@ class AppServiceProvider extends ServiceProvider
             \Filament\Auth\Http\Responses\Contracts\LoginResponse::class,
             LoginResponse::class
         );
+
+        $this->app->singleton(PaymentGateway::class, function (): PaymentGateway {
+            $driver = config('payment.default_driver', 'log');
+            $class = config("payment.drivers.{$driver}", LogPaymentGateway::class);
+
+            return $this->app->make($class);
+        });
     }
 
     /**

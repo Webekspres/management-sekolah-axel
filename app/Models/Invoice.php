@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
 use App\HasUlid;
 use App\Models\Traits\HasStudentWithAcademicLevel;
 use App\Models\Traits\LogsActivity;
@@ -41,7 +42,17 @@ class Invoice extends Model
             'amount' => 'decimal:2',
             'due_date' => 'date',
             'created_at' => 'datetime',
+            'status' => PaymentStatus::class,
         ];
+    }
+
+    public function isPayableByStudent(): bool
+    {
+        $status = $this->status instanceof PaymentStatus
+            ? $this->status
+            : PaymentStatus::tryFrom((string) $this->status);
+
+        return in_array($status, [PaymentStatus::Unpaid, PaymentStatus::Failed], true);
     }
 
     public function student(): BelongsTo

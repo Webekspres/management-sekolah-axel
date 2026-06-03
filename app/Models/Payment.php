@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\HasUlid;
 use App\Models\Traits\LogsActivity;
+use App\Models\Traits\ScopedViaActiveAcademicLevelInvoice;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Payment extends Model
 {
-    use HasFactory, HasUlid, LogsActivity;
+    use HasFactory, HasUlid, LogsActivity, ScopedViaActiveAcademicLevelInvoice;
 
     public static function getActivityLogName(): string
     {
@@ -38,11 +42,18 @@ class Payment extends Model
             'amount_paid' => 'decimal:2',
             'paid_at' => 'datetime',
             'created_at' => 'datetime',
+            'status' => PaymentStatus::class,
+            'payment_method' => PaymentMethod::class,
         ];
     }
 
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function gatewayLogs(): HasMany
+    {
+        return $this->hasMany(PaymentGatewayLog::class);
     }
 }
