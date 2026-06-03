@@ -38,6 +38,7 @@ class StudentPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->viteTheme('resources/css/filament/theme.css')
             ->globalSearch(false)
             ->databaseNotifications()
             ->databaseNotificationsPolling('15s')

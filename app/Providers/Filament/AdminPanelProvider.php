@@ -40,6 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->viteTheme('resources/css/filament/theme.css')
             ->defaultThemeMode(ThemeMode::Dark)
             ->globalSearch(false)
             ->databaseNotifications()
