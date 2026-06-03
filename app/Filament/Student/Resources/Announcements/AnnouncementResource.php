@@ -22,7 +22,13 @@ class AnnouncementResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSpeakerWave;
 
-    protected static ?string $recordTitleAttribute = 'Pengumuman';
+    protected static ?string $modelLabel = 'pengumuman';
+
+    protected static ?string $pluralModelLabel = 'Pengumuman';
+
+    protected static ?string $navigationLabel = 'Pengumuman';
+
+    protected static ?string $recordTitleAttribute = 'title';
 
     protected static UnitEnum|string|null $navigationGroup = 'Informasi Terkini';
 

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AnnouncementFactory extends Factory
@@ -14,6 +15,7 @@ class AnnouncementFactory extends Factory
             'title' => fake()->sentence(5),
             'content' => fake()->paragraphs(3, true),
             'target_role' => [$role],
+            'created_by' => User::factory(),
         ];
     }
 
