@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\DataPersonalia\Resources\Students\Schemas;
 
+use App\Filament\Forms\Components\MoneyInput;
 use App\Models\City;
 use App\Models\Province;
 use App\Models\SchoolClass;
@@ -123,11 +124,8 @@ class StudentForm
                         DatePicker::make('diploma_date')
                             ->label('Tanggal Ijazah')
                             ->native(false),
-                        TextInput::make('custom_spp')
-                            ->label('SPP Khusus')
-                            ->numeric()
-                            ->minValue(0)
-                            ->prefix('Rp'),
+                        MoneyInput::make('custom_spp')
+                            ->label('SPP Khusus'),
                     ]),
 
                 Section::make('Data Diri')

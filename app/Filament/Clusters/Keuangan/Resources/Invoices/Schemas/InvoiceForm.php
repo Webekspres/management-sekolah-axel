@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Keuangan\Resources\Invoices\Schemas;
 
 use App\Enums\PaymentStatus;
+use App\Filament\Forms\Components\MoneyInput;
 use App\Models\AcademicYear;
 use App\Models\Student;
 use App\Services\InvoiceService;
@@ -60,11 +61,9 @@ class InvoiceForm
                 ->maxLength(255)
                 ->placeholder('Contoh: SPP Bulan Maret 2026'),
 
-            TextInput::make('amount')
-                ->label('Nominal (Rp)')
-                ->numeric()
-                ->required()
-                ->minValue(0),
+            MoneyInput::make('amount')
+                ->label('Nominal')
+                ->required(),
 
             DatePicker::make('due_date')
                 ->label('Jatuh tempo')

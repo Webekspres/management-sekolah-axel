@@ -38,4 +38,14 @@ return [
         'rejected' => 'Pembayaran ditolak.',
         'cannot_pay' => 'Tagihan ini tidak dapat dibayar saat ini.',
     ],
+    'default_spp' => [
+        'action_label' => 'Pengaturan nominal SPP',
+        'heading' => 'Nominal SPP default per jenjang',
+        'description' => 'Nilai ini dipakai saat membuat tagihan baru (generate per kelas atau manual), kecuali siswa punya SPP khusus.',
+        'section' => 'Tarif per jenjang',
+        'section_hint' => 'Perubahan tidak mengubah tagihan yang sudah dibuat.',
+        'submit' => 'Simpan',
+        'cancel' => 'Batal',
+        'saved' => 'Nominal SPP default berhasil disimpan.',
+    ],
 ];
