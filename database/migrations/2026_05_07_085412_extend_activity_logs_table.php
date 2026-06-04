@@ -17,7 +17,7 @@ return new class extends Migration
             $table->json('properties')->nullable()->after('log_name');
 
             // Make user_id nullable: drop FK, change column, re-add FK
-            $table->dropForeign('activity_logs_user_id_foreign');
+            $table->dropForeign(['user_id']);
             $table->char('user_id', 26)->nullable()->change();
             $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
 

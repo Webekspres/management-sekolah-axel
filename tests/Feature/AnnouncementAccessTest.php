@@ -5,11 +5,11 @@ use App\Filament\Student\Resources\Announcements\AnnouncementResource as Student
 use App\Models\Announcement;
 use App\Models\User;
 
-test('guru announcement resource only shows announcements for their role', function () {
+test('guru announcement resource can view all announcements for management', function () {
     $guru = User::factory()->asGuru()->create();
 
-    $visibleAnnouncement = Announcement::factory()->forGuru()->create();
-    $hiddenAnnouncement = Announcement::factory()->create([
+    $guruAnnouncement = Announcement::factory()->forGuru()->create();
+    $kepsekAnnouncement = Announcement::factory()->create([
         'target_role' => ['kepala_sekolah'],
     ]);
     $sharedAnnouncement = Announcement::factory()->create([
@@ -23,9 +23,9 @@ test('guru announcement resource only shows announcements for their role', funct
         ->all();
 
     expect($announcementIds)
-        ->toContain($visibleAnnouncement->id)
-        ->toContain($sharedAnnouncement->id)
-        ->not->toContain($hiddenAnnouncement->id);
+        ->toContain($guruAnnouncement->id)
+        ->toContain($kepsekAnnouncement->id)
+        ->toContain($sharedAnnouncement->id);
 });
 
 test('announcement resource uses title as record title attribute', function () {

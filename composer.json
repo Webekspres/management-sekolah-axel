@@ -76,6 +76,9 @@
             "@lint:check",
             "@php artisan test"
         ],
+        "test:failed": [
+            "@php scripts/pest-run-failed.php"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",

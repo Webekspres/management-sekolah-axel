@@ -7,6 +7,7 @@ use App\Filament\Clusters\Academic\Resources\AcademicYears\AcademicYearResource;
 use App\Filament\Clusters\Academic\Resources\Schedules\ScheduleResource;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\SchoolClassResource;
 use App\Filament\Clusters\Academic\Resources\Subjects\SubjectResource;
+use App\Filament\Clusters\DataPersonalia\Resources\Staff\StaffResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
 use App\Filament\Resources\Announcements\AnnouncementResource;
@@ -51,6 +52,7 @@ class KepsekPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('15s')
             ->resources([
                 AnnouncementResource::class,
+                StaffResource::class,
                 // Resource yang bisa di-assign via Akses Sementara.
                 SchoolClassResource::class,
                 AcademicYearResource::class,

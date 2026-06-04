@@ -23,6 +23,8 @@ class KepsekOverviewStats extends StatsOverviewWidget
 
     protected static ?int $sort = -1;
 
+    protected static bool $isLazy = false;
+
     /**
      * @var int | string | array<string, int | string | null>
      */

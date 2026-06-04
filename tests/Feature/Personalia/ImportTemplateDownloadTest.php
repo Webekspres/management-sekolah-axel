@@ -47,6 +47,15 @@ test('download returns not found when template is not cached', function () {
     $admin = User::factory()->asAdmin()->create();
     $level = Level::factory()->create(['name' => 'SMA']);
 
+    $cacheDir = storage_path('app/import-templates');
+    if (is_dir($cacheDir)) {
+        foreach (glob($cacheDir.'/*') ?: [] as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
     $this->actingAs($admin)
         ->withSession(['active_academic_level_id' => $level->id])
         ->get(route('personalia.import-template', ['type' => 'student']))

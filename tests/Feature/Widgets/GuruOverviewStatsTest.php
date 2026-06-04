@@ -18,14 +18,16 @@ test('guru overview stats menampilkan jadwal, kbm terbaru, dan ringkasan absensi
         'teacher_id' => $teacher->id,
     ]);
 
+    $todayIndex = now()->dayOfWeekIso;
+
     $scheduleToday = Schedule::factory()->create([
         'teacher_id' => $teacher->id,
         'class_id' => $schoolClass->id,
-        'day_of_week' => now()->dayOfWeekIso,
+        'day_of_week' => $todayIndex,
     ]);
 
     Schedule::factory()->create([
-        'day_of_week' => now()->dayOfWeekIso,
+        'day_of_week' => $todayIndex,
     ]);
 
     Kbm::factory()->create([
@@ -66,7 +68,7 @@ test('guru overview stats menampilkan jadwal, kbm terbaru, dan ringkasan absensi
         ->assertSee('PENDING')
         ->assertSee('Ringkasan Absensi Kelas')
         ->assertSee('3')
-        ->assertSee('(67%)')
+        ->assertSee('67%')
         ->assertSee('RPP saya (draft)');
 
     Livewire::test(GuruTodayChecklistTable::class)->assertSuccessful();

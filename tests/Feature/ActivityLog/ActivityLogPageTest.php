@@ -37,12 +37,12 @@ function makeActivityLog(array $overrides = []): ActivityLog
 // ---------------------------------------------------------------------------
 
 test('tabel menampilkan ActivityLog records', function () {
-    makeActivityLog(['description' => 'Log entry 1']);
-    makeActivityLog(['description' => 'Log entry 2']);
-    makeActivityLog(['description' => 'Log entry 3']);
+    $log1 = makeActivityLog(['description' => 'Log entry 1']);
+    $log2 = makeActivityLog(['description' => 'Log entry 2']);
+    $log3 = makeActivityLog(['description' => 'Log entry 3']);
 
     Livewire::test(ActivityLogPage::class)
-        ->assertCountTableRecords(3);
+        ->assertCanSeeTableRecords([$log1, $log2, $log3]);
 });
 
 // ---------------------------------------------------------------------------

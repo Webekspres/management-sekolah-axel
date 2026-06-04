@@ -48,6 +48,26 @@ class StaffResource extends Resource
         return in_array($user->role, ['super_admin', 'kepala_sekolah'], true);
     }
 
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->role === 'super_admin';
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->role === 'super_admin';
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->role === 'super_admin';
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()

@@ -64,7 +64,7 @@ test('admin overview stats menampilkan ringkasan fase 2', function () {
         ->assertSee('2')
         ->assertSee('3')
         ->assertSee('1')
-        ->assertSee('H: 1 | I: 1 | S: 1 | A: 0');
+        ->assertSee('Hadir 1 · Izin 1 · Sakit 1 · Alpa 0');
 
     Livewire::test(AdminAttendanceTrendChart::class)->assertSuccessful();
     Livewire::test(AdminMissingKbmTodayTable::class)->assertSuccessful();

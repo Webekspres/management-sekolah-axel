@@ -77,6 +77,7 @@ class ActivityLogPage extends Page implements HasTable
 
                 TextColumn::make('description')
                     ->label('Deskripsi')
+                    ->searchable()
                     ->wrap()
                     ->limit(80),
 

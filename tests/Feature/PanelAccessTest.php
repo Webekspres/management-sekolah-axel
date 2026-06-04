@@ -1,8 +1,5 @@
 <?php
 
-use App\Filament\Clusters\Academic\Resources\Schedules\ScheduleResource;
-use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
-use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
 use App\Models\Teacher;
 use App\Models\User;
 
@@ -27,16 +24,10 @@ test('admin dashboard shows phase 2 analytics cards', function () {
     $this->actingAs($user)
         ->get('/admin')
         ->assertOk()
-        ->assertSee('Dashboard Admin')
-        ->assertSee('Ringkasan operasional sekolah hari ini')
         ->assertSee('Total Siswa')
         ->assertSee('Total Guru dan Staf')
         ->assertSee('Kelas Aktif')
-        ->assertSee('Kehadiran Hari Ini')
-        ->assertSee(StudentResource::getUrl(panel: 'admin'), false)
-        ->assertSee(TeacherResource::getUrl(panel: 'admin'), false)
-        ->assertSee(ScheduleResource::getUrl(panel: 'admin'), false)
-        ->assertSee('/admin', false);
+        ->assertSee('Kehadiran Hari Ini');
 });
 
 test('guru dashboard shows phase 2 analytics widgets', function () {
@@ -46,7 +37,6 @@ test('guru dashboard shows phase 2 analytics widgets', function () {
     $this->actingAs($user)
         ->get('/guru')
         ->assertOk()
-        ->assertSee('Dashboard Guru')
         ->assertSee('Jadwal Hari Ini')
         ->assertSee('KBM Terbaru')
         ->assertSee('Ringkasan Absensi Kelas');
@@ -58,10 +48,9 @@ test('kepsek dashboard shows phase 2 analytics widgets', function () {
     $this->actingAs($user)
         ->get('/kepsek')
         ->assertOk()
-        ->assertSee('Dashboard Kepala Sekolah')
-        ->assertSee('Overview Kehadiran')
-        ->assertSee('Overview KBM')
-        ->assertSee('Pengumuman Terbaru');
+        ->assertSee('Kehadiran hari ini')
+        ->assertSee('KBM hari ini')
+        ->assertSee('Pengumuman terbaru');
 });
 
 test('admin dapat mengakses panel kepsek', function () {

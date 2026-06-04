@@ -4,11 +4,12 @@ namespace App\Services;
 
 use App\Models\AcademicYear;
 use App\Models\Attendance;
+use App\Models\Kbm;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class AttendanceSummaryService
 {
@@ -144,9 +145,7 @@ class AttendanceSummaryService
         $semesterMonths = $this->getSemesterMonths((int) $academicYear->semester);
 
         $attendances = Attendance::where('student_id', $student->id)
-            ->whereHas('kbm', function ($query) use ($semesterMonths): void {
-                $query->whereIn(DB::raw('MONTH(date)'), $semesterMonths);
-            })
+            ->whereHas('kbm', fn ($query) => $this->whereKbmDateInSemesterMonths($query, $semesterMonths))
             ->with(['kbm.schedule.subject'])
             ->get();
 
@@ -189,9 +188,7 @@ class AttendanceSummaryService
         $semesterMonths = $this->getSemesterMonths((int) $academicYear->semester);
 
         $attendances = Attendance::where('student_id', $student->id)
-            ->whereHas('kbm', function ($query) use ($semesterMonths): void {
-                $query->whereIn(DB::raw('MONTH(date)'), $semesterMonths);
-            })
+            ->whereHas('kbm', fn ($query) => $this->whereKbmDateInSemesterMonths($query, $semesterMonths))
             ->get();
 
         return [
@@ -200,5 +197,18 @@ class AttendanceSummaryService
             'alpa' => $attendances->where('status', 'ALPA')->count(),
             'total' => $attendances->count(),
         ];
+    }
+
+    /**
+     * @param  Builder<Kbm>  $query
+     * @param  array<int, int>  $semesterMonths
+     */
+    private function whereKbmDateInSemesterMonths(Builder $query, array $semesterMonths): void
+    {
+        $query->where(function (Builder $monthQuery) use ($semesterMonths): void {
+            foreach ($semesterMonths as $month) {
+                $monthQuery->orWhereMonth('date', $month);
+            }
+        });
     }
 }

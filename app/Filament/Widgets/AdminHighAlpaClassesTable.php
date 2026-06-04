@@ -32,17 +32,19 @@ class AdminHighAlpaClassesTable extends TableWidget
             ->heading('Alpa tinggi (minggu ini)')
             ->description('Kelas dengan jumlah ALPA terbanyak pada rentang minggu berjalan'.DashboardAcademicContext::statsSuffix())
             ->query(function () use ($weekEnd, $weekStart) {
-                return SchoolClass::query()
-                    ->select('classes.*')
-                    ->selectRaw('(
+                $alpaSubquery = '(
                         SELECT COUNT(*) FROM attendances
                         INNER JOIN kbms ON attendances.kbm_id = kbms.id
                         INNER JOIN schedules ON kbms.schedule_id = schedules.id
                         WHERE schedules.class_id = classes.id
                         AND attendances.status = ?
                         AND kbms.date BETWEEN ? AND ?
-                    ) AS alpa_week_count', ['ALPA', $weekStart, $weekEnd])
-                    ->havingRaw('alpa_week_count > 0')
+                    )';
+
+                return SchoolClass::query()
+                    ->select('classes.*')
+                    ->selectRaw("{$alpaSubquery} AS alpa_week_count", ['ALPA', $weekStart, $weekEnd])
+                    ->whereRaw("{$alpaSubquery} > 0", ['ALPA', $weekStart, $weekEnd])
                     ->orderByDesc('alpa_week_count')
                     ->limit(40);
             })
