@@ -88,10 +88,22 @@ test('createForRaporApproved log error dan tidak throw jika relasi academicYear 
 // createForAnnouncement
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Factory Announcement::make() mem-persist User lewat created_by — hindari role acak (guru).
+ */
+function makeGuruTargetAnnouncement(array $attributes = []): Announcement
+{
+    $creator = User::factory()->asAdmin()->create();
+
+    return Announcement::factory()->forGuru()->make(array_merge([
+        'created_by' => $creator->id,
+    ], $attributes));
+}
+
 test('createForAnnouncement membuat notifikasi untuk semua user aktif dengan role yang cocok', function (): void {
     $guru1 = User::factory()->asGuru()->create();
     $guru2 = User::factory()->asGuru()->create();
-    $announcement = Announcement::factory()->forGuru()->make();
+    $announcement = makeGuruTargetAnnouncement();
 
     app(NotificationService::class)->createForAnnouncement($announcement);
 
@@ -101,7 +113,7 @@ test('createForAnnouncement membuat notifikasi untuk semua user aktif dengan rol
 
 test('createForAnnouncement tidak membuat notifikasi untuk role yang tidak cocok', function (): void {
     $siswa = User::factory()->asSiswa()->create();
-    $announcement = Announcement::factory()->forGuru()->make();
+    $announcement = makeGuruTargetAnnouncement();
 
     app(NotificationService::class)->createForAnnouncement($announcement);
 
@@ -110,7 +122,7 @@ test('createForAnnouncement tidak membuat notifikasi untuk role yang tidak cocok
 
 test('createForAnnouncement tidak membuat notifikasi untuk user tidak aktif', function (): void {
     $inactiveGuru = User::factory()->asGuru()->inactive()->create();
-    $announcement = Announcement::factory()->forGuru()->make();
+    $announcement = makeGuruTargetAnnouncement();
 
     app(NotificationService::class)->createForAnnouncement($announcement);
 
@@ -120,7 +132,7 @@ test('createForAnnouncement tidak membuat notifikasi untuk user tidak aktif', fu
 test('createForAnnouncement pesan di-truncate ke 100 karakter dengan titik tiga', function (): void {
     $guru = User::factory()->asGuru()->create();
     $longContent = str_repeat('a', 200);
-    $announcement = Announcement::factory()->forGuru()->make(['content' => $longContent]);
+    $announcement = makeGuruTargetAnnouncement(['content' => $longContent]);
 
     app(NotificationService::class)->createForAnnouncement($announcement);
 
@@ -143,13 +155,12 @@ test('createForAnnouncement tidak throw jika tidak ada user yang cocok', functio
     User::query()->where('role', 'guru')->delete();
     expect(User::query()->where('role', 'guru')->count())->toBe(0);
 
-    $announcement = Announcement::factory()->forGuru()->make();
-    $notificationCountBefore = DatabaseNotification::count();
+    $announcement = makeGuruTargetAnnouncement();
 
     expect(fn () => app(NotificationService::class)->createForAnnouncement($announcement))
         ->not->toThrow(Throwable::class);
 
-    expect(DatabaseNotification::count())->toBe($notificationCountBefore);
+    expect(DatabaseNotification::count())->toBe(0);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
