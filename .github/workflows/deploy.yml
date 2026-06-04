@@ -74,7 +74,7 @@ jobs:
           npm run build
 
       - name: Deploy to server via FTP
-        uses: SamKirscht/FTP-Deploy-Action@v4.3.6
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
