@@ -5,8 +5,8 @@ return [
         'download_template' => 'Unduh Template',
         'upload_data' => 'Unggah Data',
         'upload_heading' => 'Unggah Data',
-        'upload_helper' => 'Gunakan template yang diunduh. Isi lembar Isi Data, lalu unggah file yang sama.',
-        'upload_placeholder' => 'Pilih file Excel atau file data yang sudah diisi.',
+        'upload_helper' => 'Gunakan template yang diunduh (file Excel .xlsx atau CSV). Isi lembar Isi Data, lalu unggah file yang sama.',
+        'upload_placeholder' => 'Pilih file Excel (.xlsx), CSV, atau TXT.',
         'sheet' => [
             'data' => 'Isi Data',
             'guide' => 'Cara Mengisi',

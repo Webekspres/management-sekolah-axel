@@ -257,13 +257,17 @@ class RaporService
      *
      * @throws \RuntimeException if rapor is not in DRAFT status
      */
-    public function finalizeRapor(Rapor $rapor): void
+    public function finalizeRapor(Rapor $rapor, string $program, string $sumberPembelajaran): void
     {
         if (! $rapor->isDraft()) {
             throw new \RuntimeException("Rapor hanya bisa difinalisasi dari status DRAFT. Status saat ini: {$rapor->status}");
         }
 
-        $rapor->update(['status' => 'FINALIZED']);
+        $rapor->update([
+            'program' => $program,
+            'sumber_pembelajaran' => $sumberPembelajaran,
+            'status' => 'FINALIZED',
+        ]);
     }
 
     /**

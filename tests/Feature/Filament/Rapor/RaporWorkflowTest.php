@@ -18,70 +18,6 @@ use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Create a complete set of grade data for a student so validateCompleteness passes.
- */
-function createCompleteGrades(Student $student, Subject $subject, AcademicYear $academicYear): void
-{
-    // PH
-    Grade::factory()->create([
-        'student_id' => $student->id,
-        'subject_id' => $subject->id,
-        'academic_year_id' => $academicYear->id,
-        'grade_type' => 'PH1',
-        'score' => 80.00,
-    ]);
-
-    // ATS
-    Grade::factory()->create([
-        'student_id' => $student->id,
-        'subject_id' => $subject->id,
-        'academic_year_id' => $academicYear->id,
-        'grade_type' => 'ATS',
-        'score' => 75.00,
-    ]);
-
-    // SAS
-    Grade::factory()->create([
-        'student_id' => $student->id,
-        'subject_id' => $subject->id,
-        'academic_year_id' => $academicYear->id,
-        'grade_type' => 'SAS',
-        'score' => 78.00,
-    ]);
-
-    // Knowledge & Skill
-    KnowledgeSkillScore::factory()->create([
-        'student_id' => $student->id,
-        'subject_id' => $subject->id,
-        'academic_year_id' => $academicYear->id,
-        'knowledge_score' => 80.00,
-        'skill_score' => 78.00,
-    ]);
-
-    // Attitude
-    AttitudeScore::factory()->create([
-        'student_id' => $student->id,
-        'academic_year_id' => $academicYear->id,
-        'aspect' => 'Spiritual',
-        'score' => 85.00,
-    ]);
-
-    // Personality
-    PersonalityScore::factory()->create([
-        'student_id' => $student->id,
-        'academic_year_id' => $academicYear->id,
-        'kedisiplinan' => 'A',
-        'kerapihan' => 'B',
-        'kerajinan' => 'A',
-        'kesopanan' => 'B',
-    ]);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Setup
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -179,11 +115,20 @@ test('wali kelas dapat finalisasi rapor yang lengkap (DRAFT → FINALIZED)', fun
 
     actingAs($this->waliKelasUser);
 
-    $this->service->finalizeRapor($this->rapor);
+    $this->service->finalizeRapor($this->rapor, 'Reguler', 'Buku teks dan modul sekolah');
 
     $this->rapor->refresh();
     expect($this->rapor->status)->toBe('FINALIZED');
     expect($this->rapor->isFinalized())->toBeTrue();
+    expect($this->rapor->program)->toBe('Reguler');
+    expect($this->rapor->sumber_pembelajaran)->toBe('Buku teks dan modul sekolah');
+
+    assertDatabaseHas(Rapor::class, [
+        'id' => $this->rapor->id,
+        'status' => 'FINALIZED',
+        'program' => 'Reguler',
+        'sumber_pembelajaran' => 'Buku teks dan modul sekolah',
+    ]);
 });
 
 test('finalizeRapor gagal jika rapor bukan DRAFT', function () {
@@ -192,7 +137,7 @@ test('finalizeRapor gagal jika rapor bukan DRAFT', function () {
         'academic_year_id' => $this->academicYear->id,
     ]);
 
-    expect(fn () => $this->service->finalizeRapor($finalizedRapor))
+    expect(fn () => $this->service->finalizeRapor($finalizedRapor, 'Reguler', 'Modul'))
         ->toThrow(RuntimeException::class);
 });
 
@@ -224,6 +169,21 @@ test('approveRapor gagal jika rapor bukan FINALIZED', function () {
 // ─────────────────────────────────────────────────────────────────────────────
 // Test: rejectRapor — FINALIZED → DRAFT dengan catatan
 // ─────────────────────────────────────────────────────────────────────────────
+
+test('reject rapor mempertahankan program dan sumber pembelajaran', function () {
+    $finalizedRapor = Rapor::factory()->finalized()->create([
+        'student_id' => $this->student->id,
+        'academic_year_id' => $this->academicYear->id,
+        'program' => 'Akselerasi',
+        'sumber_pembelajaran' => 'Modul daring',
+    ]);
+
+    $this->service->rejectRapor($finalizedRapor, 'Perlu revisi');
+
+    $finalizedRapor->refresh();
+    expect($finalizedRapor->program)->toBe('Akselerasi');
+    expect($finalizedRapor->sumber_pembelajaran)->toBe('Modul daring');
+});
 
 test('kepsek dapat reject rapor FINALIZED (FINALIZED → DRAFT dengan catatan)', function () {
     $finalizedRapor = Rapor::factory()->finalized()->create([
@@ -303,7 +263,7 @@ test('rapor APPROVED tidak bisa di-finalize ulang', function () {
         'academic_year_id' => $this->academicYear->id,
     ]);
 
-    expect(fn () => $this->service->finalizeRapor($approvedRapor))
+    expect(fn () => $this->service->finalizeRapor($approvedRapor, 'Reguler', 'Modul'))
         ->toThrow(RuntimeException::class);
 });
 

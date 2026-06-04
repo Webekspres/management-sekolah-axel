@@ -42,6 +42,15 @@ class RaporsTable
                         'APPROVED' => 'Disetujui',
                         default => $state,
                     }),
+                TextColumn::make('program')
+                    ->label('Program')
+                    ->placeholder('—')
+                    ->toggleable(),
+                TextColumn::make('sumber_pembelajaran')
+                    ->label('Sumber Pembelajaran')
+                    ->limit(40)
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('approved_at')
                     ->label('Disetujui Pada')
                     ->dateTime('d M Y H:i')

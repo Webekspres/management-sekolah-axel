@@ -31,6 +31,8 @@ class Rapor extends Model
         'status',
         'approved_at',
         'rejection_note',
+        'program',
+        'sumber_pembelajaran',
         'generated_at',
     ];
 

@@ -221,6 +221,8 @@ test('renders pdf_v2 view without throwing exceptions', function (): void {
     $rapor = Rapor::factory()->create([
         'student_id' => $student->id,
         'academic_year_id' => $academicYear->id,
+        'program' => 'Reguler',
+        'sumber_pembelajaran' => 'Buku teks dan LKS',
     ]);
 
     $viewData = [
@@ -247,8 +249,11 @@ test('renders pdf_v2 view without throwing exceptions', function (): void {
 
     $html = view('rapor.pdf_v2', $viewData)->render();
 
-    expect($html)->toContain('LAPORAN HASIL BELAJAR SISWA');
+    expect($html)->toContain('LAPORAN HASIL BELAJAR');
     expect($html)->toContain('page-break-after');
+    expect($html)->toContain('Reguler');
+    expect($html)->toContain('Buku teks dan LKS');
+    expect($html)->toContain('Sumber Pembelajaran');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

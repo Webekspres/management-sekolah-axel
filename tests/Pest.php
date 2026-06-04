@@ -44,7 +44,64 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+use App\Models\AcademicYear;
+use App\Models\AttitudeScore;
+use App\Models\Grade;
+use App\Models\KnowledgeSkillScore;
+use App\Models\PersonalityScore;
+use App\Models\Student;
+use App\Models\Subject;
+
+/**
+ * Create a complete set of grade data for a student so validateCompleteness passes.
+ */
+function createCompleteGrades(Student $student, Subject $subject, AcademicYear $academicYear): void
 {
-    // ..
+    Grade::factory()->create([
+        'student_id' => $student->id,
+        'subject_id' => $subject->id,
+        'academic_year_id' => $academicYear->id,
+        'grade_type' => 'PH1',
+        'score' => 80.00,
+    ]);
+
+    Grade::factory()->create([
+        'student_id' => $student->id,
+        'subject_id' => $subject->id,
+        'academic_year_id' => $academicYear->id,
+        'grade_type' => 'ATS',
+        'score' => 75.00,
+    ]);
+
+    Grade::factory()->create([
+        'student_id' => $student->id,
+        'subject_id' => $subject->id,
+        'academic_year_id' => $academicYear->id,
+        'grade_type' => 'SAS',
+        'score' => 78.00,
+    ]);
+
+    KnowledgeSkillScore::factory()->create([
+        'student_id' => $student->id,
+        'subject_id' => $subject->id,
+        'academic_year_id' => $academicYear->id,
+        'knowledge_score' => 80.00,
+        'skill_score' => 78.00,
+    ]);
+
+    AttitudeScore::factory()->create([
+        'student_id' => $student->id,
+        'academic_year_id' => $academicYear->id,
+        'aspect' => 'Spiritual',
+        'score' => 85.00,
+    ]);
+
+    PersonalityScore::factory()->create([
+        'student_id' => $student->id,
+        'academic_year_id' => $academicYear->id,
+        'kedisiplinan' => 'A',
+        'kerapihan' => 'B',
+        'kerajinan' => 'A',
+        'kesopanan' => 'B',
+    ]);
 }

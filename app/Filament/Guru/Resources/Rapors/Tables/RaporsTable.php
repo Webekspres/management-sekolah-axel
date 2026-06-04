@@ -6,6 +6,7 @@ use App\Models\Rapor;
 use App\Services\RaporService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -50,6 +51,15 @@ class RaporsTable
                     ->description(fn (Rapor $record): string => $record->generated_at
                         ? 'PDF sudah tersedia'
                         : 'Klik Generate PDF untuk membuat PDF'),
+                TextColumn::make('program')
+                    ->label('Program')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('sumber_pembelajaran')
+                    ->label('Sumber Pembelajaran')
+                    ->limit(40)
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('rejection_note')
                     ->label('Catatan Penolakan')
                     ->limit(50)
@@ -75,14 +85,25 @@ class RaporsTable
             ])
             ->recordActions([
                 Action::make('finalize')
-                    ->label('Finalisasi')
+                    ->label('Ajukan Rapor')
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->color('warning')
                     ->visible(fn (Rapor $record): bool => $record->isDraft())
-                    ->requiresConfirmation()
-                    ->modalHeading('Finalisasi Rapor')
-                    ->modalDescription('Pastikan semua nilai sudah lengkap. Setelah difinalisasi, nilai tidak dapat diubah sampai Kepala Sekolah menyetujui atau menolak.')
-                    ->action(function (Rapor $record): void {
+                    ->modalHeading('Ajukan / Finalisasi Rapor')
+                    ->modalDescription('Pastikan semua nilai sudah lengkap. Isi Program dan Sumber Pembelajaran (wajib). Setelah diajukan, nilai tidak dapat diubah sampai Kepala Sekolah menyetujui atau menolak.')
+                    ->schema([
+                        TextInput::make('program')
+                            ->label('Program')
+                            ->required()
+                            ->maxLength(255)
+                            ->default(fn (Rapor $record): ?string => $record->program),
+                        TextInput::make('sumber_pembelajaran')
+                            ->label('Sumber Pembelajaran')
+                            ->required()
+                            ->maxLength(500)
+                            ->default(fn (Rapor $record): ?string => $record->sumber_pembelajaran),
+                    ])
+                    ->action(function (Rapor $record, array $data): void {
                         $service = app(RaporService::class);
                         $missing = $service->validateCompleteness($record);
 
@@ -96,10 +117,14 @@ class RaporsTable
                             return;
                         }
 
-                        $service->finalizeRapor($record);
+                        $service->finalizeRapor(
+                            $record,
+                            $data['program'],
+                            $data['sumber_pembelajaran'],
+                        );
 
                         Notification::make()
-                            ->title('Rapor berhasil difinalisasi')
+                            ->title('Rapor berhasil diajukan')
                             ->success()
                             ->send();
                     }),

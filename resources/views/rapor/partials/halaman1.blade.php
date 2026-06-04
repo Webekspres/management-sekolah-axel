@@ -21,7 +21,7 @@
                     <tr>
                         <td style="border: none;" class="identitas-label">Program</td>
                         <td style="border: none;" class="identitas-sep">:</td>
-                        <td style="border: none;" class="identitas-val">{{ $student->program ?? '' }}</td>
+                        <td style="border: none;" class="identitas-val">{{ $rapor->program ?? '' }}</td>
                     </tr>
                 </table>
             </td>
@@ -40,7 +40,12 @@
                     <tr>
                         <td style="border: none;" class="identitas-label">Tahun Pembelajaran</td>
                         <td style="border: none;" class="identitas-sep">:</td>
-                        <td style="border: none;" class="identitas-val">{{ $academicYear->year ?? '' }}</td>
+                        <td style="border: none;" class="identitas-val identitas-nowrap">{{ $academicYear->year ?? '' }}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: none;" class="identitas-label">Sumber Pembelajaran</td>
+                        <td style="border: none;" class="identitas-sep">:</td>
+                        <td style="border: none;" class="identitas-val">{{ $rapor->sumber_pembelajaran ?? '' }}</td>
                     </tr>
                 </table>
             </td>

@@ -22,7 +22,11 @@ class RaporFactory extends Factory
 
     public function finalized(): static
     {
-        return $this->state(['status' => 'FINALIZED']);
+        return $this->state([
+            'status' => 'FINALIZED',
+            'program' => fake()->randomElement(['Reguler', 'Akselerasi', 'Peminatan IPA']),
+            'sumber_pembelajaran' => fake()->sentence(3),
+        ]);
     }
 
     public function approved(): static
@@ -31,6 +35,8 @@ class RaporFactory extends Factory
             'status' => 'APPROVED',
             'approved_at' => now(),
             'file_path' => 'rapors/'.fake()->uuid().'.pdf',
+            'program' => fake()->randomElement(['Reguler', 'Akselerasi', 'Peminatan IPA']),
+            'sumber_pembelajaran' => fake()->sentence(3),
         ]);
     }
 }

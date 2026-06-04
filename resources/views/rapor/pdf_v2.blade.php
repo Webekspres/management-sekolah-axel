@@ -100,6 +100,9 @@
             font-family: 'Calibri', sans-serif;
             font-size: 9pt;
         }
+        .identitas-nowrap {
+            white-space: nowrap;
+        }
 
         /* ── SUB HEADER HAL 2 ── */
         .sub-header-center {
