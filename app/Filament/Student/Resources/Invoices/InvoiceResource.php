@@ -27,6 +27,11 @@ class InvoiceResource extends Resource
 
     protected static ?string $pluralLabel = 'Tagihan SPP';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->student !== null;
+    }
+
     public static function table(Table $table): Table
     {
         return InvoicesTable::configure($table);

@@ -140,13 +140,16 @@ test('createForAnnouncement tidak throw jika target_role kosong', function (): v
 });
 
 test('createForAnnouncement tidak throw jika tidak ada user yang cocok', function (): void {
-    User::where('role', 'guru')->delete();
+    User::query()->where('role', 'guru')->delete();
+    expect(User::query()->where('role', 'guru')->count())->toBe(0);
+
     $announcement = Announcement::factory()->forGuru()->make();
+    $notificationCountBefore = DatabaseNotification::count();
 
     expect(fn () => app(NotificationService::class)->createForAnnouncement($announcement))
         ->not->toThrow(Throwable::class);
 
-    expect(DatabaseNotification::count())->toBe(0);
+    expect(DatabaseNotification::count())->toBe($notificationCountBefore);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -80,18 +80,15 @@ test('siswa tidak dapat melihat attendance records siswa lain', function () {
         ->assertCanNotSeeTableRecords($attendancesB);
 });
 
-test('siswa tanpa profil student melihat empty state tanpa records', function () {
-    // User without a linked student profile
+test('siswa tanpa profil student tidak dapat mengakses halaman absensi', function () {
     $user = User::factory()->asSiswa()->create();
 
     actingAs($user);
 
-    // The query should return no records
-    $query = AttendanceResource::getEloquentQuery();
-    expect($query->count())->toBe(0);
+    expect(AttendanceResource::canAccess())->toBeFalse();
 
     Livewire::test(ListAttendances::class)
-        ->assertSuccessful();
+        ->assertForbidden();
 });
 
 test('siswa dapat filter berdasarkan status', function () {

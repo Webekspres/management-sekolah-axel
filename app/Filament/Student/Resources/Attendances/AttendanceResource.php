@@ -25,6 +25,11 @@ class AttendanceResource extends Resource
 
     protected static ?string $pluralLabel = 'Data Absensi';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->student !== null;
+    }
+
     public static function table(Table $table): Table
     {
         return AttendancesTable::configure($table);

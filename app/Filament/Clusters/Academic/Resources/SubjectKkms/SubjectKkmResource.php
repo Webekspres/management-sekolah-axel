@@ -9,6 +9,7 @@ use App\Filament\Clusters\Academic\Resources\SubjectKkms\Pages\ListSubjectKkms;
 use App\Filament\Clusters\Academic\Resources\SubjectKkms\Schemas\SubjectKkmForm;
 use App\Filament\Clusters\Academic\Resources\SubjectKkms\Tables\SubjectKkmsTable;
 use App\Models\SubjectKkm;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -34,7 +35,10 @@ class SubjectKkmResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->can('viewAny', SubjectKkm::class) ?? false;
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        return $user?->role === 'super_admin';
     }
 
     public static function form(Schema $schema): Schema
