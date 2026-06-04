@@ -35,7 +35,9 @@ class ActivityLogPage extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->role === 'super_admin';
+        $user = auth()->user();
+
+        return $user?->can('viewAny', ActivityLog::class) ?? false;
     }
 
     public function table(Table $table): Table

@@ -382,7 +382,7 @@ test('cleanup command does not remove inherited UserPolicyAbility', function () 
 // F. New Policies — smoke test
 // ===========================================================================
 
-test('all 11 access policies exist in database', function () {
+test('all access policies exist in database', function () {
     $expectedCodes = [
         'announcement_management',
         'lesson_plan_management',
@@ -395,12 +395,27 @@ test('all 11 access policies exist in database', function () {
         'schedule_management',
         'school_class_management',
         'subject_management',
+        'grade_management',
+        'rapor_management',
+        'attendance_management',
+        'attendance_review',
+        'attitude_score_management',
+        'knowledge_skill_score_management',
+        'learning_achievement_management',
+        'personality_score_management',
+        'subject_kkm_management',
+        'staff_management',
+        'invoice_management',
+        'payment_management',
+        'activity_log_management',
     ];
 
     foreach ($expectedCodes as $code) {
         expect(AccessPolicy::query()->where('code', $code)->exists())
             ->toBeTrue("Policy '{$code}' tidak ditemukan di database");
     }
+
+    expect(AccessPolicy::query()->active()->count())->toBe(count($expectedCodes));
 });
 
 test('assignAbility works for new teacher_management policy', function () {

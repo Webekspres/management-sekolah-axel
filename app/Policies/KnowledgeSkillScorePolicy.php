@@ -5,16 +5,27 @@ namespace App\Policies;
 use App\Models\KnowledgeSkillScore;
 use App\Models\Schedule;
 use App\Models\User;
+use App\Policies\Concerns\InteractsWithTemporaryAccess;
 
 class KnowledgeSkillScorePolicy
 {
+    use InteractsWithTemporaryAccess;
+
     public function viewAny(User $user): bool
     {
+        if ($this->hasTemporaryAccess($user, 'viewAny', KnowledgeSkillScore::class)) {
+            return true;
+        }
+
         return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
     }
 
     public function view(User $user, KnowledgeSkillScore $knowledgeSkillScore): bool
     {
+        if ($this->hasTemporaryAccess($user, 'view', $knowledgeSkillScore)) {
+            return true;
+        }
+
         if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
             return true;
         }
@@ -28,11 +39,19 @@ class KnowledgeSkillScorePolicy
 
     public function create(User $user): bool
     {
+        if ($this->hasTemporaryAccess($user, 'create', KnowledgeSkillScore::class)) {
+            return true;
+        }
+
         return in_array($user->role, ['super_admin', 'guru'], true);
     }
 
     public function update(User $user, KnowledgeSkillScore $knowledgeSkillScore): bool
     {
+        if ($this->hasTemporaryAccess($user, 'update', $knowledgeSkillScore)) {
+            return true;
+        }
+
         if ($user->role === 'super_admin') {
             return true;
         }
@@ -46,6 +65,10 @@ class KnowledgeSkillScorePolicy
 
     public function delete(User $user, KnowledgeSkillScore $knowledgeSkillScore): bool
     {
+        if ($this->hasTemporaryAccess($user, 'delete', $knowledgeSkillScore)) {
+            return true;
+        }
+
         return $user->role === 'super_admin';
     }
 

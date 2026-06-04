@@ -35,7 +35,7 @@ class KnowledgeSkillScoreResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return $user?->role === 'guru';
+        return $user?->can('viewAny', KnowledgeSkillScore::class) ?? false;
     }
 
     public static function form(Schema $schema): Schema

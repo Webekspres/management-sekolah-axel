@@ -35,7 +35,7 @@ class PersonalityScoreResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return $user?->role === 'guru';
+        return $user?->can('viewAny', PersonalityScore::class) ?? false;
     }
 
     public static function form(Schema $schema): Schema

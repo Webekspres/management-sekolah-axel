@@ -38,14 +38,7 @@ class StaffResource extends Resource
 
     public static function canAccess(): bool
     {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        return in_array($user->role, ['super_admin', 'kepala_sekolah'], true);
+        return auth()->user()?->can('viewAny', User::class) ?? false;
     }
 
     public static function canViewAny(): bool
@@ -55,7 +48,7 @@ class StaffResource extends Resource
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->role === 'super_admin';
+        return auth()->user()?->can('create', User::class) ?? false;
     }
 
     public static function canEdit($record): bool

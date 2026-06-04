@@ -6,7 +6,6 @@ use App\Filament\Clusters\Academic\AcademicCluster;
 use App\Filament\Clusters\Academic\Resources\Rapors\Pages\ListRapors;
 use App\Filament\Clusters\Academic\Resources\Rapors\Tables\RaporsTable;
 use App\Models\Rapor;
-use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -33,10 +32,7 @@ class RaporResource extends Resource
 
     public static function canAccess(): bool
     {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'super_admin';
+        return auth()->user()?->can('viewAny', Rapor::class) ?? false;
     }
 
     public static function canCreate(): bool

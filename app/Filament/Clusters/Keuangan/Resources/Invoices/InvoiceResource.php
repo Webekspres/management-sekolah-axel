@@ -10,7 +10,6 @@ use App\Filament\Clusters\Keuangan\Resources\Invoices\RelationManagers\PaymentsR
 use App\Filament\Clusters\Keuangan\Resources\Invoices\Schemas\InvoiceForm;
 use App\Filament\Clusters\Keuangan\Resources\Invoices\Tables\InvoicesTable;
 use App\Models\Invoice;
-use App\Models\User;
 use App\Support\FinanceRelationEagerLoads;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -35,10 +34,7 @@ class InvoiceResource extends Resource
 
     public static function canAccess(): bool
     {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'super_admin';
+        return auth()->user()?->can('viewAny', Invoice::class) ?? false;
     }
 
     public static function form(Schema $schema): Schema

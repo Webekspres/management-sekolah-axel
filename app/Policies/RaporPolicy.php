@@ -5,16 +5,27 @@ namespace App\Policies;
 use App\Models\Rapor;
 use App\Models\SchoolClass;
 use App\Models\User;
+use App\Policies\Concerns\InteractsWithTemporaryAccess;
 
 class RaporPolicy
 {
+    use InteractsWithTemporaryAccess;
+
     public function viewAny(User $user): bool
     {
+        if ($this->hasTemporaryAccess($user, 'viewAny', Rapor::class)) {
+            return true;
+        }
+
         return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
     }
 
     public function view(User $user, Rapor $rapor): bool
     {
+        if ($this->hasTemporaryAccess($user, 'view', $rapor)) {
+            return true;
+        }
+
         if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
             return true;
         }
@@ -32,16 +43,23 @@ class RaporPolicy
 
     public function create(User $user): bool
     {
+        if ($this->hasTemporaryAccess($user, 'create', Rapor::class)) {
+            return true;
+        }
+
         return in_array($user->role, ['super_admin', 'guru'], true);
     }
 
     public function update(User $user, Rapor $rapor): bool
     {
+        if ($this->hasTemporaryAccess($user, 'update', $rapor)) {
+            return true;
+        }
+
         if ($user->role === 'super_admin') {
             return true;
         }
 
-        // Prevent any modification when rapor is FINALIZED or APPROVED
         if ($rapor->isFinalized() || $rapor->isApproved()) {
             return false;
         }
@@ -55,6 +73,10 @@ class RaporPolicy
 
     public function delete(User $user, Rapor $rapor): bool
     {
+        if ($this->hasTemporaryAccess($user, 'delete', $rapor)) {
+            return true;
+        }
+
         return $user->role === 'super_admin';
     }
 

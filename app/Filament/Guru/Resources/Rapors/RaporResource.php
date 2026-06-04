@@ -29,10 +29,7 @@ class RaporResource extends Resource
 
     public static function canAccess(): bool
     {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'guru';
+        return auth()->user()?->can('viewAny', Rapor::class) ?? false;
     }
 
     public static function canCreate(): bool

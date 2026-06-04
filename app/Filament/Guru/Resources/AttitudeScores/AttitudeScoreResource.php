@@ -32,10 +32,7 @@ class AttitudeScoreResource extends Resource
 
     public static function canAccess(): bool
     {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'guru';
+        return auth()->user()?->can('viewAny', AttitudeScore::class) ?? false;
     }
 
     public static function form(Schema $schema): Schema

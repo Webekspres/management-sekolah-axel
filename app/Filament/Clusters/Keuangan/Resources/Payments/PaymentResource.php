@@ -6,7 +6,6 @@ use App\Filament\Clusters\Keuangan\KeuanganCluster;
 use App\Filament\Clusters\Keuangan\Resources\Payments\Pages\ListPayments;
 use App\Filament\Clusters\Keuangan\Resources\Payments\Tables\PaymentsTable;
 use App\Models\Payment;
-use App\Models\User;
 use App\Support\FinanceRelationEagerLoads;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -28,10 +27,7 @@ class PaymentResource extends Resource
 
     public static function canAccess(): bool
     {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'super_admin';
+        return auth()->user()?->can('viewAny', Payment::class) ?? false;
     }
 
     public static function canCreate(): bool

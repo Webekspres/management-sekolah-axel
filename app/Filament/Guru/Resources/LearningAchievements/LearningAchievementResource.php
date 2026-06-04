@@ -35,7 +35,7 @@ class LearningAchievementResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return $user?->role === 'guru';
+        return $user?->can('viewAny', LearningAchievement::class) ?? false;
     }
 
     public static function form(Schema $schema): Schema

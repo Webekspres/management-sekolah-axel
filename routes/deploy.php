@@ -11,6 +11,7 @@
  *   - Create user:   https://yourdomain.com/deploy/{token}/create-user?name=Admin&email=admin@hstkb.sch.id&password=secret123&role=super_admin
  *   - Link storage:  https://yourdomain.com/deploy/{token}/storage-link
  *   - Optimize:      https://yourdomain.com/deploy/{token}/optimize
+ *   - Access policies: https://yourdomain.com/deploy/{token}/seed-access-policies
  *   - Release:       https://yourdomain.com/deploy/{token}/release (migrate + optimize)
  *
  * Set DEPLOY_SECRET in your .env file to a long random string.
@@ -18,6 +19,7 @@
  */
 
 use App\Models\User;
+use App\Support\AccessPolicyRegistry;
 use Database\Seeders\IndonesianRegionSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
@@ -151,6 +153,18 @@ Route::prefix('deploy/{token}')->group(function () {
             'status' => $exitCode === 0 ? 'success' : 'error',
             'command' => 'storage:link',
             'output' => $output,
+        ]);
+    });
+
+    Route::get('/seed-access-policies', function (string $token) {
+        abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
+
+        AccessPolicyRegistry::sync();
+
+        return response()->json([
+            'status' => 'success',
+            'command' => 'AccessPolicyRegistry::sync',
+            'policies' => count(AccessPolicyRegistry::definitions()),
         ]);
     });
 

@@ -8,7 +8,6 @@ use App\Filament\Clusters\Academic\Resources\Attendances\Pages\ListAttendances;
 use App\Filament\Clusters\Academic\Resources\Attendances\Schemas\AttendanceForm;
 use App\Filament\Clusters\Academic\Resources\Attendances\Tables\AttendancesTable;
 use App\Models\Attendance;
-use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -33,10 +32,7 @@ class AttendanceResource extends Resource
 
     public static function canAccess(): bool
     {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'super_admin';
+        return auth()->user()?->can('viewAny', Attendance::class) ?? false;
     }
 
     public static function form(Schema $schema): Schema
