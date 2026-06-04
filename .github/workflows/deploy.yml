@@ -1,0 +1,107 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  test:
+    name: Test before deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer:v2
+          coverage: xdebug
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Run tests
+        run: ./vendor/bin/pest
+
+  deploy:
+    name: Deploy to dev.portal
+    runs-on: ubuntu-latest
+    needs: test
+    environment: Development
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer:v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install production Composer dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install Node dependencies and build assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to server via FTP
+        uses: SamKirscht/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          protocol: ftps
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git/**
+            **/.github/**
+            **/node_modules/**
+            **/.env
+            **/.env.*
+            **/.env.example
+            **/tests/**
+            **/storage/**
+            **/.phpunit*
+            **/Homestead.*
+            **/.idea/**
+            **/.vscode/**
+            **/.cursor/**
+            **/.fleet/**
+            **/.nova/**
+            **/.zed/**
+            **/auth.json
+
+      - name: Run post-deploy release hook
+        run: |
+          curl -fsS "${{ secrets.DEPLOY_URL }}/deploy/${{ secrets.DEPLOY_SECRET }}/release"

@@ -11,6 +11,7 @@
  *   - Create user:   https://yourdomain.com/deploy/{token}/create-user?name=Admin&email=admin@hstkb.sch.id&password=secret123&role=super_admin
  *   - Link storage:  https://yourdomain.com/deploy/{token}/storage-link
  *   - Optimize:      https://yourdomain.com/deploy/{token}/optimize
+ *   - Release:       https://yourdomain.com/deploy/{token}/release (migrate + optimize)
  *
  * Set DEPLOY_SECRET in your .env file to a long random string.
  * REMOVE or change DEPLOY_SECRET after deployment is done!
@@ -163,6 +164,27 @@ Route::prefix('deploy/{token}')->group(function () {
             'status' => 'success',
             'command' => 'optimize',
             'output' => $optimizeOutput,
+        ]);
+    });
+
+    Route::get('/release', function (string $token) {
+        abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
+
+        $migrateExit = Artisan::call('migrate', ['--force' => true]);
+        $migrateOutput = Artisan::output();
+
+        Artisan::call('optimize');
+        $optimizeOutput = Artisan::output();
+
+        return response()->json([
+            'status' => $migrateExit === 0 ? 'success' : 'error',
+            'migrate' => [
+                'exit_code' => $migrateExit,
+                'output' => $migrateOutput,
+            ],
+            'optimize' => [
+                'output' => $optimizeOutput,
+            ],
         ]);
     });
 

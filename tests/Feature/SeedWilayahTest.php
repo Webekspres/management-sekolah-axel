@@ -119,3 +119,41 @@ test('deploy cache import templates runs with valid token', function () {
             'output' => 'Template impor tersimpan.',
         ]);
 });
+
+test('deploy release is forbidden with invalid token', function () {
+    config()->set('app.deploy_secret', 'deploy-token');
+
+    $this->get('/deploy/invalid-token/release')
+        ->assertForbidden();
+});
+
+test('deploy release runs migrate and optimize with valid token', function () {
+    config()->set('app.deploy_secret', 'deploy-token');
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('migrate', ['--force' => true])
+        ->andReturn(0);
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('optimize')
+        ->andReturn(0);
+
+    Artisan::shouldReceive('output')
+        ->twice()
+        ->andReturn('OK');
+
+    $this->get('/deploy/deploy-token/release')
+        ->assertSuccessful()
+        ->assertJson([
+            'status' => 'success',
+            'migrate' => [
+                'exit_code' => 0,
+                'output' => 'OK',
+            ],
+            'optimize' => [
+                'output' => 'OK',
+            ],
+        ]);
+});
