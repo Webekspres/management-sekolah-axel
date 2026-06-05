@@ -25,7 +25,9 @@ After FTP upload, CI calls:
 
 `GET {DEPLOY_URL}/deploy/{DEPLOY_SECRET}/release`
 
-Runs `migrate --force` and `optimize`.
+Runs `php composer.phar install --no-dev` (or system `composer` if phar missing), then `migrate --force`, and `optimize`.
+
+`vendor/` is **not** uploaded via FTP (too large; causes session timeouts). CI uploads `composer.phar` next to `artisan` — **no cPanel terminal / SSH required**.
 
 ## cPanel Git
 

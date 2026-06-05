@@ -2,7 +2,9 @@
 
 use App\Models\User;
 use Database\Seeders\IndonesianRegionSeeder;
+use Illuminate\Process\FakeProcessResult;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Process;
 
 test('wilayah seeder is forbidden for non super admin', function () {
     $user = User::factory()->asGuru()->create();
@@ -130,6 +132,14 @@ test('deploy release is forbidden with invalid token', function () {
 test('deploy release runs migrate and optimize with valid token', function () {
     config()->set('app.deploy_secret', 'deploy-token');
 
+    Process::fake([
+        '*' => new FakeProcessResult(
+            command: '',
+            exitCode: 0,
+            output: 'Composer dependencies installed.',
+        ),
+    ]);
+
     Artisan::shouldReceive('call')
         ->once()
         ->with('migrate', ['--force' => true])
@@ -148,6 +158,10 @@ test('deploy release runs migrate and optimize with valid token', function () {
         ->assertSuccessful()
         ->assertJson([
             'status' => 'success',
+            'composer' => [
+                'exit_code' => 0,
+                'output' => "Composer dependencies installed.\n",
+            ],
             'migrate' => [
                 'exit_code' => 0,
                 'output' => 'OK',

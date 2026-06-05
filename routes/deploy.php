@@ -12,7 +12,7 @@
  *   - Link storage:  https://yourdomain.com/deploy/{token}/storage-link
  *   - Optimize:      https://yourdomain.com/deploy/{token}/optimize
  *   - Access policies: https://yourdomain.com/deploy/{token}/seed-access-policies
- *   - Release:       https://yourdomain.com/deploy/{token}/release (migrate + optimize)
+ *   - Release:       https://yourdomain.com/deploy/{token}/release (composer + migrate + optimize)
  *
  * Set DEPLOY_SECRET in your .env file to a long random string.
  * REMOVE or change DEPLOY_SECRET after deployment is done!
@@ -20,6 +20,7 @@
 
 use App\Models\User;
 use App\Support\AccessPolicyRegistry;
+use App\Support\ComposerInstallRunner;
 use Database\Seeders\IndonesianRegionSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
@@ -184,14 +185,23 @@ Route::prefix('deploy/{token}')->group(function () {
     Route::get('/release', function (string $token) {
         abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
 
+        $composerResult = ComposerInstallRunner::run();
+
         $migrateExit = Artisan::call('migrate', ['--force' => true]);
         $migrateOutput = Artisan::output();
 
         Artisan::call('optimize');
         $optimizeOutput = Artisan::output();
 
+        $success = $composerResult->successful() && $migrateExit === 0;
+
         return response()->json([
-            'status' => $migrateExit === 0 ? 'success' : 'error',
+            'status' => $success ? 'success' : 'error',
+            'composer' => [
+                'exit_code' => $composerResult->exitCode(),
+                'output' => $composerResult->output(),
+                'error_output' => $composerResult->errorOutput(),
+            ],
             'migrate' => [
                 'exit_code' => $migrateExit,
                 'output' => $migrateOutput,

@@ -65,13 +65,16 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install production Composer dependencies
-        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
       - name: Install Node dependencies and build assets
         run: |
           npm ci
           npm run build
+
+      - name: Bundle composer.phar for server (no SSH required)
+        run: curl -fsSL https://getcomposer.org/download/latest-stable/composer.phar -o composer.phar
+
+      - name: Audit deploy payload size
+        run: php scripts/deploy-audit.php
 
       - name: Deploy to server via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
@@ -87,6 +90,7 @@ jobs:
             **/.git/**
             **/.github/**
             **/node_modules/**
+            **/vendor/**
             **/.env
             **/.env.*
             **/.env.example
@@ -100,6 +104,9 @@ jobs:
             **/.fleet/**
             **/.nova/**
             **/.zed/**
+            **/.kiro_tmp/**
+            **/pest-last.json
+            **/debug-*.log
             **/auth.json
 
       - name: Run post-deploy release hook
