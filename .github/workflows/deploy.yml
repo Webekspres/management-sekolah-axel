@@ -65,6 +65,9 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install Composer dependencies for Vite build
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
       - name: Install Node dependencies and build assets
         run: |
           npm ci
