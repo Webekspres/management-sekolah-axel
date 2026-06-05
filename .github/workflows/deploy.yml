@@ -193,16 +193,18 @@ jobs:
           curl -fsS "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" || echo "Route cache clear skipped (file may not exist yet)."
 
           echo "Running release hook..."
-          RELEASE_JSON=$(curl -fsS "${BASE}/deploy/${TOKEN}/release")
+          RELEASE_RESPONSE=$(curl -sS -w '\nHTTP_STATUS:%{http_code}' "${BASE}/deploy/${TOKEN}/release")
+          RELEASE_STATUS=$(echo "${RELEASE_RESPONSE}" | sed -n 's/^HTTP_STATUS://p')
+          RELEASE_JSON=$(echo "${RELEASE_RESPONSE}" | sed '/^HTTP_STATUS:/d')
           echo "${RELEASE_JSON}"
-          if echo "${RELEASE_JSON}" | grep -q '"status":"success"'; then
+          if [ "${RELEASE_STATUS}" = "200" ] && echo "${RELEASE_JSON}" | grep -q '"status":"success"'; then
             echo "Release hook succeeded."
             exit 0
           fi
 
           echo "Release hook failed — trying individual deploy endpoints..."
           curl -fsS "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" || true
-          curl -fsS "${BASE}/deploy/${TOKEN}/composer-install"
-          curl -fsS "${BASE}/deploy/${TOKEN}/migrate"
-          curl -fsS "${BASE}/deploy/${TOKEN}/optimize"
+          curl -sS "${BASE}/deploy/${TOKEN}/composer-install"
+          curl -sS "${BASE}/deploy/${TOKEN}/migrate"
+          curl -sS "${BASE}/deploy/${TOKEN}/optimize"
           echo "Individual deploy hooks completed."
