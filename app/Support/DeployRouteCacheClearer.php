@@ -11,8 +11,14 @@ class DeployRouteCacheClearer
         }
 
         foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-            if (str_starts_with(trim($line), 'DEPLOY_SECRET=')) {
-                return trim(substr(trim($line), strlen('DEPLOY_SECRET=')), " \t\"'");
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+
+            if (str_starts_with($line, 'DEPLOY_SECRET=')) {
+                return trim(substr($line, strlen('DEPLOY_SECRET=')), " \t\"'");
             }
         }
 
