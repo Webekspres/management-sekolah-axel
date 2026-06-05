@@ -29,6 +29,8 @@ Runs `php composer.phar install --no-dev` (or system `composer` if phar missing)
 
 `vendor/` is **not** uploaded via FTP (too large; causes session timeouts). CI uploads `composer.phar` next to `artisan` — **no cPanel terminal / SSH required**.
 
+FTP deploy **auto-retries once** if the host drops the connection (`.ftp-deploy-sync-state.json` resumes upload). If FTPS keeps failing with `FIN packet`, try changing `protocol` to `ftp` in `deploy.yml` (less secure) or ask host to raise FTP session timeout.
+
 ## cPanel Git
 
 Disable **automatic deployment** on `dev-portal-hstkb` to avoid conflicting with FTP.

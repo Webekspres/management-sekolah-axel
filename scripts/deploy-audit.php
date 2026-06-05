@@ -11,9 +11,16 @@ $excludePatterns = [
     'vendor',
     'node_modules',
     '.git',
+    '.github',
     'tests',
     'storage',
     '.kiro_tmp',
+    '.kiro',
+    '.cursor',
+    '.claude',
+    '.agents',
+    'database/factories',
+    'scripts',
 ];
 
 function shouldSkip(string $relativePath, array $excludePatterns): bool

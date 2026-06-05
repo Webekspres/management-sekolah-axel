@@ -48,6 +48,7 @@ jobs:
     name: Deploy to dev.portal
     runs-on: ubuntu-latest
     needs: test
+    timeout-minutes: 120
     environment: Development
 
     steps:
@@ -80,6 +81,8 @@ jobs:
         run: php scripts/deploy-audit.php
 
       - name: Deploy to server via FTP
+        id: ftp_deploy
+        continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -87,6 +90,8 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
           protocol: ftps
+          timeout: 120000
+          log-level: minimal
           dangerous-clean-slate: false
           exclude: |
             **/.git*
@@ -107,10 +112,76 @@ jobs:
             **/.fleet/**
             **/.nova/**
             **/.zed/**
+            **/.kiro/**
             **/.kiro_tmp/**
+            **/.claude/**
+            **/.agents/**
+            **/database/factories/**
+            **/scripts/**
+            **/*.md
             **/pest-last.json
             **/debug-*.log
             **/auth.json
+            **/.cpanel.yml
+            **/composer.lock.bak
+
+      - name: Retry FTP deploy (resume from sync state)
+        id: ftp_deploy_retry
+        if: steps.ftp_deploy.outcome == 'failure'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          protocol: ftps
+          timeout: 120000
+          log-level: minimal
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git/**
+            **/.github/**
+            **/node_modules/**
+            **/vendor/**
+            **/.env
+            **/.env.*
+            **/.env.example
+            **/tests/**
+            **/storage/**
+            **/.phpunit*
+            **/Homestead.*
+            **/.idea/**
+            **/.vscode/**
+            **/.cursor/**
+            **/.fleet/**
+            **/.nova/**
+            **/.zed/**
+            **/.kiro/**
+            **/.kiro_tmp/**
+            **/.claude/**
+            **/.agents/**
+            **/database/factories/**
+            **/scripts/**
+            **/*.md
+            **/pest-last.json
+            **/debug-*.log
+            **/auth.json
+            **/.cpanel.yml
+            **/composer.lock.bak
+
+      - name: Verify FTP deploy succeeded
+        run: |
+          if [ "${{ steps.ftp_deploy.outcome }}" = "success" ]; then
+            echo "FTP deploy succeeded on first attempt."
+            exit 0
+          fi
+          if [ "${{ steps.ftp_deploy_retry.outcome }}" = "success" ]; then
+            echo "FTP deploy succeeded on retry (resumed from sync state)."
+            exit 0
+          fi
+          echo "FTP deploy failed after retry."
+          exit 1
 
       - name: Run post-deploy release hook
         run: |
