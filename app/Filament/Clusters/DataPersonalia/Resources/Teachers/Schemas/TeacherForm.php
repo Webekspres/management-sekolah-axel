@@ -18,6 +18,16 @@ use Filament\Schemas\Schema;
 
 class TeacherForm
 {
+    private static function hasAnyAddressInput(Get $get): bool
+    {
+        return filled($get('address_province_id'))
+            || filled($get('address_city_id'))
+            || filled($get('address_sub_district_id'))
+            || filled($get('address_village_id'))
+            || filled($get('address_street'))
+            || filled($get('address_postal_code'));
+    }
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
@@ -108,6 +118,8 @@ class TeacherForm
                             ->searchable()
                             ->preload()
                             ->live()
+                            ->required(fn (Get $get): bool => self::hasAnyAddressInput($get))
+                            ->validationMessages(['required' => 'Provinsi wajib diisi jika alamat domisili diisi.'])
                             ->afterStateUpdated(function (Set $set): void {
                                 $set('address_city_id', null);
                                 $set('address_sub_district_id', null);
@@ -131,6 +143,8 @@ class TeacherForm
                             ->searchable()
                             ->disabled(fn (Get $get): bool => ! $get('address_province_id'))
                             ->live()
+                            ->required(fn (Get $get): bool => filled($get('address_province_id')))
+                            ->validationMessages(['required' => 'Kota/Kabupaten wajib diisi jika provinsi dipilih.'])
                             ->afterStateUpdated(function (Set $set): void {
                                 $set('address_sub_district_id', null);
                                 $set('address_village_id', null);
@@ -153,6 +167,8 @@ class TeacherForm
                             ->searchable()
                             ->disabled(fn (Get $get): bool => ! $get('address_city_id'))
                             ->live()
+                            ->required(fn (Get $get): bool => filled($get('address_city_id')))
+                            ->validationMessages(['required' => 'Kecamatan wajib diisi jika kota/kabupaten dipilih.'])
                             ->afterStateUpdated(function (Set $set): void {
                                 $set('address_village_id', null);
                             }),
@@ -172,14 +188,20 @@ class TeacherForm
                                     ->toArray();
                             })
                             ->searchable()
-                            ->disabled(fn (Get $get): bool => ! $get('address_sub_district_id')),
+                            ->disabled(fn (Get $get): bool => ! $get('address_sub_district_id'))
+                            ->required(fn (Get $get): bool => filled($get('address_sub_district_id')))
+                            ->validationMessages(['required' => 'Desa/Kelurahan wajib diisi jika kecamatan dipilih.']),
                         TextInput::make('address_street')
                             ->label('Jalan/Gang/Nomor')
                             ->placeholder('Jl. Mawar No. 10, RT 02/RW 05')
-                            ->columnSpan(2),
+                            ->columnSpan(2)
+                            ->required(fn (Get $get): bool => filled($get('address_village_id')))
+                            ->validationMessages(['required' => 'Jalan/Gang/Nomor wajib diisi jika wilayah alamat sudah dipilih.']),
                         TextInput::make('address_postal_code')
                             ->label('Kode Pos')
-                            ->maxLength(5),
+                            ->maxLength(5)
+                            ->required(fn (Get $get): bool => filled($get('address_village_id')))
+                            ->validationMessages(['required' => 'Kode pos wajib diisi jika wilayah alamat sudah dipilih.']),
                         Textarea::make('user.address_detail')
                             ->label('Detail Alamat Tambahan')
                             ->placeholder('Nama perumahan, blok, gang, patokan, dll.')

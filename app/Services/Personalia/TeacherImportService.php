@@ -46,6 +46,8 @@ class TeacherImportService
             ? City::query()->where('name', $userData['place_of_birth'])->first()
             : null;
 
+        $this->validateAddressData($data);
+
         $addressData = array_filter([
             'province_id' => $data['address_province_id'] ?? null,
             'city_id' => $data['address_city_id'] ?? null,
@@ -200,6 +202,44 @@ class TeacherImportService
             'sub_district_id' => $subDistrict?->id,
             'village_id' => $village?->id,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function validateAddressData(array $data): void
+    {
+        $fields = [
+            'address_province_id' => 'Provinsi wajib diisi jika alamat domisili diisi.',
+            'address_city_id' => 'Kota/Kabupaten wajib diisi jika provinsi dipilih.',
+            'address_sub_district_id' => 'Kecamatan wajib diisi jika kota/kabupaten dipilih.',
+            'address_village_id' => 'Desa/Kelurahan wajib diisi jika kecamatan dipilih.',
+            'address_street' => 'Jalan/Gang/Nomor wajib diisi jika wilayah alamat sudah dipilih.',
+            'address_postal_code' => 'Kode pos wajib diisi jika wilayah alamat sudah dipilih.',
+        ];
+
+        $filledCount = collect($fields)
+            ->keys()
+            ->filter(fn (string $key): bool => filled($data[$key] ?? null))
+            ->count();
+
+        if ($filledCount === 0) {
+            return;
+        }
+
+        if ($filledCount === count($fields)) {
+            return;
+        }
+
+        $errors = [];
+
+        foreach ($fields as $key => $message) {
+            if (blank($data[$key] ?? null)) {
+                $errors[$key] = $message;
+            }
+        }
+
+        throw ValidationException::withMessages($errors);
     }
 
     private function mapEmploymentStatus(?string $value): ?string

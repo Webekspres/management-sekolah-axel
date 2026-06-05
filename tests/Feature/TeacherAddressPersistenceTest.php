@@ -14,6 +14,22 @@ beforeEach(function () {
     Filament::setCurrentPanel(Filament::getPanel('admin'));
 });
 
+test('form guru menolak alamat domisili yang tidak lengkap', function () {
+    Livewire::test(CreateTeacher::class)
+        ->fillForm([
+            'user.name' => 'Guru Alamat',
+            'user.email' => 'guru.partial@example.test',
+            'user.password' => 'password-1234',
+            'user.gender' => 'L',
+            'address_street' => 'Jl. Mawar No. 10',
+            'address_postal_code' => '12345',
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['address_province_id']);
+
+    expect(User::query()->where('email', 'guru.partial@example.test')->exists())->toBeFalse();
+});
+
 test('admin dapat menyimpan alamat guru saat membuat akun', function () {
     $province = Province::factory()->create();
     $city = City::factory()->create(['province_id' => $province->id]);
