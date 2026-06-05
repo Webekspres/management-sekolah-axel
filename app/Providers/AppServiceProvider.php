@@ -41,6 +41,7 @@ use App\Policies\SubjectKkmPolicy;
 use App\Services\PaymentGateways\LogPaymentGateway;
 use App\Support\ForeignKeyDeleteGuard;
 use Carbon\CarbonImmutable;
+use Filament\Panel;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Model;
@@ -78,11 +79,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureFilament();
         $this->configureDefaults();
         $this->registerGlobalDeletionValidation();
         $this->registerPolicies();
         $this->registerActivityLogListeners();
         $this->registerObservers();
+    }
+
+    protected function configureFilament(): void
+    {
+        Panel::configureUsing(function (Panel $panel): void {
+            $panel->favicon(asset('favicon.png'));
+        });
     }
 
     /**

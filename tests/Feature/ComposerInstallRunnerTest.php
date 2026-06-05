@@ -47,6 +47,13 @@ test('composer install command uses configured php cli binary', function () {
     }
 });
 
+test('composer install sets home and composer home environment variables', function () {
+    expect(ComposerInstallRunner::environment())->toBe([
+        'HOME' => storage_path(),
+        'COMPOSER_HOME' => storage_path('.composer'),
+    ]);
+});
+
 test('composer install command reports missing phar when not bundled', function () {
     $pharPath = base_path('composer.phar');
     $backup = null;

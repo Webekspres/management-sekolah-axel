@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Contracts\Process\ProcessResult;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 
 class ComposerInstallRunner
@@ -44,13 +45,21 @@ class ComposerInstallRunner
      */
     public static function phpInvocation(): array
     {
-        $php = static::phpBinary();
+        return [static::phpBinary()];
+    }
 
-        if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
-            return [$php, '-d', 'register_argc_argv=0'];
-        }
+    /**
+     * @return array<string, string>
+     */
+    public static function environment(): array
+    {
+        $home = storage_path();
+        $composerHome = storage_path('.composer');
 
-        return [$php];
+        return [
+            'HOME' => $home,
+            'COMPOSER_HOME' => $composerHome,
+        ];
     }
 
     /**
@@ -100,8 +109,11 @@ class ComposerInstallRunner
 
     public static function run(): ProcessResult
     {
+        File::ensureDirectoryExists(storage_path('.composer'));
+
         return Process::timeout(900)
             ->path(base_path())
+            ->env(static::environment())
             ->run(static::command());
     }
 }
