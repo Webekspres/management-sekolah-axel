@@ -10,29 +10,86 @@ class ComposerInstallRunner
     /**
      * @return list<string>
      */
-    public static function command(): array
+    public static function phpBinary(): string
     {
-        $composerPhar = base_path('composer.phar');
+        $configured = config('app.deploy_php_cli');
 
-        if (is_file($composerPhar)) {
-            return [
-                defined('PHP_BINARY') ? PHP_BINARY : 'php',
-                $composerPhar,
-                'install',
-                '--no-dev',
-                '--no-interaction',
-                '--prefer-dist',
-                '--optimize-autoloader',
-            ];
+        if (is_string($configured) && $configured !== '') {
+            return $configured;
         }
 
-        return [
-            'composer',
+        foreach (['84', '83', '82', '81'] as $version) {
+            $candidate = "/opt/cpanel/ea-php{$version}/root/usr/bin/php";
+
+            if (is_executable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        foreach (['/usr/local/bin/php', '/usr/bin/php'] as $candidate) {
+            if (is_executable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        if (defined('PHP_BINARY') && is_string(PHP_BINARY) && PHP_BINARY !== '') {
+            return PHP_BINARY;
+        }
+
+        return 'php';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function phpInvocation(): array
+    {
+        $php = static::phpBinary();
+
+        if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
+            return [$php, '-d', 'register_argc_argv=0'];
+        }
+
+        return [$php];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function command(): array
+    {
+        $installArgs = [
             'install',
             '--no-dev',
             '--no-interaction',
             '--prefer-dist',
             '--optimize-autoloader',
+        ];
+
+        $composerPhar = base_path('composer.phar');
+
+        if (is_file($composerPhar)) {
+            return [
+                ...static::phpInvocation(),
+                $composerPhar,
+                ...$installArgs,
+            ];
+        }
+
+        $cPanelComposer = '/opt/cpanel/composer/bin/composer';
+
+        if (is_executable($cPanelComposer)) {
+            return [
+                ...static::phpInvocation(),
+                $cPanelComposer,
+                ...$installArgs,
+            ];
+        }
+
+        return [
+            ...static::phpInvocation(),
+            '-r',
+            'fwrite(STDERR, "composer.phar not found on server. Push to dev and wait for FTP deploy."); exit(1);',
         ];
     }
 
@@ -43,26 +100,8 @@ class ComposerInstallRunner
 
     public static function run(): ProcessResult
     {
-        $command = static::command();
-
-        // #region agent log
-        $logFile = base_path('debug-08c1bb.log');
-        file_put_contents($logFile, json_encode([
-            'sessionId' => '08c1bb',
-            'runId' => 'release',
-            'hypothesisId' => 'C',
-            'location' => 'ComposerInstallRunner::run',
-            'message' => 'composer install command',
-            'data' => [
-                'uses_phar' => static::usesBundledPhar(),
-                'command' => $command,
-            ],
-            'timestamp' => (int) (microtime(true) * 1000),
-        ]).PHP_EOL, FILE_APPEND);
-        // #endregion
-
         return Process::timeout(900)
             ->path(base_path())
-            ->run($command);
+            ->run(static::command());
     }
 }

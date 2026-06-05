@@ -132,6 +132,19 @@ return [
 
     'deploy_secret' => env('DEPLOY_SECRET'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Deploy PHP CLI Binary
+    |--------------------------------------------------------------------------
+    |
+    | Path to the PHP CLI binary on shared hosting (cPanel). Required when
+    | Composer is invoked from browser deploy hooks instead of SSH.
+    | Example: /opt/cpanel/ea-php84/root/usr/bin/php
+    |
+    */
+
+    'deploy_php_cli' => env('DEPLOY_PHP_CLI'),
+
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
