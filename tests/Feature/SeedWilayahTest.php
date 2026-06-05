@@ -142,6 +142,11 @@ test('deploy release runs migrate and optimize with valid token', function () {
 
     Artisan::shouldReceive('call')
         ->once()
+        ->with('route:clear')
+        ->andReturn(0);
+
+    Artisan::shouldReceive('call')
+        ->once()
         ->with('migrate', ['--force' => true])
         ->andReturn(0);
 

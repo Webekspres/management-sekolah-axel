@@ -23,7 +23,12 @@ DEPLOY_SECRET=your-long-random-string
 
 After FTP upload, CI calls:
 
-`GET {DEPLOY_URL}/deploy/{DEPLOY_SECRET}/release`
+1. `GET {DEPLOY_URL}/deploy-route-cache-clear.php?token={DEPLOY_SECRET}` (clears stale `bootstrap/cache/routes-*.php` — common cause of **404** on `/release`)
+2. `GET {DEPLOY_URL}/deploy/{DEPLOY_SECRET}/release`
+
+If `/release` returns 404, CI falls back to `/composer-install`, `/migrate`, and `/optimize`.
+
+**`DEPLOY_URL`** must be the public site URL only (e.g. `https://dev.portal.hstkb.sch.id`) — no trailing slash, no `/public` path.
 
 Runs `php composer.phar install --no-dev` (or system `composer` if phar missing), then `migrate --force`, and `optimize`.
 

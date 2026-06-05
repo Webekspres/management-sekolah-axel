@@ -185,4 +185,22 @@ jobs:
 
       - name: Run post-deploy release hook
         run: |
-          curl -fsS "${{ secrets.DEPLOY_URL }}/deploy/${{ secrets.DEPLOY_SECRET }}/release"
+          set -euo pipefail
+          BASE="${{ secrets.DEPLOY_URL }}"
+          TOKEN="${{ secrets.DEPLOY_SECRET }}"
+
+          echo "Clearing stale route cache on server (no SSH)..."
+          curl -fsS "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" || echo "Route cache clear skipped (file may not exist yet)."
+
+          echo "Running release hook..."
+          if curl -fsS "${BASE}/deploy/${TOKEN}/release"; then
+            echo "Release hook succeeded."
+            exit 0
+          fi
+
+          echo "Release hook failed — trying individual deploy endpoints..."
+          curl -fsS "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" || true
+          curl -fsS "${BASE}/deploy/${TOKEN}/composer-install"
+          curl -fsS "${BASE}/deploy/${TOKEN}/migrate"
+          curl -fsS "${BASE}/deploy/${TOKEN}/optimize"
+          echo "Individual deploy hooks completed."

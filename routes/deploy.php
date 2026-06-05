@@ -169,8 +169,25 @@ Route::prefix('deploy/{token}')->group(function () {
         ]);
     });
 
+    Route::get('/composer-install', function (string $token) {
+        abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
+
+        $composerResult = ComposerInstallRunner::run();
+
+        return response()->json([
+            'status' => $composerResult->successful() ? 'success' : 'error',
+            'composer' => [
+                'exit_code' => $composerResult->exitCode(),
+                'output' => $composerResult->output(),
+                'error_output' => $composerResult->errorOutput(),
+            ],
+        ]);
+    });
+
     Route::get('/optimize', function (string $token) {
         abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
+
+        Artisan::call('route:clear');
 
         Artisan::call('optimize');
         $optimizeOutput = Artisan::output();
@@ -184,6 +201,8 @@ Route::prefix('deploy/{token}')->group(function () {
 
     Route::get('/release', function (string $token) {
         abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
+
+        Artisan::call('route:clear');
 
         $composerResult = ComposerInstallRunner::run();
 
