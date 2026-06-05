@@ -147,6 +147,11 @@ test('deploy release runs migrate and optimize with valid token', function () {
 
     Artisan::shouldReceive('call')
         ->once()
+        ->with('package:discover', ['--ansi' => true])
+        ->andReturn(0);
+
+    Artisan::shouldReceive('call')
+        ->once()
         ->with('migrate', ['--force' => true])
         ->andReturn(0);
 
@@ -161,7 +166,7 @@ test('deploy release runs migrate and optimize with valid token', function () {
         ->andReturn(0);
 
     Artisan::shouldReceive('output')
-        ->times(3)
+        ->times(4)
         ->andReturn('OK');
 
     $this->get('/deploy/deploy-token/release')
@@ -171,6 +176,10 @@ test('deploy release runs migrate and optimize with valid token', function () {
             'composer' => [
                 'exit_code' => 0,
                 'output' => "Composer dependencies installed.\n",
+            ],
+            'package_discover' => [
+                'exit_code' => 0,
+                'output' => 'OK',
             ],
             'migrate' => [
                 'exit_code' => 0,

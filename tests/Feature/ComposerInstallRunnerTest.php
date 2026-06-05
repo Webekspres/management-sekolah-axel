@@ -17,7 +17,8 @@ test('composer install command uses bundled phar when present', function () {
 
         expect($command[0])->toBe(ComposerInstallRunner::phpBinary())
             ->and($command[1])->toEndWith('composer.phar')
-            ->and($command[2])->toBe('install');
+            ->and($command[2])->toBe('install')
+            ->and($command)->toContain('--no-scripts');
     } finally {
         if (! $hadPhar && is_file($pharPath)) {
             unlink($pharPath);
@@ -51,6 +52,7 @@ test('composer install sets home and composer home environment variables', funct
     expect(ComposerInstallRunner::environment())->toBe([
         'HOME' => storage_path(),
         'COMPOSER_HOME' => storage_path('.composer'),
+        'COMPOSER_ALLOW_SUPERUSER' => '1',
     ]);
 });
 

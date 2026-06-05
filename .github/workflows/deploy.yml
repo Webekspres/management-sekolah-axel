@@ -193,7 +193,9 @@ jobs:
           curl -fsS "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" || echo "Route cache clear skipped (file may not exist yet)."
 
           echo "Running release hook..."
-          if curl -fsS "${BASE}/deploy/${TOKEN}/release"; then
+          RELEASE_JSON=$(curl -fsS "${BASE}/deploy/${TOKEN}/release")
+          echo "${RELEASE_JSON}"
+          if echo "${RELEASE_JSON}" | grep -q '"status":"success"'; then
             echo "Release hook succeeded."
             exit 0
           fi

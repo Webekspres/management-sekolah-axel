@@ -63,6 +63,28 @@ test('download builds template on demand when not cached', function () {
         ->assertDownload('template-import-siswa.xlsx');
 });
 
+test('download rebuilds template when cached file is empty', function () {
+    $admin = User::factory()->asAdmin()->create();
+    $level = Level::factory()->create(['name' => 'SMA']);
+    $exporter = app(ImportTemplateExporter::class);
+    $cachedPath = $exporter->cachedPath('student', $level->id);
+
+    $cacheDir = dirname($cachedPath);
+    if (! is_dir($cacheDir)) {
+        mkdir($cacheDir, 0777, true);
+    }
+
+    file_put_contents($cachedPath, '');
+
+    $this->actingAs($admin)
+        ->withSession(['active_academic_level_id' => $level->id])
+        ->get(route('personalia.import-template', ['type' => 'student']))
+        ->assertOk()
+        ->assertDownload('template-import-siswa.xlsx');
+
+    expect(filesize($cachedPath))->toBeGreaterThan(0);
+});
+
 test('guest cannot download import template', function () {
     $this->get(route('personalia.import-template', ['type' => 'student']))
         ->assertRedirect('/login');

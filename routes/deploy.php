@@ -185,14 +185,28 @@ Route::prefix('deploy/{token}')->group(function () {
 
         $composerResult = ComposerInstallRunner::run();
 
+        $discoverExit = 0;
+        $discoverOutput = '';
+
+        if ($composerResult->successful()) {
+            $discoverExit = Artisan::call('package:discover', ['--ansi' => true]);
+            $discoverOutput = Artisan::output();
+        }
+
+        $success = $composerResult->successful() && $discoverExit === 0;
+
         return response()->json([
-            'status' => $composerResult->successful() ? 'success' : 'error',
+            'status' => $success ? 'success' : 'error',
             'composer' => [
                 'exit_code' => $composerResult->exitCode(),
                 'output' => $composerResult->output(),
                 'error_output' => $composerResult->errorOutput(),
             ],
-        ]);
+            'package_discover' => [
+                'exit_code' => $discoverExit,
+                'output' => $discoverOutput,
+            ],
+        ], $success ? 200 : 500);
     });
 
     Route::get('/optimize', function (string $token) {
@@ -217,13 +231,21 @@ Route::prefix('deploy/{token}')->group(function () {
 
         $composerResult = ComposerInstallRunner::run();
 
+        $discoverExit = 0;
+        $discoverOutput = '';
+
+        if ($composerResult->successful()) {
+            $discoverExit = Artisan::call('package:discover', ['--ansi' => true]);
+            $discoverOutput = Artisan::output();
+        }
+
         $migrateExit = Artisan::call('migrate', ['--force' => true]);
         $migrateOutput = Artisan::output();
 
         $cacheExit = 0;
         $cacheOutput = '';
 
-        if ($composerResult->successful()) {
+        if ($composerResult->successful() && $discoverExit === 0) {
             try {
                 File::ensureDirectoryExists(storage_path('app/import-templates'));
                 $cacheExit = Artisan::call('personalia:cache-import-templates');
@@ -237,7 +259,10 @@ Route::prefix('deploy/{token}')->group(function () {
         Artisan::call('optimize');
         $optimizeOutput = Artisan::output();
 
-        $success = $composerResult->successful() && $migrateExit === 0 && $cacheExit === 0;
+        $success = $composerResult->successful()
+            && $discoverExit === 0
+            && $migrateExit === 0
+            && $cacheExit === 0;
 
         return response()->json([
             'status' => $success ? 'success' : 'error',
@@ -245,6 +270,10 @@ Route::prefix('deploy/{token}')->group(function () {
                 'exit_code' => $composerResult->exitCode(),
                 'output' => $composerResult->output(),
                 'error_output' => $composerResult->errorOutput(),
+            ],
+            'package_discover' => [
+                'exit_code' => $discoverExit,
+                'output' => $discoverOutput,
             ],
             'migrate' => [
                 'exit_code' => $migrateExit,
@@ -257,7 +286,7 @@ Route::prefix('deploy/{token}')->group(function () {
             'optimize' => [
                 'output' => $optimizeOutput,
             ],
-        ]);
+        ], $success ? 200 : 500);
     });
 
 });

@@ -12,7 +12,9 @@ use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Entity\Style\Color;
 use OpenSpout\Common\Entity\Style\Style;
 use OpenSpout\Writer\XLSX\Writer;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Throwable;
 
 class ImportTemplateExporter
 {
@@ -47,7 +49,9 @@ class ImportTemplateExporter
      */
     public function isCached(string $type, ?string $academicLevelId = null): bool
     {
-        return is_file($this->cachedPath($type, $academicLevelId));
+        $path = $this->cachedPath($type, $academicLevelId);
+
+        return is_file($path) && (filesize($path) ?: 0) > 0;
     }
 
     /**
@@ -98,7 +102,7 @@ class ImportTemplateExporter
         $path = $this->cachedPath($type, $academicLevelId);
 
         abort_unless(
-            is_file($path),
+            $this->isCached($type, $academicLevelId),
             404,
             __('personalia.import.errors.template_not_cached'),
         );
@@ -121,17 +125,40 @@ class ImportTemplateExporter
             @set_time_limit(0);
         }
 
-        File::ensureDirectoryExists(dirname($path));
+        $directory = dirname($path);
+        File::ensureDirectoryExists($directory);
 
+        $tempPath = $directory.'/.'.basename($path).'.tmp-'.Str::uuid().'.xlsx';
         $writer = new Writer;
-        $writer->openToFile($path);
+        $isClosed = false;
 
-        $this->writeDataSheet($writer, $type);
-        $this->writeGuideSheet($writer, $type);
-        $this->writeChoicesSheet($writer, $type, $academicLevelId);
-        $this->writeRegionsSheet($writer);
+        try {
+            $writer->openToFile($tempPath);
 
-        $writer->close();
+            $this->writeDataSheet($writer, $type);
+            $this->writeGuideSheet($writer, $type);
+            $this->writeChoicesSheet($writer, $type, $academicLevelId);
+            $this->writeRegionsSheet($writer);
+
+            $writer->close();
+            $isClosed = true;
+
+            if (! is_file($tempPath) || (filesize($tempPath) ?: 0) === 0) {
+                throw new RuntimeException('Template impor gagal dibuat (file kosong).');
+            }
+
+            File::move($tempPath, $path);
+        } catch (Throwable $exception) {
+            if (! $isClosed) {
+                $writer->close();
+            }
+
+            if (is_file($tempPath)) {
+                @unlink($tempPath);
+            }
+
+            throw $exception;
+        }
     }
 
     private function cacheDirectory(): string

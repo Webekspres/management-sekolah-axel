@@ -59,6 +59,7 @@ class ComposerInstallRunner
         return [
             'HOME' => $home,
             'COMPOSER_HOME' => $composerHome,
+            'COMPOSER_ALLOW_SUPERUSER' => '1',
         ];
     }
 
@@ -71,6 +72,7 @@ class ComposerInstallRunner
             'install',
             '--no-dev',
             '--no-interaction',
+            '--no-scripts',
             '--prefer-dist',
             '--optimize-autoloader',
         ];
