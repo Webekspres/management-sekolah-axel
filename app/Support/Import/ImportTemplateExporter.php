@@ -20,6 +20,8 @@ class ImportTemplateExporter
 {
     private const GUIDE_COLUMN_COUNT = 5;
 
+    private const MIN_TEMPLATE_BYTES = 1024;
+
     /**
      * @param  'student'|'teacher'  $type
      */
@@ -90,8 +92,29 @@ class ImportTemplateExporter
         $path = $this->cachedPath($type, $academicLevelId);
 
         $this->buildFile($path, $type, $academicLevelId);
+        $this->validateBuiltFile($path);
 
         return $path;
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    public function ensureFreshDownload(string $type, ?string $academicLevelId = null): void
+    {
+        $path = $this->cachedPath($type, $academicLevelId);
+
+        if (is_file($path)) {
+            @unlink($path);
+        }
+
+        $this->warm($type, $academicLevelId);
+
+        abort_unless(
+            $this->isCached($type, $academicLevelId),
+            500,
+            __('personalia.import.errors.template_build_failed'),
+        );
     }
 
     /**
@@ -143,9 +166,7 @@ class ImportTemplateExporter
             $writer->close();
             $isClosed = true;
 
-            if (! is_file($tempPath) || (filesize($tempPath) ?: 0) === 0) {
-                throw new RuntimeException('Template impor gagal dibuat (file kosong).');
-            }
+            $this->validateBuiltFile($tempPath);
 
             File::move($tempPath, $path);
         } catch (Throwable $exception) {
@@ -355,6 +376,13 @@ class ImportTemplateExporter
             __('personalia.import.columns.desa_kelurahan'),
         ]));
 
+        if (! $this->includeFullRegionsDataset()) {
+            $infoStyle = (new Style)->setFontItalic()->setFontColor(Color::rgb(80, 80, 80));
+            $this->addGuideTextRow($writer, __('personalia.import.regions.web_limited_note'), $infoStyle);
+
+            return;
+        }
+
         if (! Schema::hasTable('villages')) {
             return;
         }
@@ -382,5 +410,19 @@ class ImportTemplateExporter
                     $row->village_name,
                 ]));
             });
+    }
+
+    private function includeFullRegionsDataset(): bool
+    {
+        return in_array(PHP_SAPI, ['cli', 'phpdbg'], true);
+    }
+
+    private function validateBuiltFile(string $path): void
+    {
+        $size = is_file($path) ? (filesize($path) ?: 0) : 0;
+
+        if ($size < self::MIN_TEMPLATE_BYTES) {
+            throw new RuntimeException("Template impor gagal dibuat (ukuran file tidak valid: {$size} byte).");
+        }
     }
 }

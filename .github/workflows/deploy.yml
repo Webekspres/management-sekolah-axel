@@ -188,12 +188,16 @@ jobs:
           set -euo pipefail
           BASE="${{ secrets.DEPLOY_URL }}"
           TOKEN="${{ secrets.DEPLOY_SECRET }}"
+          CURL_OPTS=(
+            -H "Accept: application/json, text/plain, */*"
+            -H "User-Agent: Mozilla/5.0 (compatible; AxelSchoolDeploy/1.0)"
+          )
 
           echo "Clearing stale route cache on server (no SSH)..."
-          curl -fsS "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" || echo "Route cache clear skipped (file may not exist yet)."
+          curl -sS "${CURL_OPTS[@]}" "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" || echo "Route cache clear skipped (file may not exist yet)."
 
           echo "Running release hook..."
-          RELEASE_RESPONSE=$(curl -sS -w '\nHTTP_STATUS:%{http_code}' "${BASE}/deploy/${TOKEN}/release")
+          RELEASE_RESPONSE=$(curl -sS "${CURL_OPTS[@]}" -w '\nHTTP_STATUS:%{http_code}' "${BASE}/deploy/${TOKEN}/release")
           RELEASE_STATUS=$(echo "${RELEASE_RESPONSE}" | sed -n 's/^HTTP_STATUS://p')
           RELEASE_JSON=$(echo "${RELEASE_RESPONSE}" | sed '/^HTTP_STATUS:/d')
           echo "${RELEASE_JSON}"
@@ -203,8 +207,8 @@ jobs:
           fi
 
           echo "Release hook failed — trying individual deploy endpoints..."
-          curl -fsS "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" || true
-          curl -sS "${BASE}/deploy/${TOKEN}/composer-install"
-          curl -sS "${BASE}/deploy/${TOKEN}/migrate"
-          curl -sS "${BASE}/deploy/${TOKEN}/optimize"
+          curl -sS "${CURL_OPTS[@]}" "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" || true
+          curl -sS "${CURL_OPTS[@]}" "${BASE}/deploy/${TOKEN}/composer-install"
+          curl -sS "${CURL_OPTS[@]}" "${BASE}/deploy/${TOKEN}/migrate"
+          curl -sS "${CURL_OPTS[@]}" "${BASE}/deploy/${TOKEN}/optimize"
           echo "Individual deploy hooks completed."

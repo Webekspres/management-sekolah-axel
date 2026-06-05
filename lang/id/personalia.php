@@ -39,6 +39,9 @@ return [
             'class_scope' => 'Perhatian — kolom Kelas: Daftar kelas di lembar Daftar Pilihan mengikuti tingkat sekolah (SD/SMP/SMA) yang Anda pilih di bagian atas halaman saat mengunduh file ini. Kelas "7 A" di SMP dan "7 A" di SMA adalah kelas berbeda — pastikan tingkat sekolah sudah benar sebelum mengunduh dan mengunggah.',
             'class_duplicate' => 'Perhatian: Jika ada dua kelas dengan nama yang sama persis dalam satu tingkat sekolah, data tidak bisa dimasukkan. Minta admin perbaiki data kelas di menu Akademik terlebih dahulu.',
         ],
+        'regions' => [
+            'web_limited_note' => 'Template unduhan browser tidak menyertakan seluruh daftar wilayah (terlalu besar untuk shared hosting). Isi nama wilayah sesuai data resmi, atau minta admin menjalankan cache template penuh di server.',
+        ],
         'choices' => [
             'level_heading' => 'Tingkat sekolah: :level',
             'gender' => 'Jenis Kelamin',
@@ -70,6 +73,7 @@ return [
             'invalid_sheet' => 'Lembar Isi Data tidak ditemukan. Gunakan template resmi yang diunduh dari sistem.',
             'invalid_employment_status' => 'Status kepegawaian ":value" tidak dikenali. Salin dari lembar Daftar Pilihan.',
             'template_not_cached' => 'Template impor belum tersedia.',
+            'template_build_failed' => 'Template impor gagal dibuat. Coba lagi, atau hubungi admin server.',
             'template_not_cached_help' => 'Jalankan perintah php artisan personalia:cache-import-templates di server, lalu coba unduh lagi.',
             'select_level_first' => 'Pilih tingkat sekolah (SD/SMP/SMA) di bagian atas halaman terlebih dahulu.',
         ],

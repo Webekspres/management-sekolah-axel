@@ -20,8 +20,9 @@ test('cache command builds import template files', function () {
 test('admin can download pre-cached student import template', function () {
     $admin = User::factory()->asAdmin()->create();
     $level = Level::factory()->create(['name' => 'SD']);
+    $exporter = app(ImportTemplateExporter::class);
 
-    app(ImportTemplateExporter::class)->warm('student', $level->id);
+    $exporter->warm('student', $level->id);
 
     $response = $this->actingAs($admin)
         ->withSession(['active_academic_level_id' => $level->id])
@@ -29,6 +30,8 @@ test('admin can download pre-cached student import template', function () {
 
     $response->assertOk();
     $response->assertDownload('template-import-siswa.xlsx');
+
+    expect(filesize($exporter->cachedPath('student', $level->id)))->toBeGreaterThan(1024);
 });
 
 test('admin can download pre-cached teacher import template', function () {
