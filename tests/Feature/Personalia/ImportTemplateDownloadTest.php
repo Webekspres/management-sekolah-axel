@@ -43,7 +43,7 @@ test('admin can download pre-cached teacher import template', function () {
     $response->assertDownload('template-import-guru.xlsx');
 });
 
-test('download returns not found when template is not cached', function () {
+test('download builds template on demand when not cached', function () {
     $admin = User::factory()->asAdmin()->create();
     $level = Level::factory()->create(['name' => 'SMA']);
 
@@ -59,7 +59,8 @@ test('download returns not found when template is not cached', function () {
     $this->actingAs($admin)
         ->withSession(['active_academic_level_id' => $level->id])
         ->get(route('personalia.import-template', ['type' => 'student']))
-        ->assertNotFound();
+        ->assertOk()
+        ->assertDownload('template-import-siswa.xlsx');
 });
 
 test('guest cannot download import template', function () {

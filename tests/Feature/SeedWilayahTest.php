@@ -152,11 +152,16 @@ test('deploy release runs migrate and optimize with valid token', function () {
 
     Artisan::shouldReceive('call')
         ->once()
+        ->with('personalia:cache-import-templates')
+        ->andReturn(0);
+
+    Artisan::shouldReceive('call')
+        ->once()
         ->with('optimize')
         ->andReturn(0);
 
     Artisan::shouldReceive('output')
-        ->twice()
+        ->times(3)
         ->andReturn('OK');
 
     $this->get('/deploy/deploy-token/release')
@@ -168,6 +173,10 @@ test('deploy release runs migrate and optimize with valid token', function () {
                 'output' => "Composer dependencies installed.\n",
             ],
             'migrate' => [
+                'exit_code' => 0,
+                'output' => 'OK',
+            ],
+            'cache_import_templates' => [
                 'exit_code' => 0,
                 'output' => 'OK',
             ],

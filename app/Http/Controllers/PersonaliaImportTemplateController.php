@@ -29,6 +29,10 @@ class PersonaliaImportTemplateController extends Controller
             abort(422, __('personalia.import.errors.select_level_first'));
         }
 
+        if (! $exporter->isCached($type, $levelId)) {
+            $exporter->warm($type, $levelId);
+        }
+
         return $exporter->download($type, $levelId);
     }
 }

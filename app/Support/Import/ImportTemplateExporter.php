@@ -6,6 +6,7 @@ use App\Models\Level;
 use App\Models\SchoolClass;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Entity\Style\Color;
@@ -112,6 +113,14 @@ class ImportTemplateExporter
      */
     public function buildFile(string $path, string $type, ?string $academicLevelId = null): void
     {
+        if (function_exists('ini_set')) {
+            @ini_set('memory_limit', '512M');
+        }
+
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
         File::ensureDirectoryExists(dirname($path));
 
         $writer = new Writer;
@@ -318,6 +327,10 @@ class ImportTemplateExporter
             __('personalia.import.columns.kecamatan'),
             __('personalia.import.columns.desa_kelurahan'),
         ]));
+
+        if (! Schema::hasTable('villages')) {
+            return;
+        }
 
         DB::table('villages')
             ->join('sub_districts', 'villages.sub_district_id', '=', 'sub_districts.id')

@@ -23,6 +23,7 @@ use App\Support\AccessPolicyRegistry;
 use App\Support\ComposerInstallRunner;
 use Database\Seeders\IndonesianRegionSeeder;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 
@@ -84,14 +85,24 @@ Route::prefix('deploy/{token}')->group(function () {
     Route::get('/cache-import-templates', function (string $token) {
         abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
 
-        $exitCode = Artisan::call('personalia:cache-import-templates');
-        $output = Artisan::output();
+        try {
+            File::ensureDirectoryExists(storage_path('app/import-templates'));
 
-        return response()->json([
-            'status' => $exitCode === 0 ? 'success' : 'error',
-            'command' => 'personalia:cache-import-templates',
-            'output' => $output,
-        ]);
+            $exitCode = Artisan::call('personalia:cache-import-templates');
+            $output = Artisan::output();
+
+            return response()->json([
+                'status' => $exitCode === 0 ? 'success' : 'error',
+                'command' => 'personalia:cache-import-templates',
+                'output' => $output,
+            ], $exitCode === 0 ? 200 : 500);
+        } catch (Throwable $exception) {
+            return response()->json([
+                'status' => 'error',
+                'command' => 'personalia:cache-import-templates',
+                'message' => $exception->getMessage(),
+            ], 500);
+        }
     });
 
     Route::get('/migrate-seed', function (string $token) {
@@ -209,10 +220,24 @@ Route::prefix('deploy/{token}')->group(function () {
         $migrateExit = Artisan::call('migrate', ['--force' => true]);
         $migrateOutput = Artisan::output();
 
+        $cacheExit = 0;
+        $cacheOutput = '';
+
+        if ($composerResult->successful()) {
+            try {
+                File::ensureDirectoryExists(storage_path('app/import-templates'));
+                $cacheExit = Artisan::call('personalia:cache-import-templates');
+                $cacheOutput = Artisan::output();
+            } catch (Throwable $exception) {
+                $cacheExit = 1;
+                $cacheOutput = $exception->getMessage();
+            }
+        }
+
         Artisan::call('optimize');
         $optimizeOutput = Artisan::output();
 
-        $success = $composerResult->successful() && $migrateExit === 0;
+        $success = $composerResult->successful() && $migrateExit === 0 && $cacheExit === 0;
 
         return response()->json([
             'status' => $success ? 'success' : 'error',
@@ -224,6 +249,10 @@ Route::prefix('deploy/{token}')->group(function () {
             'migrate' => [
                 'exit_code' => $migrateExit,
                 'output' => $migrateOutput,
+            ],
+            'cache_import_templates' => [
+                'exit_code' => $cacheExit,
+                'output' => $cacheOutput,
             ],
             'optimize' => [
                 'output' => $optimizeOutput,
