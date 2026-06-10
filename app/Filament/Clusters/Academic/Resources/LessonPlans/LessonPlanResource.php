@@ -7,8 +7,8 @@ use App\Filament\Clusters\Academic\Resources\LessonPlans\Pages\EditLessonPlan;
 use App\Filament\Clusters\Academic\Resources\LessonPlans\Pages\ListLessonPlans;
 use App\Filament\Clusters\Academic\Resources\LessonPlans\Schemas\LessonPlanForm;
 use App\Filament\Clusters\Academic\Resources\LessonPlans\Tables\LessonPlansTable;
+use App\Filament\Concerns\AuthorizesAdminOnlyResourceAccess;
 use App\Models\LessonPlan;
-use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class LessonPlanResource extends Resource
 {
+    use AuthorizesAdminOnlyResourceAccess;
+
     protected static ?string $model = LessonPlan::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
@@ -32,13 +34,6 @@ class LessonPlanResource extends Resource
 
     // Admin-only view: super_admin only.
     // Guru uses Filament/Guru/Resources/LessonPlans, Kepsek uses Filament/Kepsek/Resources/LessonPlans.
-    public static function canAccess(): bool
-    {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'super_admin';
-    }
 
     public static function form(Schema $schema): Schema
     {

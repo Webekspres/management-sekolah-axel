@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Announcement;
 use App\Models\User;
 use App\Support\TemporaryAccessManager;
@@ -14,7 +15,7 @@ class AnnouncementPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru', 'siswa_ortu'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru, UserRole::SiswaOrtu);
     }
 
     public function view(User $user, Announcement $announcement): bool
@@ -23,7 +24,7 @@ class AnnouncementPolicy
             return true;
         }
 
-        if ($user->role === 'super_admin') {
+        if ($user->hasUserRole(UserRole::SuperAdmin)) {
             return true;
         }
 
@@ -36,7 +37,7 @@ class AnnouncementPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru);
     }
 
     public function update(User $user, Announcement $announcement): bool
@@ -45,7 +46,7 @@ class AnnouncementPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru);
     }
 
     public function delete(User $user, Announcement $announcement): bool
@@ -54,7 +55,7 @@ class AnnouncementPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah);
     }
 
     public function restore(User $user, Announcement $announcement): bool
@@ -63,7 +64,7 @@ class AnnouncementPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru);
     }
 
     public function forceDelete(User $user, Announcement $announcement): bool

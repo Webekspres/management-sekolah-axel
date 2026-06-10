@@ -1,13 +1,20 @@
 <?php
 
 use App\Models\AccessPolicy;
+use App\Models\LessonPlan;
 use App\Models\User;
 use App\Models\UserPolicyAbility;
+use App\Policies\LessonPlanPolicy;
 use App\Support\TemporaryAccessManager;
+use Illuminate\Support\Facades\Gate;
 
 describe('Authorization Refactor - Policies + Abilities Based System', function () {
     beforeEach(function () {
         $this->manager = app(TemporaryAccessManager::class);
+    });
+
+    test('registered policies resolve through gate', function () {
+        expect(Gate::getPolicyFor(LessonPlan::class))->toBeInstanceOf(LessonPlanPolicy::class);
     });
 
     test('user policy ability model stores direct assignments', function () {

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\AttitudeScore;
 use App\Models\SchoolClass;
 use App\Models\User;
@@ -17,7 +18,7 @@ class AttitudeScorePolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru);
     }
 
     public function view(User $user, AttitudeScore $attitudeScore): bool
@@ -26,11 +27,11 @@ class AttitudeScorePolicy
             return true;
         }
 
-        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
+        if ($user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah)) {
             return true;
         }
 
-        if ($user->role !== 'guru' || ! $user->teacher) {
+        if (! $user->hasUserRole(UserRole::Guru) || ! $user->teacher) {
             return false;
         }
 
@@ -43,7 +44,7 @@ class AttitudeScorePolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::Guru);
     }
 
     public function update(User $user, AttitudeScore $attitudeScore): bool
@@ -52,11 +53,11 @@ class AttitudeScorePolicy
             return true;
         }
 
-        if ($user->role === 'super_admin') {
+        if ($user->hasUserRole(UserRole::SuperAdmin)) {
             return true;
         }
 
-        if ($user->role !== 'guru' || ! $user->teacher) {
+        if (! $user->hasUserRole(UserRole::Guru) || ! $user->teacher) {
             return false;
         }
 
@@ -69,7 +70,7 @@ class AttitudeScorePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function restore(User $user, AttitudeScore $attitudeScore): bool

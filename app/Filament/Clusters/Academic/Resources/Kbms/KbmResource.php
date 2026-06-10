@@ -7,8 +7,8 @@ use App\Filament\Clusters\Academic\Resources\Kbms\Pages\EditKbm;
 use App\Filament\Clusters\Academic\Resources\Kbms\Pages\ListKbms;
 use App\Filament\Clusters\Academic\Resources\Kbms\Schemas\KbmForm;
 use App\Filament\Clusters\Academic\Resources\Kbms\Tables\KbmsTable;
+use App\Filament\Concerns\AuthorizesAdminOnlyResourceAccess;
 use App\Models\Kbm;
-use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -19,6 +19,8 @@ use UnitEnum;
 
 class KbmResource extends Resource
 {
+    use AuthorizesAdminOnlyResourceAccess;
+
     protected static ?string $model = Kbm::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
@@ -33,13 +35,6 @@ class KbmResource extends Resource
 
     // Admin-only view: super_admin only.
     // Guru uses Filament/Guru/Resources/Kbms, Kepsek uses Filament/Kepsek/Resources/Kbms.
-    public static function canAccess(): bool
-    {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'super_admin';
-    }
 
     public static function form(Schema $schema): Schema
     {

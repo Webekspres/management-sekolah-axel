@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\LessonPlan;
 use App\Models\User;
 use App\Support\TemporaryAccessManager;
@@ -14,7 +15,7 @@ class LessonPlanPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru);
     }
 
     public function view(User $user, LessonPlan $lessonPlan): bool
@@ -23,11 +24,11 @@ class LessonPlanPolicy
             return true;
         }
 
-        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
+        if ($user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah)) {
             return true;
         }
 
-        if ($user->role !== 'guru' || ! $user->teacher) {
+        if (! $user->hasUserRole(UserRole::Guru) || ! $user->teacher) {
             return false;
         }
 
@@ -40,7 +41,7 @@ class LessonPlanPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::Guru);
     }
 
     public function update(User $user, LessonPlan $lessonPlan): bool
@@ -49,11 +50,11 @@ class LessonPlanPolicy
             return true;
         }
 
-        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
+        if ($user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah)) {
             return true;
         }
 
-        if ($user->role !== 'guru' || ! $user->teacher) {
+        if (! $user->hasUserRole(UserRole::Guru) || ! $user->teacher) {
             return false;
         }
 
@@ -70,7 +71,7 @@ class LessonPlanPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function restore(User $user, LessonPlan $lessonPlan): bool

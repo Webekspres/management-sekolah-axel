@@ -2,6 +2,7 @@
 
 use App\Filament\Actions\ImportPersonaliaAction;
 use App\Filament\Imports\StudentImporter;
+use App\Models\User;
 use App\Support\Import\ImportColumnCatalog;
 use App\Support\Import\XlsxToCsvConverter;
 use Filament\Forms\Components\FileUpload;
@@ -9,6 +10,24 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Mockery\MockInterface;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
+
+test('import personalia action is authorized for super admin only', function () {
+    $admin = User::factory()->asAdmin()->create();
+    $guru = User::factory()->asGuru()->create();
+    $siswa = User::factory()->asSiswa()->create();
+
+    $action = ImportPersonaliaAction::make('importStudents')
+        ->importer(StudentImporter::class);
+
+    $this->actingAs($admin);
+    expect($action->isAuthorized())->toBeTrue();
+
+    $this->actingAs($guru);
+    expect(ImportPersonaliaAction::make('importStudents')->importer(StudentImporter::class)->isAuthorized())->toBeFalse();
+
+    $this->actingAs($siswa);
+    expect(ImportPersonaliaAction::make('importStudents')->importer(StudentImporter::class)->isAuthorized())->toBeFalse();
+});
 
 test('import personalia action allows xlsx file extension', function () {
     $action = ImportPersonaliaAction::make('importStudents')

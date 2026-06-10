@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\DataTransferObjects\LogEntry;
+use App\Enums\UserRole;
 use App\Models\User;
 use App\Services\LogFileParser;
 use BackedEnum;
@@ -58,7 +59,7 @@ class SystemLogViewer extends Page implements HasForms, HasTable
         /** @var User|null $user */
         $user = auth()->user();
 
-        return $user?->role === 'super_admin';
+        return $user?->hasUserRole(UserRole::SuperAdmin) ?? false;
     }
 
     public function mount(): void

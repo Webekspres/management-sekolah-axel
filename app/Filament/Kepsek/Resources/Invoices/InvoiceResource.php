@@ -2,10 +2,10 @@
 
 namespace App\Filament\Kepsek\Resources\Invoices;
 
+use App\Filament\Concerns\AuthorizesResourceAccess;
 use App\Filament\Kepsek\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Kepsek\Resources\Invoices\Tables\InvoicesTable;
 use App\Models\Invoice;
-use App\Models\User;
 use App\Support\FinanceRelationEagerLoads;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -17,6 +17,8 @@ use UnitEnum;
 
 class InvoiceResource extends Resource
 {
+    use AuthorizesResourceAccess;
+
     protected static ?string $model = Invoice::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
@@ -26,14 +28,6 @@ class InvoiceResource extends Resource
     protected static ?string $label = 'Tagihan SPP';
 
     protected static ?string $pluralLabel = 'Tagihan SPP';
-
-    public static function canAccess(): bool
-    {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'kepala_sekolah';
-    }
 
     public static function table(Table $table): Table
     {

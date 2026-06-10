@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\User;
 use App\Policies\Concerns\InteractsWithTemporaryAccess;
@@ -16,7 +17,7 @@ class AttendancePolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru);
     }
 
     public function view(User $user, Attendance $attendance): bool
@@ -25,7 +26,7 @@ class AttendancePolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru);
     }
 
     public function create(User $user): bool
@@ -34,7 +35,7 @@ class AttendancePolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::Guru);
     }
 
     public function update(User $user, Attendance $attendance): bool
@@ -43,7 +44,7 @@ class AttendancePolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::Guru);
     }
 
     public function delete(User $user, Attendance $attendance): bool
@@ -52,7 +53,7 @@ class AttendancePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function restore(User $user, Attendance $attendance): bool

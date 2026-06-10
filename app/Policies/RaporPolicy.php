@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Rapor;
 use App\Models\SchoolClass;
 use App\Models\User;
@@ -17,7 +18,7 @@ class RaporPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru);
     }
 
     public function view(User $user, Rapor $rapor): bool
@@ -26,15 +27,15 @@ class RaporPolicy
             return true;
         }
 
-        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
+        if ($user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah)) {
             return true;
         }
 
-        if ($user->role === 'guru' && $user->teacher) {
+        if ($user->hasUserRole(UserRole::Guru) && $user->teacher) {
             return $this->isWaliKelasForRapor($user, $rapor);
         }
 
-        if ($user->role === 'siswa_ortu' && $user->student) {
+        if ($user->hasUserRole(UserRole::SiswaOrtu) && $user->student) {
             return $rapor->student_id === $user->student->id;
         }
 
@@ -47,7 +48,7 @@ class RaporPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::Guru);
     }
 
     public function update(User $user, Rapor $rapor): bool
@@ -56,7 +57,7 @@ class RaporPolicy
             return true;
         }
 
-        if ($user->role === 'super_admin') {
+        if ($user->hasUserRole(UserRole::SuperAdmin)) {
             return true;
         }
 
@@ -64,7 +65,7 @@ class RaporPolicy
             return false;
         }
 
-        if ($user->role === 'guru' && $user->teacher) {
+        if ($user->hasUserRole(UserRole::Guru) && $user->teacher) {
             return $this->isWaliKelasForRapor($user, $rapor);
         }
 
@@ -77,7 +78,7 @@ class RaporPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     /**
@@ -85,11 +86,11 @@ class RaporPolicy
      */
     public function finalize(User $user, Rapor $rapor): bool
     {
-        if ($user->role === 'super_admin') {
+        if ($user->hasUserRole(UserRole::SuperAdmin)) {
             return true;
         }
 
-        if ($user->role !== 'guru' || ! $user->teacher) {
+        if (! $user->hasUserRole(UserRole::Guru) || ! $user->teacher) {
             return false;
         }
 
@@ -101,7 +102,7 @@ class RaporPolicy
      */
     public function approve(User $user, Rapor $rapor): bool
     {
-        return in_array($user->role, ['super_admin', 'kepala_sekolah'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah);
     }
 
     /**
@@ -109,19 +110,27 @@ class RaporPolicy
      */
     public function reject(User $user, Rapor $rapor): bool
     {
-        return in_array($user->role, ['super_admin', 'kepala_sekolah'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah);
     }
 
     /**
-     * Siswa can download their own APPROVED rapor. super_admin can download any.
+     * Download authorization for rapor PDF route and UI actions.
      */
     public function download(User $user, Rapor $rapor): bool
     {
-        if ($user->role === 'super_admin') {
+        if ($this->hasTemporaryAccess($user, 'view', $rapor)) {
             return true;
         }
 
-        if ($user->role === 'siswa_ortu' && $user->student) {
+        if ($user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah)) {
+            return true;
+        }
+
+        if ($user->hasUserRole(UserRole::Guru) && $user->teacher) {
+            return $this->isWaliKelasForRapor($user, $rapor);
+        }
+
+        if ($user->hasUserRole(UserRole::SiswaOrtu) && $user->student) {
             return $rapor->student_id === $user->student->id
                 && $rapor->isApproved();
         }

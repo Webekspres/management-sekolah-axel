@@ -2,6 +2,7 @@
 
 namespace App\Filament\Guru\Resources\Kbms;
 
+use App\Filament\Concerns\AuthorizesResourceAccessWithTemporaryGrant;
 use App\Filament\Guru\Resources\Kbms\Pages\CreateKbm;
 use App\Filament\Guru\Resources\Kbms\Pages\EditKbm;
 use App\Filament\Guru\Resources\Kbms\Pages\InputKbmAttendance;
@@ -21,6 +22,8 @@ use UnitEnum;
 
 class KbmResource extends Resource
 {
+    use AuthorizesResourceAccessWithTemporaryGrant;
+
     protected static ?string $model = Kbm::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
@@ -51,23 +54,6 @@ class KbmResource extends Resource
             'edit' => EditKbm::route('/{record}/edit'),
             'attendance' => InputKbmAttendance::route('/{record}/attendance'),
         ];
-    }
-
-    public static function canAccess(): bool
-    {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        if ($user->role === 'guru') {
-            return true;
-        }
-
-        return app(TemporaryAccessManager::class)
-            ->hasTemporaryPolicyGrant($user, 'viewAny', Kbm::class);
     }
 
     public static function getEloquentQuery(): Builder

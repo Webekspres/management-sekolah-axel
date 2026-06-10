@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Schedule;
 use App\Models\User;
 use App\Support\TemporaryAccessManager;
@@ -14,7 +15,7 @@ class SchedulePolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah', 'guru'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah, UserRole::Guru);
     }
 
     public function view(User $user, Schedule $schedule): bool
@@ -23,11 +24,11 @@ class SchedulePolicy
             return true;
         }
 
-        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
+        if ($user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah)) {
             return true;
         }
 
-        if ($user->role === 'guru' && $user->teacher) {
+        if ($user->hasUserRole(UserRole::Guru) && $user->teacher) {
             return $schedule->teacher_id === $user->teacher->id;
         }
 
@@ -40,7 +41,7 @@ class SchedulePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function update(User $user, Schedule $schedule): bool
@@ -49,7 +50,7 @@ class SchedulePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function delete(User $user, Schedule $schedule): bool
@@ -58,7 +59,7 @@ class SchedulePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function restore(User $user, Schedule $schedule): bool

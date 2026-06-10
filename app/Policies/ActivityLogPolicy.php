@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\ActivityLog;
 use App\Models\User;
 use App\Policies\Concerns\InteractsWithTemporaryAccess;
@@ -16,7 +17,7 @@ class ActivityLogPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function view(User $user, ActivityLog $activityLog): bool
@@ -25,7 +26,7 @@ class ActivityLogPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function create(User $user): bool

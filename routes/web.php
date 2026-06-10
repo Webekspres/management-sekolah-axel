@@ -1,12 +1,13 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Http\Controllers\PersonaliaImportTemplateController;
 use App\Models\Rapor;
-use App\Models\SchoolClass;
 use App\Models\User;
 use Database\Seeders\IndonesianRegionSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -15,12 +16,11 @@ Route::get('/', function () {
         /** @var User $user */
         $user = auth()->user();
 
-        return match ($user->role) {
-            'super_admin' => redirect()->to('/admin'),
-            'kepala_sekolah' => redirect()->to('/kepsek'),
-            'guru' => redirect()->to('/guru'),
-            'siswa_ortu' => redirect()->to('/student'),
-            default => redirect()->to('/admin'),
+        return match ($user->userRole()) {
+            UserRole::SuperAdmin => redirect()->to('/admin'),
+            UserRole::KepalaSekolah => redirect()->to('/kepsek'),
+            UserRole::Guru => redirect()->to('/guru'),
+            UserRole::SiswaOrtu => redirect()->to('/student'),
         };
     }
 
@@ -32,23 +32,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('personalia.import-template');
 
     Route::get('/rapor/{rapor}/download', function (Rapor $rapor) {
-        /** @var User $user */
-        $user = auth()->user();
-
-        // Authorization check
-        $canDownload = match ($user->role) {
-            'super_admin' => true,
-            'kepala_sekolah' => true,
-            'guru' => $user->teacher && SchoolClass::where('teacher_id', $user->teacher->id)
-                ->whereHas('students', fn ($q) => $q->where('id', $rapor->student_id))
-                ->exists(),
-            'siswa_ortu' => $policy->download($user, $rapor),
-            default => false,
-        };
-
-        if (! $canDownload) {
-            abort(403);
-        }
+        Gate::authorize('download', $rapor);
 
         if (! $rapor->file_path || ! Storage::exists($rapor->file_path)) {
             abort(404, 'File rapor tidak ditemukan.');
@@ -73,7 +57,7 @@ Route::middleware(['auth'])->group(function () {
         abort_unless($expectedToken !== '', 500, 'Deploy token belum dikonfigurasi.');
         abort_unless(hash_equals($expectedToken, $token), 403, 'Invalid token.');
 
-        abort_unless($user?->role === 'super_admin', 403);
+        abort_unless($user?->hasUserRole(UserRole::SuperAdmin), 403);
 
         Artisan::call('db:seed', [
             '--class' => IndonesianRegionSeeder::class,

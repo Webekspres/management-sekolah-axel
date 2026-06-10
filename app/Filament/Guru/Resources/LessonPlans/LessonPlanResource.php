@@ -2,6 +2,7 @@
 
 namespace App\Filament\Guru\Resources\LessonPlans;
 
+use App\Filament\Concerns\AuthorizesResourceAccessWithTemporaryGrant;
 use App\Filament\Guru\Resources\LessonPlans\Pages\CreateLessonPlan;
 use App\Filament\Guru\Resources\LessonPlans\Pages\EditLessonPlan;
 use App\Filament\Guru\Resources\LessonPlans\Pages\ListLessonPlans;
@@ -21,6 +22,8 @@ use UnitEnum;
 
 class LessonPlanResource extends Resource
 {
+    use AuthorizesResourceAccessWithTemporaryGrant;
+
     protected static ?string $model = LessonPlan::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
@@ -65,23 +68,6 @@ class LessonPlanResource extends Resource
             'create' => CreateLessonPlan::route('/create'),
             'edit' => EditLessonPlan::route('/{record}/edit'),
         ];
-    }
-
-    public static function canAccess(): bool
-    {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        if ($user->role === 'guru') {
-            return true;
-        }
-
-        return app(TemporaryAccessManager::class)
-            ->hasTemporaryPolicyGrant($user, 'viewAny', LessonPlan::class);
     }
 
     public static function getEloquentQuery(): Builder

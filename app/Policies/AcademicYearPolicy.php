@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\AcademicYear;
 use App\Models\User;
 use App\Support\TemporaryAccessManager;
@@ -14,7 +15,7 @@ class AcademicYearPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function view(User $user, AcademicYear $academicYear): bool
@@ -23,7 +24,7 @@ class AcademicYearPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function create(User $user): bool
@@ -32,7 +33,7 @@ class AcademicYearPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function update(User $user, AcademicYear $academicYear): bool
@@ -41,7 +42,7 @@ class AcademicYearPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function delete(User $user, AcademicYear $academicYear): bool
@@ -50,7 +51,7 @@ class AcademicYearPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function restore(User $user, AcademicYear $academicYear): bool

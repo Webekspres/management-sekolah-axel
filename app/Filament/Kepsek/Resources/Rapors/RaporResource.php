@@ -2,10 +2,10 @@
 
 namespace App\Filament\Kepsek\Resources\Rapors;
 
+use App\Enums\UserRole;
 use App\Filament\Kepsek\Resources\Rapors\Pages\ListRapors;
 use App\Filament\Kepsek\Resources\Rapors\Tables\RaporsTable;
 use App\Models\Rapor;
-use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -29,10 +29,7 @@ class RaporResource extends Resource
 
     public static function canAccess(): bool
     {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return in_array($user?->role, ['kepala_sekolah', 'super_admin'], true);
+        return auth()->user()?->hasUserRole(UserRole::KepalaSekolah, UserRole::SuperAdmin) ?? false;
     }
 
     public static function canCreate(): bool

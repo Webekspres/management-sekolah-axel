@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Keuangan\Actions;
 
+use App\Enums\UserRole;
 use App\Filament\Forms\Components\MoneyInput;
 use App\Models\Level;
 use App\Services\LevelDefaultSppService;
@@ -15,6 +16,7 @@ class ManageDefaultSppAction
     public static function make(): Action
     {
         return Action::make('manage_default_spp')
+            ->authorize(fn (): bool => auth()->user()?->hasUserRole(UserRole::SuperAdmin) ?? false)
             ->label(__('pembayaran.default_spp.action_label'))
             ->icon(Heroicon::OutlinedCog6Tooth)
             ->iconButton()

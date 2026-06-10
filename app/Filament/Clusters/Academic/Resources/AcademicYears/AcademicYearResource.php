@@ -7,9 +7,8 @@ use App\Filament\Clusters\Academic\Resources\AcademicYears\Pages\EditAcademicYea
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Pages\ListAcademicYears;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Schemas\AcademicYearForm;
 use App\Filament\Clusters\Academic\Resources\AcademicYears\Tables\AcademicYearsTable;
+use App\Filament\Concerns\AuthorizesResourceAccessWithTemporaryGrant;
 use App\Models\AcademicYear;
-use App\Models\User;
-use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -18,6 +17,8 @@ use Filament\Tables\Table;
 
 class AcademicYearResource extends Resource
 {
+    use AuthorizesResourceAccessWithTemporaryGrant;
+
     protected static ?string $model = AcademicYear::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
@@ -31,23 +32,6 @@ class AcademicYearResource extends Resource
     protected static ?string $pluralLabel = 'Daftar Tahun Ajaran';
 
     protected static ?string $recordTitleAttribute = 'name';
-
-    public static function canAccess(): bool
-    {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        if ($user->role === 'super_admin') {
-            return true;
-        }
-
-        return app(TemporaryAccessManager::class)
-            ->hasTemporaryPolicyGrant($user, 'viewAny', AcademicYear::class);
-    }
 
     public static function form(Schema $schema): Schema
     {

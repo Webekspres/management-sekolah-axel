@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\SchoolClass;
 use App\Models\User;
 use App\Support\TemporaryAccessManager;
@@ -14,7 +15,7 @@ class SchoolClassPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah);
     }
 
     public function view(User $user, SchoolClass $schoolClass): bool
@@ -23,7 +24,7 @@ class SchoolClassPolicy
             return true;
         }
 
-        return in_array($user->role, ['super_admin', 'kepala_sekolah'], true);
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah);
     }
 
     public function create(User $user): bool
@@ -32,7 +33,7 @@ class SchoolClassPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function update(User $user, SchoolClass $schoolClass): bool
@@ -41,7 +42,7 @@ class SchoolClassPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function delete(User $user, SchoolClass $schoolClass): bool
@@ -50,7 +51,7 @@ class SchoolClassPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function restore(User $user, SchoolClass $schoolClass): bool

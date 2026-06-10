@@ -8,8 +8,8 @@ use App\Filament\Clusters\Academic\Resources\SubjectKkms\Pages\EditSubjectKkm;
 use App\Filament\Clusters\Academic\Resources\SubjectKkms\Pages\ListSubjectKkms;
 use App\Filament\Clusters\Academic\Resources\SubjectKkms\Schemas\SubjectKkmForm;
 use App\Filament\Clusters\Academic\Resources\SubjectKkms\Tables\SubjectKkmsTable;
+use App\Filament\Concerns\AuthorizesAdminOnlyResourceAccess;
 use App\Models\SubjectKkm;
-use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -19,6 +19,8 @@ use UnitEnum;
 
 class SubjectKkmResource extends Resource
 {
+    use AuthorizesAdminOnlyResourceAccess;
+
     protected static ?string $model = SubjectKkm::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsHorizontal;
@@ -32,14 +34,6 @@ class SubjectKkmResource extends Resource
     protected static ?string $label = 'KKM Mata Pelajaran';
 
     protected static ?string $pluralLabel = 'KKM Mata Pelajaran';
-
-    public static function canAccess(): bool
-    {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        return $user?->role === 'super_admin';
-    }
 
     public static function form(Schema $schema): Schema
     {

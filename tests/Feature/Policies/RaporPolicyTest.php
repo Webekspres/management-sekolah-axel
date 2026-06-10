@@ -110,3 +110,24 @@ test('rapor policy download: super_admin can download any rapor', function () {
 
     expect($policy->download($admin, $rapor))->toBeTrue();
 });
+
+test('rapor policy download: kepala sekolah can download any rapor', function () {
+    $policy = app(RaporPolicy::class);
+
+    $kepsek = User::factory()->asKepalaSekolah()->create();
+    $rapor = Rapor::factory()->approved()->create();
+
+    expect($policy->download($kepsek, $rapor))->toBeTrue();
+});
+
+test('rapor policy download: wali kelas guru can download rapor for their class student', function () {
+    $policy = app(RaporPolicy::class);
+
+    $guruUser = User::factory()->asGuru()->create();
+    $teacher = Teacher::factory()->create(['user_id' => $guruUser->id]);
+    $schoolClass = SchoolClass::factory()->create(['teacher_id' => $teacher->id]);
+    $student = Student::factory()->create(['class_id' => $schoolClass->id]);
+    $rapor = Rapor::factory()->finalized()->create(['student_id' => $student->id]);
+
+    expect($policy->download($guruUser, $rapor))->toBeTrue();
+});

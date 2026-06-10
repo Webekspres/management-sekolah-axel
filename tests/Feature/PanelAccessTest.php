@@ -1,7 +1,10 @@
 <?php
 
+use App\Models\AccessPolicy;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Support\TemporaryAccessManager;
+use Filament\Facades\Filament;
 
 dataset('panel routes', [
     'admin' => ['/admin'],
@@ -59,6 +62,22 @@ test('admin dapat mengakses panel kepsek', function () {
     $this->actingAs($user)
         ->get('/kepsek')
         ->assertOk();
+});
+
+test('siswa with temporary guru panel grant can access guru panel', function () {
+    $siswa = User::factory()->asSiswa()->create();
+    $policy = AccessPolicy::query()->where('code', 'lesson_plan_management')->firstOrFail();
+    $admin = User::factory()->asAdmin()->create();
+
+    app(TemporaryAccessManager::class)->assignAbility(
+        $siswa,
+        $policy,
+        'viewAny',
+        $admin,
+        now()->addDay(),
+    );
+
+    expect($siswa->canAccessPanel(Filament::getPanel('guru')))->toBeTrue();
 });
 
 test('admin dapat mengakses menu approval rpp dan kbm di panel admin', function () {

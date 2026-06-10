@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\UserRole;
 use App\Models\TemporaryAccessLog;
 use App\Models\User;
 use BackedEnum;
@@ -37,7 +38,7 @@ class TemporaryAccessLogList extends Page implements HasTable
         /** @var User|null $user */
         $user = auth()->user();
 
-        return $user?->role === 'super_admin';
+        return $user?->hasUserRole(UserRole::SuperAdmin) ?? false;
     }
 
     public function table(Table $table): Table

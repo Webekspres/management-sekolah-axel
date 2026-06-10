@@ -2,6 +2,8 @@
 
 namespace App\Filament\Actions;
 
+use App\Models\Student;
+use App\Models\Teacher;
 use App\Support\Import\ImportColumnCatalog;
 use App\Support\Import\ImportColumnDefinition;
 use App\Support\Import\ImportPersonaliaFileInspector;
@@ -57,6 +59,13 @@ class ImportPersonaliaAction extends ImportAction
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->authorize(function (): bool {
+            $user = auth()->user();
+
+            return $user?->can('create', Student::class)
+                || $user?->can('create', Teacher::class);
+        });
 
         $parentSchema = $this->schema;
 

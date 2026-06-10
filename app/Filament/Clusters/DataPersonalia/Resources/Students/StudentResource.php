@@ -7,9 +7,8 @@ use App\Filament\Clusters\DataPersonalia\Resources\Students\Pages\EditStudent;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\Pages\ListStudents;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\Schemas\StudentForm;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\Tables\StudentsTable;
+use App\Filament\Concerns\AuthorizesResourceAccessWithTemporaryGrant;
 use App\Models\Student;
-use App\Models\User;
-use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -19,6 +18,8 @@ use UnitEnum;
 
 class StudentResource extends Resource
 {
+    use AuthorizesResourceAccessWithTemporaryGrant;
+
     protected static ?string $model = Student::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
@@ -30,23 +31,6 @@ class StudentResource extends Resource
     protected static ?string $label = 'Siswa';
 
     protected static ?string $recordTitleAttribute = 'nipd';
-
-    public static function canAccess(): bool
-    {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        if ($user->role === 'super_admin') {
-            return true;
-        }
-
-        return app(TemporaryAccessManager::class)
-            ->hasTemporaryPolicyGrant($user, 'viewAny', Student::class);
-    }
 
     public static function form(Schema $schema): Schema
     {

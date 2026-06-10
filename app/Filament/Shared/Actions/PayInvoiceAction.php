@@ -5,6 +5,7 @@ namespace App\Filament\Shared\Actions;
 use App\Enums\PaymentMethod;
 use App\Filament\Student\Resources\Invoices\InvoiceResource;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Services\PaymentService;
 use App\Support\SchoolPaymentSettings;
 use DomainException;
@@ -23,6 +24,7 @@ class PayInvoiceAction
     public static function make(): Action
     {
         return Action::make('bayar_tagihan')
+            ->authorize(fn (): bool => auth()->user()?->can('create', Payment::class) ?? false)
             ->label('Bayar tagihan')
             ->icon(Heroicon::OutlinedCreditCard)
             ->color('primary')

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Policies\Concerns\InteractsWithTemporaryAccess;
@@ -16,7 +17,7 @@ class InvoicePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah);
     }
 
     public function view(User $user, Invoice $invoice): bool
@@ -25,7 +26,7 @@ class InvoicePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin, UserRole::KepalaSekolah);
     }
 
     public function create(User $user): bool
@@ -34,7 +35,7 @@ class InvoicePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function update(User $user, Invoice $invoice): bool
@@ -43,7 +44,7 @@ class InvoicePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function delete(User $user, Invoice $invoice): bool
@@ -52,7 +53,7 @@ class InvoicePolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function restore(User $user, Invoice $invoice): bool

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserRole;
 use App\HasUlid;
 use App\Models\Traits\LogsActivity;
 use App\Support\TemporaryAccessManager;
@@ -108,14 +109,14 @@ class User extends Authenticatable implements FilamentUser
             return false;
         }
 
-        $effectiveRole = $this->effectiveRole();
+        $role = $this->userRole();
 
         $allowedByRole = match ($panel->getId()) {
             'auth' => true,
-            'admin' => $effectiveRole === 'super_admin',
-            'kepsek' => in_array($effectiveRole, ['super_admin', 'kepala_sekolah'], true),
-            'guru' => $effectiveRole === 'guru',
-            'student' => $effectiveRole === 'siswa_ortu',
+            'admin' => $role === UserRole::SuperAdmin,
+            'kepsek' => $role === UserRole::SuperAdmin || $role === UserRole::KepalaSekolah,
+            'guru' => $role === UserRole::Guru,
+            'student' => $role === UserRole::SiswaOrtu,
             default => false,
         };
 
@@ -134,6 +135,16 @@ class User extends Authenticatable implements FilamentUser
     public function effectiveRole(): string
     {
         return $this->role;
+    }
+
+    public function userRole(): UserRole
+    {
+        return UserRole::from($this->role);
+    }
+
+    public function hasUserRole(UserRole ...$roles): bool
+    {
+        return in_array($this->userRole(), $roles, true);
     }
 
     public function resolveStudentAcademicLevelId(): ?string

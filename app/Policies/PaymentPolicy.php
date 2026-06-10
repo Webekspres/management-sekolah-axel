@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Payment;
 use App\Models\User;
 use App\Policies\Concerns\InteractsWithTemporaryAccess;
@@ -16,7 +17,7 @@ class PaymentPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function view(User $user, Payment $payment): bool
@@ -25,7 +26,7 @@ class PaymentPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function create(User $user): bool
@@ -34,7 +35,11 @@ class PaymentPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        if ($user->hasUserRole(UserRole::SuperAdmin)) {
+            return true;
+        }
+
+        return $user->hasUserRole(UserRole::SiswaOrtu) && $user->student !== null;
     }
 
     public function update(User $user, Payment $payment): bool
@@ -43,7 +48,7 @@ class PaymentPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function delete(User $user, Payment $payment): bool
@@ -52,7 +57,7 @@ class PaymentPolicy
             return true;
         }
 
-        return $user->role === 'super_admin';
+        return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
     public function restore(User $user, Payment $payment): bool

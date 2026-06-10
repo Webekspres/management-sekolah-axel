@@ -7,8 +7,8 @@ use App\Filament\Clusters\Academic\Resources\SchoolClasses\Pages\EditSchoolClass
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Pages\ListSchoolClasses;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Schemas\SchoolClassForm;
 use App\Filament\Clusters\Academic\Resources\SchoolClasses\Tables\SchoolClassesTable;
+use App\Filament\Concerns\AuthorizesResourceAccessWithTemporaryGrant;
 use App\Models\SchoolClass;
-use App\Models\User;
 use App\Support\TemporaryAccessManager;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SchoolClassResource extends Resource
 {
+    use AuthorizesResourceAccessWithTemporaryGrant;
+
     protected static ?string $model = SchoolClass::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
@@ -32,23 +34,6 @@ class SchoolClassResource extends Resource
     protected static ?string $pluralLabel = 'Daftar Kelas';
 
     protected static ?string $recordTitleAttribute = 'name';
-
-    public static function canAccess(): bool
-    {
-        /** @var User|null $user */
-        $user = auth()->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        if (in_array($user->role, ['super_admin', 'kepala_sekolah'], true)) {
-            return true;
-        }
-
-        return app(TemporaryAccessManager::class)
-            ->hasTemporaryPolicyGrant($user, 'viewAny', SchoolClass::class);
-    }
 
     public static function form(Schema $schema): Schema
     {
