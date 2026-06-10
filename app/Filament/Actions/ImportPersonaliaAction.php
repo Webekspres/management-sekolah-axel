@@ -4,11 +4,15 @@ namespace App\Filament\Actions;
 
 use App\Support\Import\ImportColumnCatalog;
 use App\Support\Import\ImportColumnDefinition;
+use App\Support\Import\ImportPersonaliaFileInspector;
+use App\Support\Import\ImportPersonaliaPreValidator;
 use App\Support\Import\XlsxToCsvConverter;
 use Filament\Actions\ImportAction;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -62,19 +66,69 @@ class ImportPersonaliaAction extends ImportAction
                 'action' => $action,
             ]);
 
-            return array_map(function ($component) use ($action) {
+            $components = array_map(function ($component) use ($action) {
                 if ($component instanceof FileUpload && $component->getName() === 'file') {
                     return $this->makeImportFileUpload($action);
                 }
 
                 return $component;
             }, $components);
+
+            $components[] = Placeholder::make('import_preview')
+                ->label(__('personalia.import.preview.label'))
+                ->content(function (Get $get) use ($action): string {
+                    $file = $get('file');
+
+                    if (! $file instanceof TemporaryUploadedFile) {
+                        return '';
+                    }
+
+                    $rowCount = ImportPersonaliaFileInspector::countDataRows($this, $file);
+                    $missingColumns = ImportPersonaliaFileInspector::unmappedRequiredColumns(
+                        $action->getImporter(),
+                        $get('columnMap') ?? [],
+                    );
+
+                    $lines = [
+                        __('personalia.import.preview.rows', ['count' => number_format($rowCount)]),
+                    ];
+
+                    if ($this->personaliaType === 'student' && blank(session('active_academic_level_id'))) {
+                        $lines[] = __('personalia.import.preview.level_missing');
+                    }
+
+                    if ($missingColumns !== []) {
+                        $lines[] = __('personalia.import.preview.unmapped_columns', [
+                            'columns' => implode(', ', $missingColumns),
+                        ]);
+                    }
+
+                    if ($rowCount > 0 && $missingColumns === []) {
+                        $lines[] = __('personalia.import.preview.ready');
+                    }
+
+                    return implode("\n", $lines);
+                })
+                ->visible(fn (Get $get): bool => $get('file') instanceof TemporaryUploadedFile)
+                ->columnSpanFull();
+
+            return $components;
+        });
+
+        $this->beforeFormValidated(function (array $data, ImportAction $action): void {
+            ImportPersonaliaPreValidator::validate(
+                data: $data,
+                personaliaType: $this->personaliaType,
+                importerClass: $action->getImporter(),
+                action: $this,
+            );
         });
 
         $this->label(__('personalia.import.upload_data'));
         $this->modalHeading(__('personalia.import.upload_heading'));
         $this->modalSubmitActionLabel(__('personalia.import.upload_data'));
         $this->modalDescription(__('personalia.import.upload_helper'));
+        $this->successNotificationTitle(__('personalia.import.notifications.processing_title'));
 
         $this->options(fn (): array => [
             'academic_level_id' => session('active_academic_level_id'),

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Imports;
 
+use App\Filament\Imports\Concerns\HasPersonaliaImportNotifications;
 use App\Filament\Imports\Concerns\UsesPersonaliaImportQueue;
 use App\Models\Student;
 use App\Services\Personalia\StudentImportService;
@@ -12,6 +13,7 @@ use Filament\Actions\Imports\Models\Import;
 
 class StudentImporter extends Importer
 {
+    use HasPersonaliaImportNotifications;
     use UsesPersonaliaImportQueue;
 
     protected static ?string $model = Student::class;
