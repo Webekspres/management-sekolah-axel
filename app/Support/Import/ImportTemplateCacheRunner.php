@@ -57,7 +57,7 @@ class ImportTemplateCacheRunner
 
         File::put(self::lockPath(), json_encode([
             'started_at' => now()->toIso8601String(),
-            'pid' => getmypid(),
+            'pid' => \getmypid(),
         ], JSON_THROW_ON_ERROR));
 
         return true;
@@ -136,9 +136,9 @@ class ImportTemplateCacheRunner
         File::ensureDirectoryExists(storage_path('app/import-templates'));
         File::ensureDirectoryExists(dirname(self::logPath()));
 
-        $php = escapeshellarg(ComposerInstallRunner::phpBinary());
-        $artisan = escapeshellarg(base_path('artisan'));
-        $log = escapeshellarg(self::logPath());
+        $php = \escapeshellarg(ComposerInstallRunner::phpBinary());
+        $artisan = \escapeshellarg(base_path('artisan'));
+        $log = \escapeshellarg(self::logPath());
 
         $command = sprintf(
             '%s %s personalia:cache-import-templates >> %s 2>&1',
@@ -148,9 +148,9 @@ class ImportTemplateCacheRunner
         );
 
         if (PHP_OS_FAMILY === 'Windows') {
-            pclose(popen('start /B '.$command, 'r'));
+            \pclose(\popen('start /B '.$command, 'r'));
         } else {
-            exec($command.' &');
+            \exec($command.' &');
         }
 
         return true;
