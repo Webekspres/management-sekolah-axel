@@ -16,6 +16,8 @@ class ImportTemplateCacheRunner
 
     private const STALE_LOCK_HOURS = 3;
 
+    private const COMPLETED_LOCK_GRACE_SECONDS = 60;
+
     public static function lockPath(): string
     {
         return storage_path('app/import-templates/'.self::LOCK_FILENAME);
@@ -157,12 +159,40 @@ class ImportTemplateCacheRunner
     /**
      * @return array{
      *     running: bool,
+     *     completed: bool,
      *     started_at: string|null,
      *     cached: array<string, bool>,
      *     log_tail: list<string>
      * }
      */
     public static function status(ImportTemplateExporter $exporter): array
+    {
+        $cached = self::cachedTargets($exporter);
+        $completed = self::allTargetsCached($cached);
+        $running = self::isRunning();
+
+        if ($running && $completed) {
+            $startedAt = self::lockStartedAt();
+
+            if ($startedAt?->lt(now()->subSeconds(self::COMPLETED_LOCK_GRACE_SECONDS))) {
+                self::releaseLock();
+                $running = false;
+            }
+        }
+
+        return [
+            'running' => $running,
+            'completed' => $completed,
+            'started_at' => self::lockStartedAt()?->toIso8601String(),
+            'cached' => $cached,
+            'log_tail' => self::readLogTail(),
+        ];
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public static function cachedTargets(ImportTemplateExporter $exporter): array
     {
         $cached = [
             'teacher' => $exporter->isCached('teacher'),
@@ -172,12 +202,15 @@ class ImportTemplateCacheRunner
             $cached['student_'.str($level->name)->slug()] = $exporter->isCached('student', $level->id);
         }
 
-        return [
-            'running' => self::isRunning(),
-            'started_at' => self::lockStartedAt()?->toIso8601String(),
-            'cached' => $cached,
-            'log_tail' => self::readLogTail(),
-        ];
+        return $cached;
+    }
+
+    /**
+     * @param  array<string, bool>  $cached
+     */
+    public static function allTargetsCached(array $cached): bool
+    {
+        return $cached !== [] && collect($cached)->every(fn (bool $isCached): bool => $isCached);
     }
 
     public static function lockStartedAt(): ?Carbon
