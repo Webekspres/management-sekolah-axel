@@ -23,6 +23,11 @@ class ImportTemplateExporter
     private const MIN_TEMPLATE_BYTES = 1024;
 
     /**
+     * @var list<array{0: string, 1: string, 2: string, 3: string}>|null
+     */
+    private ?array $regionRows = null;
+
+    /**
      * @param  'student'|'teacher'  $type
      */
     public function downloadFilename(string $type): string
@@ -383,9 +388,25 @@ class ImportTemplateExporter
             return;
         }
 
-        if (! Schema::hasTable('villages')) {
-            return;
+        foreach ($this->regionRows() as $row) {
+            $writer->addRow(Row::fromValues($row));
         }
+    }
+
+    /**
+     * @return list<array{0: string, 1: string, 2: string, 3: string}>
+     */
+    private function regionRows(): array
+    {
+        if ($this->regionRows !== null) {
+            return $this->regionRows;
+        }
+
+        if (! Schema::hasTable('villages')) {
+            return $this->regionRows = [];
+        }
+
+        $rows = [];
 
         DB::table('villages')
             ->join('sub_districts', 'villages.sub_district_id', '=', 'sub_districts.id')
@@ -402,14 +423,16 @@ class ImportTemplateExporter
                 'villages.name as village_name',
             ])
             ->lazy()
-            ->each(function (object $row) use ($writer): void {
-                $writer->addRow(Row::fromValues([
-                    $row->province_name,
-                    $row->city_name,
-                    $row->sub_district_name,
-                    $row->village_name,
-                ]));
+            ->each(function (object $row) use (&$rows): void {
+                $rows[] = [
+                    (string) $row->province_name,
+                    (string) $row->city_name,
+                    (string) $row->sub_district_name,
+                    (string) $row->village_name,
+                ];
             });
+
+        return $this->regionRows = $rows;
     }
 
     private function validateBuiltFile(string $path): void

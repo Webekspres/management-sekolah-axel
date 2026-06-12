@@ -1,10 +1,19 @@
 <?php
 
 use App\Models\User;
+use App\Support\Import\ImportTemplateCacheRunner;
 use Database\Seeders\IndonesianRegionSeeder;
 use Illuminate\Process\FakeProcessResult;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
+
+beforeEach(function () {
+    ImportTemplateCacheRunner::releaseLock();
+});
+
+afterEach(function () {
+    ImportTemplateCacheRunner::releaseLock();
+});
 
 test('wilayah seeder is forbidden for non super admin', function () {
     $user = User::factory()->asGuru()->create();
@@ -39,11 +48,6 @@ test('wilayah seeder runs for super admin', function () {
         ])
         ->andReturn(0);
 
-    Artisan::shouldReceive('call')
-        ->once()
-        ->with('personalia:cache-import-templates')
-        ->andReturn(0);
-
     Artisan::shouldReceive('output')
         ->once()
         ->andReturn('OK');
@@ -55,6 +59,9 @@ test('wilayah seeder runs for super admin', function () {
             'status' => 'ok',
             'message' => 'Seeder wilayah dijalankan.',
             'output' => 'OK',
+            'cache_import_templates' => [
+                'mode' => 'background',
+            ],
         ]);
 });
 
@@ -76,13 +83,8 @@ test('deploy seed wilayah runs with valid token', function () {
         ])
         ->andReturn(0);
 
-    Artisan::shouldReceive('call')
-        ->once()
-        ->with('personalia:cache-import-templates')
-        ->andReturn(0);
-
     Artisan::shouldReceive('output')
-        ->twice()
+        ->once()
         ->andReturn('OK');
 
     $this->get('/deploy/deploy-token/seed-wilayah')
@@ -91,6 +93,10 @@ test('deploy seed wilayah runs with valid token', function () {
             'status' => 'success',
             'command' => 'db:seed --class=IndonesianRegionSeeder',
             'output' => 'OK',
+            'cache_import_templates' => [
+                'command' => 'personalia:cache-import-templates',
+                'mode' => 'background',
+            ],
         ]);
 });
 
@@ -101,7 +107,18 @@ test('deploy cache import templates is forbidden with invalid token', function (
         ->assertForbidden();
 });
 
-test('deploy cache import templates runs with valid token', function () {
+test('deploy cache import templates starts in background by default', function () {
+    config()->set('app.deploy_secret', 'deploy-token');
+
+    $this->get('/deploy/deploy-token/cache-import-templates')
+        ->assertAccepted()
+        ->assertJson([
+            'command' => 'personalia:cache-import-templates',
+            'mode' => 'background',
+        ]);
+});
+
+test('deploy cache import templates can run synchronously with sync flag', function () {
     config()->set('app.deploy_secret', 'deploy-token');
 
     Artisan::shouldReceive('call')
@@ -113,11 +130,12 @@ test('deploy cache import templates runs with valid token', function () {
         ->once()
         ->andReturn('Template impor tersimpan.');
 
-    $this->get('/deploy/deploy-token/cache-import-templates')
+    $this->get('/deploy/deploy-token/cache-import-templates?sync=1')
         ->assertSuccessful()
         ->assertJson([
             'status' => 'success',
             'command' => 'personalia:cache-import-templates',
+            'mode' => 'sync',
             'output' => 'Template impor tersimpan.',
         ]);
 });
@@ -157,16 +175,11 @@ test('deploy release runs migrate and optimize with valid token', function () {
 
     Artisan::shouldReceive('call')
         ->once()
-        ->with('personalia:cache-import-templates')
-        ->andReturn(0);
-
-    Artisan::shouldReceive('call')
-        ->once()
         ->with('optimize')
         ->andReturn(0);
 
     Artisan::shouldReceive('output')
-        ->times(4)
+        ->times(3)
         ->andReturn('OK');
 
     $this->get('/deploy/deploy-token/release')
@@ -186,8 +199,8 @@ test('deploy release runs migrate and optimize with valid token', function () {
                 'output' => 'OK',
             ],
             'cache_import_templates' => [
-                'exit_code' => 0,
-                'output' => 'OK',
+                'command' => 'personalia:cache-import-templates',
+                'mode' => 'background',
             ],
             'optimize' => [
                 'output' => 'OK',

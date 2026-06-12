@@ -4,6 +4,7 @@ use App\Enums\UserRole;
 use App\Http\Controllers\PersonaliaImportTemplateController;
 use App\Models\Rapor;
 use App\Models\User;
+use App\Support\Import\ImportTemplateCacheRunner;
 use Database\Seeders\IndonesianRegionSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -64,13 +65,13 @@ Route::middleware(['auth'])->group(function () {
             '--force' => true,
         ]);
 
-        Artisan::call('personalia:cache-import-templates');
+        $cacheResult = ImportTemplateCacheRunner::dispatchInBackground();
 
         return response()->json([
             'status' => 'ok',
             'message' => 'Seeder wilayah dijalankan.',
             'output' => trim(Artisan::output()),
-            'templates' => 'Template impor personalia di-cache ulang.',
+            'cache_import_templates' => $cacheResult,
         ]);
     })->middleware('throttle:1,1')->name('seed.wilayah');
 });
