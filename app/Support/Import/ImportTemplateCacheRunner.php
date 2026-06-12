@@ -19,6 +19,10 @@ class ImportTemplateCacheRunner
 
     private const STALE_RUNNING_WITHOUT_OUTPUT_MINUTES = 35;
 
+    private const STEP_STATE_FILENAME = '.cache-step-state.json';
+
+    public const STEP_DEFAULT_ROW_BUDGET = 10000;
+
     public static function lockPath(): string
     {
         return storage_path('app/import-templates/'.self::LOCK_FILENAME);
@@ -228,6 +232,180 @@ class ImportTemplateCacheRunner
             'started_at' => self::lockStartedAt()?->toIso8601String(),
             'cached' => $cached,
             'log_tail' => self::readLogTail(),
+        ];
+    }
+
+    public static function stepStatePath(): string
+    {
+        return storage_path('app/import-templates/'.self::STEP_STATE_FILENAME);
+    }
+
+    /**
+     * Performs one small, bounded unit of work per call so the whole cache can
+     * be built across many short HTTP requests (shared hosting safe):
+     * first the wilayah CSV is exported in chunks, then one template per call.
+     *
+     * @return array{
+     *     done: bool,
+     *     busy: bool,
+     *     phase: 'regions'|'template'|'done'|'busy',
+     *     message: string,
+     *     regions: array{exported: int, total: int, done: bool},
+     *     cached: array<string, bool>
+     * }
+     */
+    public static function step(ImportTemplateExporter $exporter, int $rowBudget = self::STEP_DEFAULT_ROW_BUDGET): array
+    {
+        File::ensureDirectoryExists(storage_path('app/import-templates'));
+
+        if (! self::acquireLock()) {
+            return self::stepResult($exporter, busy: true, phase: 'busy', message: 'Proses lain sedang berjalan. Halaman akan mencoba lagi otomatis.');
+        }
+
+        try {
+            $state = self::readStepState();
+
+            if (! $state['regions_done'] && $exporter->hasRegionsCsv()) {
+                $state['regions_done'] = true;
+                self::writeStepState($state);
+            }
+
+            if (! $state['regions_done']) {
+                $written = $exporter->appendRegionsCsvChunk($state['regions_offset'], $rowBudget);
+                $state['regions_offset'] += $written;
+
+                if ($written < $rowBudget) {
+                    $exporter->finalizeRegionsCsv();
+                    $state['regions_done'] = true;
+                }
+
+                self::writeStepState($state);
+
+                self::appendLog(sprintf(
+                    'Langkah wilayah: %s baris diekspor%s.',
+                    number_format($state['regions_offset']),
+                    $state['regions_done'] ? ' (selesai)' : '',
+                ));
+
+                return self::stepResult($exporter, phase: 'regions', message: sprintf(
+                    'Mengekspor data wilayah: %s baris selesai.',
+                    number_format($state['regions_offset']),
+                ));
+            }
+
+            foreach ($exporter->cacheTargets() as $target) {
+                if ($exporter->isCached($target['type'], $target['level_id'])) {
+                    continue;
+                }
+
+                $label = $target['type'] === 'teacher'
+                    ? 'Guru'
+                    : 'Siswa ('.(Level::query()->find($target['level_id'])?->name ?? 'semua').')';
+
+                self::appendLog('Langkah template: membangun '.$label.'...');
+
+                $exporter->warm($target['type'], $target['level_id']);
+
+                self::appendLog('Langkah template: '.$label.' selesai.');
+
+                return self::stepResult($exporter, phase: 'template', message: 'Template "'.$label.'" selesai dibangun.');
+            }
+
+            self::appendLog('Semua template impor selesai dibangun (mode bertahap).');
+
+            return self::stepResult($exporter, done: true, phase: 'done', message: 'Semua template selesai. Silakan unduh template dari halaman admin.');
+        } catch (\Throwable $exception) {
+            self::appendLog('Langkah cache gagal: '.$exception->getMessage());
+
+            throw $exception;
+        } finally {
+            self::releaseLock();
+        }
+    }
+
+    public static function resetStepProgress(ImportTemplateExporter $exporter): void
+    {
+        self::releaseLock();
+        $exporter->clearRegionsCsv();
+
+        if (is_file(self::stepStatePath())) {
+            @unlink(self::stepStatePath());
+        }
+
+        foreach ($exporter->cacheTargets() as $target) {
+            $path = $exporter->cachedPath($target['type'], $target['level_id']);
+
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+
+        self::appendLog('Progres cache bertahap direset.');
+    }
+
+    /**
+     * @return array{regions_offset: int, regions_done: bool}
+     */
+    private static function readStepState(): array
+    {
+        $default = ['regions_offset' => 0, 'regions_done' => false];
+
+        if (! is_file(self::stepStatePath())) {
+            return $default;
+        }
+
+        $payload = json_decode((string) file_get_contents(self::stepStatePath()), true);
+
+        if (! is_array($payload)) {
+            return $default;
+        }
+
+        return [
+            'regions_offset' => max(0, (int) ($payload['regions_offset'] ?? 0)),
+            'regions_done' => (bool) ($payload['regions_done'] ?? false),
+        ];
+    }
+
+    /**
+     * @param  array{regions_offset: int, regions_done: bool}  $state
+     */
+    private static function writeStepState(array $state): void
+    {
+        File::ensureDirectoryExists(dirname(self::stepStatePath()));
+
+        File::put(self::stepStatePath(), json_encode($state, JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * @return array{
+     *     done: bool,
+     *     busy: bool,
+     *     phase: 'regions'|'template'|'done'|'busy',
+     *     message: string,
+     *     regions: array{exported: int, total: int, done: bool},
+     *     cached: array<string, bool>
+     * }
+     */
+    private static function stepResult(
+        ImportTemplateExporter $exporter,
+        string $phase,
+        string $message,
+        bool $done = false,
+        bool $busy = false,
+    ): array {
+        $state = self::readStepState();
+
+        return [
+            'done' => $done,
+            'busy' => $busy,
+            'phase' => $phase,
+            'message' => $message,
+            'regions' => [
+                'exported' => $state['regions_offset'],
+                'total' => $exporter->countRegionRows(),
+                'done' => $state['regions_done'] || $exporter->hasRegionsCsv(),
+            ],
+            'cached' => self::cachedTargets($exporter),
         ];
     }
 

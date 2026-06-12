@@ -417,6 +417,111 @@ class ImportTemplateExporter
         return $this->cacheDirectory().'/'.self::REGIONS_CSV_FILENAME;
     }
 
+    public function regionsCsvPartialPath(): string
+    {
+        return $this->regionsCsvPath().'.partial';
+    }
+
+    public function hasRegionsCsv(): bool
+    {
+        $path = $this->regionsCsvPath();
+
+        return is_file($path) && (filesize($path) ?: 0) > 0;
+    }
+
+    public function countRegionRows(): int
+    {
+        if (! Schema::hasTable('villages')) {
+            return 0;
+        }
+
+        return (int) DB::table('villages')->count();
+    }
+
+    /**
+     * Appends up to $limit wilayah rows (starting at $offset) to the partial
+     * regions CSV. Returns the number of rows written, so callers can resume
+     * across multiple short HTTP requests.
+     */
+    public function appendRegionsCsvChunk(int $offset, int $limit): int
+    {
+        if (! Schema::hasTable('villages')) {
+            return 0;
+        }
+
+        File::ensureDirectoryExists($this->cacheDirectory());
+
+        $handle = fopen($this->regionsCsvPartialPath(), 'a');
+
+        if ($handle === false) {
+            throw new RuntimeException('Gagal menulis cache wilayah untuk template impor.');
+        }
+
+        $written = 0;
+
+        try {
+            $rows = DB::table('villages')
+                ->join('sub_districts', 'villages.sub_district_id', '=', 'sub_districts.id')
+                ->join('cities', 'sub_districts.city_id', '=', 'cities.id')
+                ->join('provinces', 'cities.province_id', '=', 'provinces.id')
+                ->orderBy('provinces.name')
+                ->orderBy('cities.name')
+                ->orderBy('sub_districts.name')
+                ->orderBy('villages.name')
+                ->orderBy('villages.id')
+                ->select([
+                    'provinces.name as province_name',
+                    'cities.name as city_name',
+                    'sub_districts.name as sub_district_name',
+                    'villages.name as village_name',
+                ])
+                ->offset($offset)
+                ->limit($limit)
+                ->get();
+
+            foreach ($rows as $row) {
+                fputcsv($handle, [
+                    (string) $row->province_name,
+                    (string) $row->city_name,
+                    (string) $row->sub_district_name,
+                    (string) $row->village_name,
+                ]);
+
+                $written++;
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $written;
+    }
+
+    public function finalizeRegionsCsv(): void
+    {
+        $partialPath = $this->regionsCsvPartialPath();
+
+        if (! is_file($partialPath)) {
+            return;
+        }
+
+        $finalPath = $this->regionsCsvPath();
+
+        if (is_file($finalPath)) {
+            @unlink($finalPath);
+        }
+
+        File::move($partialPath, $finalPath);
+    }
+
+    public function clearRegionsCsv(): void
+    {
+        foreach ([$this->regionsCsvPath(), $this->regionsCsvPartialPath()] as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+    }
+
     public function ensureRegionsCsvCache(): void
     {
         $path = $this->regionsCsvPath();

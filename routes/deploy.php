@@ -6,9 +6,12 @@
  * Usage (from browser):
  *   - Migrate:       https://yourdomain.com/deploy/{token}/migrate
  *   - Seed wilayah:  https://yourdomain.com/deploy/{token}/seed-wilayah
- *   - Cache template impor: https://yourdomain.com/deploy/{token}/cache-import-templates
- *     (runs in background; poll status at .../cache-import-templates/status)
- *   - Cache sync (slow): .../cache-import-templates?sync=1
+ *   - Cache template impor (RECOMMENDED, shared-hosting safe):
+ *     https://yourdomain.com/deploy/{token}/cache-import-templates/step
+ *     Open in browser and leave the tab open - it auto-continues in small
+ *     chunks until done. Add ?reset=1 to start over. Add ?json=1 for JSON.
+ *   - Cache status: .../cache-import-templates/status
+ *   - Cache sync (may timeout on shared hosting): .../cache-import-templates?sync=1
  *   - Cache one template: .../cache-import-templates?sync=1&target=teacher (or sd|smp|sma)
  *   - Migrate+Seed:  https://yourdomain.com/deploy/{token}/migrate-seed
  *   - Create user:   https://yourdomain.com/deploy/{token}/create-user?name=Admin&email=admin@hstkb.sch.id&password=secret123&role=super_admin
@@ -90,6 +93,69 @@ Route::prefix('deploy/{token}')->group(function () {
         abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
 
         return response()->json(ImportTemplateCacheRunner::status($exporter));
+    });
+
+    Route::get('/cache-import-templates/step', function (string $token, Request $request, ImportTemplateExporter $exporter) {
+        abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
+
+        if ($request->boolean('reset')) {
+            ImportTemplateCacheRunner::resetStepProgress($exporter);
+
+            return redirect()->to($request->url());
+        }
+
+        try {
+            $result = ImportTemplateCacheRunner::step($exporter);
+        } catch (Throwable $exception) {
+            if ($request->boolean('json')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $exception->getMessage(),
+                ], 500);
+            }
+
+            $error = e($exception->getMessage());
+
+            return response(
+                '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>Cache Template - Error</title></head>'
+                .'<body style="font-family:sans-serif;max-width:640px;margin:40px auto;">'
+                ."<h2 style=\"color:#b91c1c;\">Terjadi kesalahan</h2><p>{$error}</p>"
+                ."<p><a href=\"{$request->url()}\">Coba lagi</a> &middot; <a href=\"{$request->url()}?reset=1\">Reset &amp; mulai ulang</a></p>"
+                .'</body></html>',
+                500,
+            )->header('Content-Type', 'text/html');
+        }
+
+        if ($request->boolean('json')) {
+            return response()->json($result);
+        }
+
+        $cachedList = collect($result['cached'])
+            ->map(fn (bool $isCached, string $name): string => '<li>'.e($name).': '.($isCached ? '&#9989; selesai' : '&#8987; belum').'</li>')
+            ->implode('');
+
+        $regions = $result['regions'];
+        $regionsLine = $regions['done']
+            ? 'Data wilayah: selesai ('.number_format($regions['exported'] > 0 ? $regions['exported'] : $regions['total']).' baris).'
+            : 'Data wilayah: '.number_format($regions['exported']).' / '.number_format($regions['total']).' baris.';
+
+        $refreshTag = $result['done'] ? '' : '<meta http-equiv="refresh" content="2">';
+        $heading = $result['done'] ? 'Selesai!' : ($result['busy'] ? 'Menunggu proses lain...' : 'Sedang membangun...');
+        $footer = $result['done']
+            ? '<p style="color:#15803d;font-weight:bold;">Semua template siap. Tab ini boleh ditutup.</p>'
+            : '<p>Biarkan tab ini terbuka - halaman akan lanjut otomatis setiap 2 detik.</p>';
+
+        return response(
+            "<!DOCTYPE html><html lang=\"id\"><head><meta charset=\"utf-8\">{$refreshTag}<title>Cache Template Impor</title></head>"
+            .'<body style="font-family:sans-serif;max-width:640px;margin:40px auto;">'
+            ."<h2>{$heading}</h2>"
+            .'<p>'.e($result['message']).'</p>'
+            ."<p>{$regionsLine}</p>"
+            ."<ul>{$cachedList}</ul>"
+            .$footer
+            ."<p style=\"color:#6b7280;font-size:13px;\"><a href=\"{$request->url()}?reset=1\">Reset &amp; mulai ulang dari awal</a></p>"
+            .'</body></html>',
+        )->header('Content-Type', 'text/html');
     });
 
     Route::get('/cache-import-templates', function (string $token, Request $request) {
