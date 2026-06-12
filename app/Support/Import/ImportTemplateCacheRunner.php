@@ -7,6 +7,7 @@ use App\Support\ComposerInstallRunner;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
 
 class ImportTemplateCacheRunner
 {
@@ -136,24 +137,34 @@ class ImportTemplateCacheRunner
         File::ensureDirectoryExists(storage_path('app/import-templates'));
         File::ensureDirectoryExists(dirname(self::logPath()));
 
-        $php = \escapeshellarg(ComposerInstallRunner::phpBinary());
-        $artisan = \escapeshellarg(base_path('artisan'));
-        $log = \escapeshellarg(self::logPath());
+        self::appendLog('Memulai cache template impor di background...');
 
-        $command = sprintf(
-            '%s %s personalia:cache-import-templates >> %s 2>&1',
-            $php,
-            $artisan,
-            $log,
-        );
+        try {
+            Process::path(base_path())
+                ->timeout(7200)
+                ->env(ComposerInstallRunner::environment())
+                ->start([
+                    ComposerInstallRunner::phpBinary(),
+                    base_path('artisan'),
+                    'personalia:cache-import-templates',
+                ]);
 
-        if (PHP_OS_FAMILY === 'Windows') {
-            \pclose(\popen('start /B '.$command, 'r'));
-        } else {
-            \exec($command.' &');
+            return true;
+        } catch (\Throwable $exception) {
+            self::appendLog('Gagal memulai proses background: '.$exception->getMessage());
+
+            return false;
         }
+    }
 
-        return true;
+    public static function appendLog(string $message): void
+    {
+        File::ensureDirectoryExists(dirname(self::logPath()));
+
+        File::append(
+            self::logPath(),
+            '['.now()->toIso8601String().'] '.$message.PHP_EOL,
+        );
     }
 
     /**

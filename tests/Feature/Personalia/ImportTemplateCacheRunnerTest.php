@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\Level;
+use App\Support\ComposerInstallRunner;
 use App\Support\Import\ImportTemplateCacheRunner;
 use App\Support\Import\ImportTemplateExporter;
+use Illuminate\Process\PendingProcess;
+use Illuminate\Support\Facades\Process;
 
 beforeEach(function () {
     ImportTemplateCacheRunner::releaseLock();
@@ -10,6 +13,20 @@ beforeEach(function () {
 
 afterEach(function () {
     ImportTemplateCacheRunner::releaseLock();
+});
+
+test('import template cache runner starts artisan without shell helpers', function () {
+    Process::fake();
+
+    expect(ImportTemplateCacheRunner::startInBackground())->toBeTrue();
+
+    Process::assertRan(function (PendingProcess $process): bool {
+        return $process->command === [
+            ComposerInstallRunner::phpBinary(),
+            base_path('artisan'),
+            'personalia:cache-import-templates',
+        ];
+    });
 });
 
 test('import template cache runner manages lock lifecycle', function () {

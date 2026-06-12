@@ -26,6 +26,8 @@ class CachePersonaliaImportTemplatesCommand extends Command
         }
 
         try {
+            ImportTemplateCacheRunner::appendLog('Perintah cache template impor dijalankan.');
+
             $this->components->info('Membuat template impor personalia...');
 
             foreach ($exporter->cacheTargets() as $target) {
@@ -45,7 +47,13 @@ class CachePersonaliaImportTemplatesCommand extends Command
 
             $this->components->success('Template impor tersimpan di storage/app/import-templates/');
 
+            ImportTemplateCacheRunner::appendLog('Cache template impor selesai.');
+
             return self::SUCCESS;
+        } catch (\Throwable $exception) {
+            ImportTemplateCacheRunner::appendLog('Cache template impor gagal: '.$exception->getMessage());
+
+            throw $exception;
         } finally {
             ImportTemplateCacheRunner::releaseLock();
         }

@@ -75,6 +75,8 @@ test('deploy seed wilayah is forbidden with invalid token', function () {
 test('deploy seed wilayah runs with valid token', function () {
     config()->set('app.deploy_secret', 'deploy-token');
 
+    Process::fake();
+
     Artisan::shouldReceive('call')
         ->once()
         ->with('db:seed', [
@@ -109,6 +111,8 @@ test('deploy cache import templates is forbidden with invalid token', function (
 
 test('deploy cache import templates starts in background by default', function () {
     config()->set('app.deploy_secret', 'deploy-token');
+
+    Process::fake();
 
     $this->get('/deploy/deploy-token/cache-import-templates')
         ->assertAccepted()
@@ -151,11 +155,13 @@ test('deploy release runs migrate and optimize with valid token', function () {
     config()->set('app.deploy_secret', 'deploy-token');
 
     Process::fake([
-        '*' => new FakeProcessResult(
-            command: '',
-            exitCode: 0,
-            output: 'Composer dependencies installed.',
-        ),
+        '*' => function () {
+            return new FakeProcessResult(
+                command: '',
+                exitCode: 0,
+                output: 'Composer dependencies installed.',
+            );
+        },
     ]);
 
     Artisan::shouldReceive('call')
