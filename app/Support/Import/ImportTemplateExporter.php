@@ -87,11 +87,11 @@ class ImportTemplateExporter
     /**
      * @param  'student'|'teacher'  $type
      */
-    public function warm(string $type, ?string $academicLevelId = null): string
+    public function warm(string $type, ?string $academicLevelId = null, bool $includeFullRegions = true): string
     {
         $path = $this->cachedPath($type, $academicLevelId);
 
-        $this->buildFile($path, $type, $academicLevelId);
+        $this->buildFile($path, $type, $academicLevelId, $includeFullRegions);
         $this->validateBuiltFile($path);
 
         return $path;
@@ -100,7 +100,7 @@ class ImportTemplateExporter
     /**
      * @param  'student'|'teacher'  $type
      */
-    public function ensureFreshDownload(string $type, ?string $academicLevelId = null): void
+    public function ensureFreshDownload(string $type, ?string $academicLevelId = null, bool $includeFullRegions = false): void
     {
         $path = $this->cachedPath($type, $academicLevelId);
 
@@ -108,7 +108,7 @@ class ImportTemplateExporter
             @unlink($path);
         }
 
-        $this->warm($type, $academicLevelId);
+        $this->warm($type, $academicLevelId, $includeFullRegions);
 
         abort_unless(
             $this->isCached($type, $academicLevelId),
@@ -138,7 +138,7 @@ class ImportTemplateExporter
     /**
      * @param  'student'|'teacher'  $type
      */
-    public function buildFile(string $path, string $type, ?string $academicLevelId = null): void
+    public function buildFile(string $path, string $type, ?string $academicLevelId = null, bool $includeFullRegions = true): void
     {
         if (function_exists('ini_set')) {
             @ini_set('memory_limit', '512M');
@@ -161,7 +161,7 @@ class ImportTemplateExporter
             $this->writeDataSheet($writer, $type);
             $this->writeGuideSheet($writer, $type);
             $this->writeChoicesSheet($writer, $type, $academicLevelId);
-            $this->writeRegionsSheet($writer);
+            $this->writeRegionsSheet($writer, $includeFullRegions);
 
             $writer->close();
             $isClosed = true;
@@ -364,7 +364,7 @@ class ImportTemplateExporter
         }
     }
 
-    private function writeRegionsSheet(Writer $writer): void
+    private function writeRegionsSheet(Writer $writer, bool $includeFullRegions): void
     {
         $writer->addNewSheetAndMakeItCurrent();
         $writer->getCurrentSheet()->setName(__('personalia.import.sheet.regions'));
@@ -376,7 +376,7 @@ class ImportTemplateExporter
             __('personalia.import.columns.desa_kelurahan'),
         ]));
 
-        if (! $this->includeFullRegionsDataset()) {
+        if (! $includeFullRegions) {
             $infoStyle = (new Style)->setFontItalic()->setFontColor(Color::rgb(80, 80, 80));
             $this->addGuideTextRow($writer, __('personalia.import.regions.web_limited_note'), $infoStyle);
 
@@ -410,11 +410,6 @@ class ImportTemplateExporter
                     $row->village_name,
                 ]));
             });
-    }
-
-    private function includeFullRegionsDataset(): bool
-    {
-        return in_array(PHP_SAPI, ['cli', 'phpdbg'], true);
     }
 
     private function validateBuiltFile(string $path): void
