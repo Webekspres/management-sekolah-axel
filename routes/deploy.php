@@ -98,6 +98,10 @@ Route::prefix('deploy/{token}')->group(function () {
         try {
             $target = $request->query('target');
 
+            if ($request->boolean('force')) {
+                ImportTemplateCacheRunner::releaseLock();
+            }
+
             if ($request->boolean('sync')) {
                 $result = ImportTemplateCacheRunner::runSynchronously(
                     is_string($target) && $target !== '' ? $target : null,

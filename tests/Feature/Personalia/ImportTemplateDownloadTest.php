@@ -39,13 +39,42 @@ function readImportTemplateRegionsSheet(string $path): array
     return $rows;
 }
 
+test('regions csv cache is reused across template builds', function () {
+    $province = Province::factory()->create(['name' => 'Jawa Barat CSV']);
+    $city = City::factory()->create(['province_id' => $province->id, 'name' => 'Kota Bandung CSV']);
+    $subDistrict = SubDistrict::factory()->create(['city_id' => $city->id, 'name' => 'Coblong CSV']);
+    Village::factory()->create(['sub_district_id' => $subDistrict->id, 'name' => 'Dago CSV']);
+
+    $exporter = app(ImportTemplateExporter::class);
+    $regionsCsv = $exporter->regionsCsvPath();
+
+    if (is_file($regionsCsv)) {
+        unlink($regionsCsv);
+    }
+
+    $exporter->warm('teacher', null, includeFullRegions: true);
+
+    expect(is_file($regionsCsv))->toBeTrue();
+
+    $firstModified = filemtime($regionsCsv);
+
+    $exporter->warm('teacher', null, includeFullRegions: true);
+
+    expect(filemtime($regionsCsv))->toBe($firstModified);
+});
+
 test('cached import template includes wilayah rows when built with full regions', function () {
+    $exporter = app(ImportTemplateExporter::class);
+
+    if (is_file($exporter->regionsCsvPath())) {
+        unlink($exporter->regionsCsvPath());
+    }
+
     $province = Province::factory()->create(['name' => 'Jawa Barat Template']);
     $city = City::factory()->create(['province_id' => $province->id, 'name' => 'Kota Bandung Template']);
     $subDistrict = SubDistrict::factory()->create(['city_id' => $city->id, 'name' => 'Coblong Template']);
     Village::factory()->create(['sub_district_id' => $subDistrict->id, 'name' => 'Dago Template']);
 
-    $exporter = app(ImportTemplateExporter::class);
     $path = $exporter->warm('teacher', null, includeFullRegions: true);
 
     $rows = readImportTemplateRegionsSheet($path);
@@ -72,13 +101,17 @@ test('browser fallback template does not include wilayah rows', function () {
 test('download serves pre-cached template without stripping wilayah data', function () {
     $admin = User::factory()->asAdmin()->create();
     $level = Level::factory()->create(['name' => 'SD']);
+    $exporter = app(ImportTemplateExporter::class);
+
+    if (is_file($exporter->regionsCsvPath())) {
+        unlink($exporter->regionsCsvPath());
+    }
 
     $province = Province::factory()->create(['name' => 'Jawa Tengah Cached']);
     $city = City::factory()->create(['province_id' => $province->id, 'name' => 'Kota Semarang Cached']);
     $subDistrict = SubDistrict::factory()->create(['city_id' => $city->id, 'name' => 'Candisari Cached']);
     Village::factory()->create(['sub_district_id' => $subDistrict->id, 'name' => 'Jatingaleh Cached']);
 
-    $exporter = app(ImportTemplateExporter::class);
     $cachedPath = $exporter->warm('student', $level->id, includeFullRegions: true);
 
     $this->actingAs($admin)

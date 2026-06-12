@@ -17,6 +17,8 @@ class ImportTemplateCacheRunner
 
     private const COMPLETED_LOCK_GRACE_SECONDS = 60;
 
+    private const STALE_RUNNING_WITHOUT_OUTPUT_MINUTES = 35;
+
     public static function lockPath(): string
     {
         return storage_path('app/import-templates/'.self::LOCK_FILENAME);
@@ -204,6 +206,17 @@ class ImportTemplateCacheRunner
             $startedAt = self::lockStartedAt();
 
             if ($startedAt?->lt(now()->subSeconds(self::COMPLETED_LOCK_GRACE_SECONDS))) {
+                self::releaseLock();
+                $running = false;
+            }
+        }
+
+        if ($running && ! $completed) {
+            $startedAt = self::lockStartedAt();
+            $cachedCount = collect($cached)->filter()->count();
+
+            if ($cachedCount === 0 && $startedAt?->lt(now()->subMinutes(self::STALE_RUNNING_WITHOUT_OUTPUT_MINUTES))) {
+                self::appendLog('Lock dilepas otomatis: tidak ada file template terbentuk setelah '.self::STALE_RUNNING_WITHOUT_OUTPUT_MINUTES.' menit (proses kemungkinan macet).');
                 self::releaseLock();
                 $running = false;
             }

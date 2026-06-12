@@ -48,8 +48,12 @@ class CachePersonaliaImportTemplatesCommand extends Command
                     ? 'Guru'
                     : 'Siswa ('.(Level::query()->find($levelId)?->name ?? 'semua').')';
 
-                $this->components->task($label, function () use ($exporter, $type, $levelId): bool {
+                $this->components->task($label, function () use ($exporter, $type, $levelId, $label): bool {
+                    ImportTemplateCacheRunner::appendLog('Membangun template: '.$label);
+
                     $exporter->warm($type, $levelId);
+
+                    ImportTemplateCacheRunner::appendLog('Selesai template: '.$label);
 
                     return true;
                 });

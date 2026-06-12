@@ -61,6 +61,33 @@ test('deploy cache import templates status endpoint reports progress', function 
         ]);
 });
 
+test('status releases stale lock when no template files were created', function () {
+    config()->set('app.deploy_secret', 'deploy-token');
+
+    $exporter = app(ImportTemplateExporter::class);
+    $cachedPath = $exporter->cachedPath('teacher', null);
+
+    if (is_file($cachedPath)) {
+        unlink($cachedPath);
+    }
+
+    ImportTemplateCacheRunner::acquireLock();
+
+    $lockPath = ImportTemplateCacheRunner::lockPath();
+    file_put_contents($lockPath, json_encode([
+        'started_at' => now()->subMinutes(40)->toIso8601String(),
+        'pid' => \getmypid(),
+    ], JSON_THROW_ON_ERROR));
+
+    $this->get('/deploy/deploy-token/cache-import-templates/status')
+        ->assertSuccessful()
+        ->assertJson([
+            'running' => false,
+        ]);
+
+    expect(ImportTemplateCacheRunner::isRunning())->toBeFalse();
+});
+
 test('status releases orphan lock when all templates are already cached', function () {
     config()->set('app.deploy_secret', 'deploy-token');
 

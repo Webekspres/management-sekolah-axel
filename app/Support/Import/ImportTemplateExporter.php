@@ -22,10 +22,7 @@ class ImportTemplateExporter
 
     private const MIN_TEMPLATE_BYTES = 1024;
 
-    /**
-     * @var list<array{0: string, 1: string, 2: string, 3: string}>|null
-     */
-    private ?array $regionRows = null;
+    private const REGIONS_CSV_FILENAME = '.regions-export.csv';
 
     /**
      * @param  'student'|'teacher'  $type
@@ -388,51 +385,88 @@ class ImportTemplateExporter
             return;
         }
 
-        foreach ($this->regionRows() as $row) {
-            $writer->addRow(Row::fromValues($row));
+        if (! Schema::hasTable('villages')) {
+            return;
+        }
+
+        $this->ensureRegionsCsvCache();
+
+        $csvPath = $this->regionsCsvPath();
+
+        if (! is_file($csvPath)) {
+            return;
+        }
+
+        $handle = fopen($csvPath, 'r');
+
+        if ($handle === false) {
+            return;
+        }
+
+        try {
+            while (($row = fgetcsv($handle)) !== false) {
+                $writer->addRow(Row::fromValues($row));
+            }
+        } finally {
+            fclose($handle);
         }
     }
 
-    /**
-     * @return list<array{0: string, 1: string, 2: string, 3: string}>
-     */
-    private function regionRows(): array
+    public function regionsCsvPath(): string
     {
-        if ($this->regionRows !== null) {
-            return $this->regionRows;
+        return $this->cacheDirectory().'/'.self::REGIONS_CSV_FILENAME;
+    }
+
+    public function ensureRegionsCsvCache(): void
+    {
+        $path = $this->regionsCsvPath();
+
+        if (is_file($path) && (filesize($path) ?: 0) > 0) {
+            return;
         }
 
         if (! Schema::hasTable('villages')) {
-            return $this->regionRows = [];
+            return;
         }
 
-        $rows = [];
+        File::ensureDirectoryExists(dirname($path));
 
-        DB::table('villages')
-            ->join('sub_districts', 'villages.sub_district_id', '=', 'sub_districts.id')
-            ->join('cities', 'sub_districts.city_id', '=', 'cities.id')
-            ->join('provinces', 'cities.province_id', '=', 'provinces.id')
-            ->orderBy('provinces.name')
-            ->orderBy('cities.name')
-            ->orderBy('sub_districts.name')
-            ->orderBy('villages.name')
-            ->select([
-                'provinces.name as province_name',
-                'cities.name as city_name',
-                'sub_districts.name as sub_district_name',
-                'villages.name as village_name',
-            ])
-            ->lazy()
-            ->each(function (object $row) use (&$rows): void {
-                $rows[] = [
-                    (string) $row->province_name,
-                    (string) $row->city_name,
-                    (string) $row->sub_district_name,
-                    (string) $row->village_name,
-                ];
-            });
+        $tempPath = $path.'.tmp-'.Str::uuid();
+        $handle = fopen($tempPath, 'w');
 
-        return $this->regionRows = $rows;
+        if ($handle === false) {
+            throw new RuntimeException('Gagal menulis cache wilayah untuk template impor.');
+        }
+
+        try {
+            DB::table('villages')
+                ->join('sub_districts', 'villages.sub_district_id', '=', 'sub_districts.id')
+                ->join('cities', 'sub_districts.city_id', '=', 'cities.id')
+                ->join('provinces', 'cities.province_id', '=', 'provinces.id')
+                ->orderBy('provinces.name')
+                ->orderBy('cities.name')
+                ->orderBy('sub_districts.name')
+                ->orderBy('villages.name')
+                ->select([
+                    'provinces.name as province_name',
+                    'cities.name as city_name',
+                    'sub_districts.name as sub_district_name',
+                    'villages.name as village_name',
+                ])
+                ->lazy()
+                ->each(function (object $row) use ($handle): void {
+                    fputcsv($handle, [
+                        (string) $row->province_name,
+                        (string) $row->city_name,
+                        (string) $row->sub_district_name,
+                        (string) $row->village_name,
+                    ]);
+                });
+        } finally {
+            fclose($handle);
+        }
+
+        File::move($tempPath, $path);
     }
 
     private function validateBuiltFile(string $path): void
