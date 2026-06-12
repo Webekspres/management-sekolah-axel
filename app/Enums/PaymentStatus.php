@@ -60,4 +60,15 @@ enum PaymentStatus: string
 
         return $options;
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function optionsForManualRecording(): array
+    {
+        return [
+            self::Paid->value => self::Paid->label(),
+            self::Pending->value => self::Pending->label(),
+        ];
+    }
 }

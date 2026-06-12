@@ -13,6 +13,7 @@ use Filament\Actions\ImportAction;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -124,13 +125,24 @@ class ImportPersonaliaAction extends ImportAction
             return $components;
         });
 
-        $this->beforeFormValidated(function (array $data, ImportAction $action): void {
-            ImportPersonaliaPreValidator::validate(
-                data: $data,
-                personaliaType: $this->personaliaType,
-                importerClass: $action->getImporter(),
-                action: $this,
-            );
+        $this->before(function (array $data, ImportAction $action): void {
+            try {
+                ImportPersonaliaPreValidator::validate(
+                    data: $data,
+                    personaliaType: $this->personaliaType,
+                    importerClass: $action->getImporter(),
+                    action: $this,
+                );
+            } catch (ValidationException $exception) {
+                Notification::make()
+                    ->title(__('personalia.import.errors.pre_validation_title'))
+                    ->body(implode(' ', collect($exception->errors())->flatten()->all()))
+                    ->danger()
+                    ->persistent()
+                    ->send();
+
+                $action->halt();
+            }
         });
 
         $this->label(__('personalia.import.upload_data'));

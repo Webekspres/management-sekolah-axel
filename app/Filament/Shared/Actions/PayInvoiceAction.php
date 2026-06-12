@@ -45,7 +45,8 @@ class PayInvoiceAction
                     ->native(false),
                 Section::make(__('pembayaran.method_group.online'))
                     ->description(__('pembayaran.pay_modal.online_hint'))
-                    ->visible(fn (Get $get): bool => PaymentMethod::tryFrom((string) $get('payment_method'))?->requiresGateway() ?? false)
+                    ->visible(fn (Get $get): bool => (bool) config('payment.student_gateway_enabled')
+                        && (PaymentMethod::tryFrom((string) $get('payment_method'))?->requiresGateway() ?? false))
                     ->schema([]),
                 Section::make(__('pembayaran.pay_modal.bank_section'))
                     ->description(__('pembayaran.pay_modal.transfer_hint'))
@@ -73,6 +74,8 @@ class PayInvoiceAction
                 $paymentService = app(PaymentService::class);
 
                 try {
+                    PaymentMethod::assertAvailableToStudent($method);
+
                     if ($method->isCash()) {
                         Notification::make()
                             ->title(__('pembayaran.pay_modal.cash_no_status_change'))

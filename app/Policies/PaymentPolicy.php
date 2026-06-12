@@ -60,6 +60,24 @@ class PaymentPolicy
         return $user->hasUserRole(UserRole::SuperAdmin);
     }
 
+    public function verify(User $user, Payment $payment): bool
+    {
+        if ($this->hasTemporaryAccess($user, 'verify', $payment)) {
+            return true;
+        }
+
+        return $user->hasUserRole(UserRole::SuperAdmin);
+    }
+
+    public function reject(User $user, Payment $payment): bool
+    {
+        if ($this->hasTemporaryAccess($user, 'reject', $payment)) {
+            return true;
+        }
+
+        return $user->hasUserRole(UserRole::SuperAdmin);
+    }
+
     public function restore(User $user, Payment $payment): bool
     {
         return false;

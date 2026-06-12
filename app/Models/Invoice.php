@@ -6,10 +6,12 @@ use App\Enums\PaymentStatus;
 use App\HasUlid;
 use App\Models\Traits\HasStudentWithAcademicLevel;
 use App\Models\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Invoice extends Model
 {
@@ -32,6 +34,7 @@ class Invoice extends Model
         'academic_year_id',
         'amount',
         'description',
+        'billing_period',
         'status',
         'due_date',
     ];
@@ -44,6 +47,40 @@ class Invoice extends Model
             'created_at' => 'datetime',
             'status' => PaymentStatus::class,
         ];
+    }
+
+    public static function billingPeriodFromDate(Carbon $date): string
+    {
+        return $date->format('Y-m');
+    }
+
+    /**
+     * @param  Builder<Invoice>  $query
+     */
+    public function scopeForBillingPeriod(Builder $query, Student $student, AcademicYear $academicYear, string $billingPeriod): Builder
+    {
+        return $query
+            ->where('student_id', $student->id)
+            ->where('academic_year_id', $academicYear->id)
+            ->where('billing_period', $billingPeriod);
+    }
+
+    public function hasPaymentHistory(): bool
+    {
+        if ($this->relationLoaded('payments')) {
+            return $this->payments->isNotEmpty();
+        }
+
+        return $this->payments()->exists();
+    }
+
+    public function isLockedForEditing(): bool
+    {
+        $status = $this->status instanceof PaymentStatus
+            ? $this->status
+            : PaymentStatus::tryFrom((string) $this->status);
+
+        return $status === PaymentStatus::Paid || $this->hasPaymentHistory();
     }
 
     public function isPayableByStudent(): bool

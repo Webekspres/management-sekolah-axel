@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Keuangan\Resources\Payments\Tables;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Services\PaymentService;
+use DomainException;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
@@ -57,20 +58,30 @@ class PaymentsTable
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
+                    ->authorize(fn ($record): bool => auth()->user()?->can('verify', $record) ?? false)
                     ->visible(fn ($record): bool => $record->status === PaymentStatus::Pending)
                     ->action(function ($record): void {
-                        app(PaymentService::class)->verifyPayment($record);
-                        Notification::make()->title(__('pembayaran.notifications.verified'))->success()->send();
+                        try {
+                            app(PaymentService::class)->verifyPayment($record);
+                            Notification::make()->title(__('pembayaran.notifications.verified'))->success()->send();
+                        } catch (DomainException $exception) {
+                            Notification::make()->title($exception->getMessage())->danger()->send();
+                        }
                     }),
                 Action::make('reject')
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
+                    ->authorize(fn ($record): bool => auth()->user()?->can('reject', $record) ?? false)
                     ->visible(fn ($record): bool => $record->status === PaymentStatus::Pending)
                     ->action(function ($record): void {
-                        app(PaymentService::class)->rejectPayment($record);
-                        Notification::make()->title(__('pembayaran.notifications.rejected'))->warning()->send();
+                        try {
+                            app(PaymentService::class)->rejectPayment($record);
+                            Notification::make()->title(__('pembayaran.notifications.rejected'))->warning()->send();
+                        } catch (DomainException $exception) {
+                            Notification::make()->title($exception->getMessage())->danger()->send();
+                        }
                     }),
             ]);
     }

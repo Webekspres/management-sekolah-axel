@@ -25,8 +25,6 @@ class PaymentService
 
     public function confirmOfflineTransfer(Invoice $invoice, Student $student): Payment
     {
-        $invoice = $this->resolveInvoice($invoice);
-
         if (! $this->canStudentPay($invoice)) {
             throw new DomainException(__('pembayaran.notifications.cannot_pay'));
         }
@@ -36,6 +34,9 @@ class PaymentService
         }
 
         return DB::transaction(function () use ($invoice): Payment {
+            $invoice = $this->lockInvoiceForUpdate($invoice);
+            $this->assertInvoicePayable($invoice);
+
             $this->cancelPendingPayments($invoice);
 
             $payment = Payment::query()->withoutInvoiceAcademicLevelScope()->create([
@@ -57,7 +58,9 @@ class PaymentService
      */
     public function initiateOnlinePayment(Invoice $invoice, Student $student, PaymentMethod $method): array
     {
-        $invoice = $this->resolveInvoice($invoice);
+        if (! config('payment.student_gateway_enabled')) {
+            throw new DomainException(__('pembayaran.notifications.gateway_disabled'));
+        }
 
         if (! $this->canStudentPay($invoice)) {
             throw new DomainException(__('pembayaran.notifications.cannot_pay'));
@@ -72,6 +75,9 @@ class PaymentService
         }
 
         return DB::transaction(function () use ($invoice, $method): array {
+            $invoice = $this->lockInvoiceForUpdate($invoice);
+            $this->assertInvoicePayable($invoice);
+
             $this->cancelPendingPayments($invoice);
 
             $payment = Payment::query()->withoutInvoiceAcademicLevelScope()->create([
@@ -96,17 +102,28 @@ class PaymentService
 
     public function verifyPayment(Payment $payment): Payment
     {
-        if ($payment->status !== PaymentStatus::Pending) {
-            throw new DomainException('Hanya pembayaran menunggu verifikasi yang dapat disetujui.');
-        }
-
         return DB::transaction(function () use ($payment): Payment {
+            $payment = Payment::query()
+                ->withoutInvoiceAcademicLevelScope()
+                ->whereKey($payment->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($payment->status !== PaymentStatus::Pending) {
+                throw new DomainException(__('pembayaran.notifications.verify_pending_only'));
+            }
+
+            $invoice = $this->lockInvoiceForUpdate($payment->invoice_id);
+            $this->assertInvoiceNotPaid($invoice);
+
+            $this->cancelPendingPayments($invoice, exceptPaymentId: $payment->id);
+
             $payment->update([
                 'status' => PaymentStatus::Paid,
                 'paid_at' => now(),
             ]);
 
-            $this->updateInvoiceStatus($payment->invoice_id, PaymentStatus::Paid);
+            $this->updateInvoiceStatus($invoice, PaymentStatus::Paid);
 
             return $payment->fresh();
         });
@@ -114,17 +131,26 @@ class PaymentService
 
     public function rejectPayment(Payment $payment): Payment
     {
-        if ($payment->status !== PaymentStatus::Pending) {
-            throw new DomainException('Hanya pembayaran menunggu verifikasi yang dapat ditolak.');
-        }
-
         return DB::transaction(function () use ($payment): Payment {
+            $payment = Payment::query()
+                ->withoutInvoiceAcademicLevelScope()
+                ->whereKey($payment->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($payment->status !== PaymentStatus::Pending) {
+                throw new DomainException(__('pembayaran.notifications.reject_pending_only'));
+            }
+
+            $invoice = $this->lockInvoiceForUpdate($payment->invoice_id);
+            $this->assertInvoiceNotPaid($invoice);
+
             $payment->update([
                 'status' => PaymentStatus::Failed,
                 'paid_at' => null,
             ]);
 
-            $this->updateInvoiceStatus($payment->invoice_id, PaymentStatus::Failed);
+            $this->updateInvoiceStatus($invoice, PaymentStatus::Failed);
 
             return $payment->fresh();
         });
@@ -135,10 +161,16 @@ class PaymentService
         PaymentMethod $method,
         PaymentStatus $status = PaymentStatus::Paid,
     ): Payment {
+        if (in_array($status, [PaymentStatus::Unpaid, PaymentStatus::Failed], true)) {
+            throw new DomainException(__('pembayaran.notifications.invalid_manual_status'));
+        }
+
         return DB::transaction(function () use ($invoice, $method, $status): Payment {
-            if ($status === PaymentStatus::Pending) {
-                $this->cancelPendingPayments($invoice);
-            }
+            $invoice = $this->lockInvoiceForUpdate($invoice);
+            $this->assertInvoiceNotPaid($invoice);
+            $this->assertNoPaidPaymentExists($invoice);
+
+            $this->cancelPendingPayments($invoice);
 
             $payment = Payment::query()->withoutInvoiceAcademicLevelScope()->create([
                 'invoice_id' => $invoice->id,
@@ -154,12 +186,46 @@ class PaymentService
         });
     }
 
-    protected function resolveInvoice(Invoice $invoice): Invoice
+    protected function lockInvoiceForUpdate(Invoice|string $invoice): Invoice
     {
+        $invoiceId = $invoice instanceof Invoice ? $invoice->id : $invoice;
+
         return Invoice::query()
             ->withoutGlobalScopes()
-            ->whereKey($invoice->id)
+            ->whereKey($invoiceId)
+            ->lockForUpdate()
             ->firstOrFail();
+    }
+
+    protected function assertInvoicePayable(Invoice $invoice): void
+    {
+        if (! $invoice->isPayableByStudent()) {
+            throw new DomainException(__('pembayaran.notifications.cannot_pay'));
+        }
+    }
+
+    protected function assertInvoiceNotPaid(Invoice $invoice): void
+    {
+        $status = $invoice->status instanceof PaymentStatus
+            ? $invoice->status
+            : PaymentStatus::tryFrom((string) $invoice->status);
+
+        if ($status === PaymentStatus::Paid) {
+            throw new DomainException(__('pembayaran.notifications.invoice_already_paid'));
+        }
+    }
+
+    protected function assertNoPaidPaymentExists(Invoice $invoice): void
+    {
+        $hasPaid = Payment::query()
+            ->withoutInvoiceAcademicLevelScope()
+            ->where('invoice_id', $invoice->id)
+            ->where('status', PaymentStatus::Paid)
+            ->exists();
+
+        if ($hasPaid) {
+            throw new DomainException(__('pembayaran.notifications.invoice_already_paid'));
+        }
     }
 
     protected function updateInvoiceStatus(Invoice|string $invoice, PaymentStatus $status): void
@@ -177,12 +243,13 @@ class PaymentService
         }
     }
 
-    protected function cancelPendingPayments(Invoice $invoice): void
+    protected function cancelPendingPayments(Invoice $invoice, ?string $exceptPaymentId = null): void
     {
         Payment::query()
             ->withoutInvoiceAcademicLevelScope()
             ->where('invoice_id', $invoice->id)
             ->where('status', PaymentStatus::Pending)
+            ->when($exceptPaymentId !== null, fn ($query) => $query->where('id', '!=', $exceptPaymentId))
             ->update(['status' => PaymentStatus::Failed]);
     }
 }

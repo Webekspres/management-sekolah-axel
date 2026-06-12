@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use DomainException;
+
 enum PaymentMethod: string
 {
     case Qris = 'qris';
@@ -48,6 +50,22 @@ enum PaymentMethod: string
         return $this === self::Cash;
     }
 
+    public function isAvailableToStudent(): bool
+    {
+        if (! $this->requiresGateway()) {
+            return true;
+        }
+
+        return (bool) config('payment.student_gateway_enabled', false);
+    }
+
+    public static function assertAvailableToStudent(self $method): void
+    {
+        if (! $method->isAvailableToStudent()) {
+            throw new DomainException(__('pembayaran.notifications.gateway_disabled'));
+        }
+    }
+
     public static function labelFor(mixed $state): string
     {
         if ($state instanceof self) {
@@ -65,7 +83,9 @@ enum PaymentMethod: string
         $options = [];
 
         foreach (self::cases() as $case) {
-            $options[$case->value] = $case->label();
+            if ($case->isAvailableToStudent()) {
+                $options[$case->value] = $case->label();
+            }
         }
 
         return $options;
@@ -76,6 +96,12 @@ enum PaymentMethod: string
      */
     public static function optionsForAdmin(): array
     {
-        return self::optionsForStudent();
+        $options = [];
+
+        foreach (self::cases() as $case) {
+            $options[$case->value] = $case->label();
+        }
+
+        return $options;
     }
 }

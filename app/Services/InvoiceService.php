@@ -10,6 +10,7 @@ use App\Models\Student;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class InvoiceService
 {
@@ -41,74 +42,104 @@ class InvoiceService
         string $description,
         Carbon $dueDate,
         ?float $amount = null,
+        ?string $billingPeriod = null,
+        ?string $invoiceNumber = null,
     ): Invoice {
+        $billingPeriod ??= Invoice::billingPeriodFromDate($dueDate);
+        $amount ??= $this->resolveAmountForStudent($student);
+
+        $this->assertAmountPositive($amount);
+        $this->assertNoDuplicateInvoice($student, $academicYear, $billingPeriod);
+
         return Invoice::query()->create([
-            'invoice_number' => $this->generateInvoiceNumber(),
+            'invoice_number' => $invoiceNumber ?? $this->generateInvoiceNumber(),
             'student_id' => $student->id,
             'academic_year_id' => $academicYear->id,
-            'amount' => $amount ?? $this->resolveAmountForStudent($student),
+            'amount' => $amount,
             'description' => $description,
+            'billing_period' => $billingPeriod,
             'status' => PaymentStatus::Unpaid,
             'due_date' => $dueDate->toDateString(),
         ]);
     }
 
     /**
-     * @return int Number of invoices created
+     * @return array{created: int, skipped: int}
      */
     public function bulkGenerateForSchoolClass(
         SchoolClass $schoolClass,
         AcademicYear $academicYear,
         string $description,
         Carbon $dueDate,
-    ): int {
-        $students = $schoolClass->students()->get();
-        $created = 0;
-
-        foreach ($students as $student) {
-            $exists = Invoice::query()
-                ->where('student_id', $student->id)
-                ->where('academic_year_id', $academicYear->id)
-                ->where('description', $description)
-                ->exists();
-
-            if ($exists) {
-                continue;
-            }
-
-            $this->createForStudent($student, $academicYear, $description, $dueDate);
-            $created++;
-        }
-
-        return $created;
+    ): array {
+        return $this->bulkGenerateForStudents(
+            $schoolClass->students()->get(),
+            $academicYear,
+            $description,
+            $dueDate,
+        );
     }
 
     /**
      * @param  Collection<int, Student>  $students
+     * @return array{created: int, skipped: int}
      */
     public function bulkGenerateForStudents(
         Collection $students,
         AcademicYear $academicYear,
         string $description,
         Carbon $dueDate,
-    ): int {
+    ): array {
+        $billingPeriod = Invoice::billingPeriodFromDate($dueDate);
         $created = 0;
+        $skipped = 0;
 
         foreach ($students as $student) {
-            $exists = Invoice::query()
-                ->where('student_id', $student->id)
-                ->where('academic_year_id', $academicYear->id)
-                ->where('description', $description)
-                ->exists();
+            if ($this->duplicateExists($student, $academicYear, $billingPeriod)) {
+                $skipped++;
 
-            if ($exists) {
                 continue;
             }
 
-            $this->createForStudent($student, $academicYear, $description, $dueDate);
-            $created++;
+            try {
+                $this->createForStudent(
+                    $student,
+                    $academicYear,
+                    $description,
+                    $dueDate,
+                    billingPeriod: $billingPeriod,
+                );
+                $created++;
+            } catch (ValidationException) {
+                $skipped++;
+            }
         }
 
-        return $created;
+        return ['created' => $created, 'skipped' => $skipped];
+    }
+
+    public function assertNoDuplicateInvoice(Student $student, AcademicYear $academicYear, string $billingPeriod): void
+    {
+        if ($this->duplicateExists($student, $academicYear, $billingPeriod)) {
+            throw ValidationException::withMessages([
+                'billing_period' => __('pembayaran.validation.duplicate_billing_period'),
+            ]);
+        }
+    }
+
+    public function assertAmountPositive(float $amount): void
+    {
+        if ($amount <= 0) {
+            throw ValidationException::withMessages([
+                'amount' => __('pembayaran.validation.zero_amount'),
+            ]);
+        }
+    }
+
+    protected function duplicateExists(Student $student, AcademicYear $academicYear, string $billingPeriod): bool
+    {
+        return Invoice::query()
+            ->forBillingPeriod($student, $academicYear, $billingPeriod)
+            ->exists();
     }
 }

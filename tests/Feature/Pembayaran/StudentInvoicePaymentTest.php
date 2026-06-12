@@ -88,3 +88,28 @@ it('cash payment does not create payment record', function () {
     expect($invoice->fresh()->status)->toBe(PaymentStatus::Unpaid)
         ->and($invoice->payments)->toHaveCount(0);
 });
+
+it('student payment modal excludes gateway methods when disabled', function () {
+    config(['payment.student_gateway_enabled' => false]);
+
+    expect(PaymentMethod::optionsForStudent())->not->toHaveKey('qris')
+        ->and(PaymentMethod::optionsForStudent())->not->toHaveKey('va_bca');
+});
+
+it('rejects tampered gateway payment from student action', function () {
+    config(['payment.student_gateway_enabled' => false]);
+
+    $student = Student::factory()->create();
+    $invoice = Invoice::factory()->unpaid()->create(['student_id' => $student->id]);
+
+    $this->actingAs($student->user);
+    Filament::setCurrentPanel(Filament::getPanel('student'));
+
+    Livewire::test(ListInvoices::class)
+        ->callAction(TestAction::make('bayar_tagihan')->table($invoice), [
+            'payment_method' => PaymentMethod::Qris->value,
+        ]);
+
+    expect($invoice->fresh()->status)->toBe(PaymentStatus::Unpaid)
+        ->and($invoice->fresh()->payments)->toHaveCount(0);
+});

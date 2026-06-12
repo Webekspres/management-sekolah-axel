@@ -37,6 +37,15 @@ return [
         'verified' => 'Pembayaran berhasil diverifikasi.',
         'rejected' => 'Pembayaran ditolak.',
         'cannot_pay' => 'Tagihan ini tidak dapat dibayar saat ini.',
+        'gateway_disabled' => 'Pembayaran online belum tersedia. Silakan pilih transfer bank atau tunai.',
+        'invoice_already_paid' => 'Tagihan ini sudah lunas.',
+        'invalid_manual_status' => 'Status pembayaran manual tidak valid.',
+        'verify_pending_only' => 'Hanya pembayaran menunggu verifikasi yang dapat disetujui.',
+        'reject_pending_only' => 'Hanya pembayaran menunggu verifikasi yang dapat ditolak.',
+    ],
+    'validation' => [
+        'duplicate_billing_period' => 'Tagihan SPP untuk periode ini sudah ada untuk siswa dan tahun akademik yang dipilih.',
+        'zero_amount' => 'Nominal tagihan harus lebih dari nol. Atur SPP default per jenjang atau SPP khusus siswa.',
     ],
     'default_spp' => [
         'action_label' => 'Pengaturan nominal SPP',

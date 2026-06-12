@@ -77,6 +77,7 @@ return [
             'teacher_completed_with_failures' => 'Pengunggahan data guru selesai. :successful baris berhasil, :failed baris gagal.',
         ],
         'errors' => [
+            'pre_validation_title' => 'Unggahan tidak dapat diproses',
             'file_required' => 'Pilih file Excel (.xlsx) atau CSV terlebih dahulu.',
             'no_data_rows' => 'File tidak berisi baris data. Isi lembar Isi Data mulai baris ke-4 pada template.',
             'unmapped_required_columns' => 'Petakan kolom wajib berikut: :columns.',

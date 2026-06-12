@@ -14,9 +14,9 @@ Tagihan SPP (`invoices`) dan pembayaran (`payments`) untuk portal admin, kepala 
 
 ## Metode pembayaran (siswa)
 
-- **Online** (QRIS, VA): gateway abstraksi (`LogPaymentGateway` stub di v1).
 - **Transfer**: instruksi rekening dari `Setting`, tombol konfirmasi → status menunggu verifikasi.
 - **Tunai**: instruksi + himbau konfirmasi lewat WhatsApp (**tanpa** nomor WA di UI); tidak membuat record pembayaran dari portal.
+- **Online** (QRIS, VA): backend siap (`PaymentGateway`, `initiateOnlinePayment`); UI siswa **nonaktif** default (`PAYMENT_STUDENT_GATEWAY_ENABLED=false`). Aktifkan config + driver PG di Fase 2.
 
 ## Copywriting
 

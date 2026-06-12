@@ -3,7 +3,7 @@
 namespace App\Filament\Clusters\Keuangan\Resources\Invoices\Tables;
 
 use App\Enums\PaymentStatus;
-use App\Models\AcademicYear;
+use App\Models\Invoice;
 use App\Models\SchoolClass;
 use App\Services\InvoiceService;
 use Filament\Actions\BulkAction;
@@ -38,6 +38,9 @@ class InvoicesTable
                 TextColumn::make('description')
                     ->label('Keterangan')
                     ->limit(40),
+                TextColumn::make('billing_period')
+                    ->label('Periode')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('amount')
                     ->label('Nominal')
                     ->money('IDR', locale: 'id'),
@@ -90,28 +93,39 @@ class InvoicesTable
                                 ->default(now()->addDays(14)),
                         ])
                         ->action(function (array $data): void {
-                            $class = SchoolClass::query()->findOrFail($data['school_class_id']);
-                            $academicYear = $class->academicYear ?? AcademicYear::query()->where('is_active', true)->first();
+                            $class = SchoolClass::query()->with('academicYear')->findOrFail($data['school_class_id']);
+                            $academicYear = $class->academicYear;
 
                             if ($academicYear === null) {
-                                Notification::make()->title('Tahun akademik tidak ditemukan.')->danger()->send();
+                                Notification::make()
+                                    ->title('Kelas tidak memiliki tahun akademik.')
+                                    ->danger()
+                                    ->send();
 
                                 return;
                             }
 
-                            $count = app(InvoiceService::class)->bulkGenerateForSchoolClass(
+                            $result = app(InvoiceService::class)->bulkGenerateForSchoolClass(
                                 $class,
                                 $academicYear,
                                 $data['description'],
                                 Carbon::parse($data['due_date']),
                             );
 
+                            $message = "{$result['created']} tagihan berhasil dibuat.";
+
+                            if ($result['skipped'] > 0) {
+                                $message .= " {$result['skipped']} dilewati (duplikat periode).";
+                            }
+
                             Notification::make()
-                                ->title("{$count} tagihan berhasil dibuat.")
+                                ->title($message)
                                 ->success()
                                 ->send();
                         }),
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->authorizeIndividualRecords()
+                        ->visible(fn (): bool => auth()->user()?->can('deleteAny', Invoice::class) ?? false),
                 ]),
             ]);
     }

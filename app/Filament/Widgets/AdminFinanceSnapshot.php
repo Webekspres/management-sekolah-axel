@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\UserRole;
 use App\Models\Invoice;
 use App\Models\Payment;
 use Filament\Widgets\StatsOverviewWidget;
@@ -26,7 +27,7 @@ class AdminFinanceSnapshot extends StatsOverviewWidget
 
     public static function canView(): bool
     {
-        return Auth::user()?->role === 'super_admin';
+        return Auth::user()?->hasUserRole(UserRole::SuperAdmin) ?? false;
     }
 
     protected function getStats(): array

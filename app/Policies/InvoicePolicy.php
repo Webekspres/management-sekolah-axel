@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
 use App\Models\Invoice;
 use App\Models\User;
@@ -53,7 +54,45 @@ class InvoicePolicy
             return true;
         }
 
+        if (! $user->hasUserRole(UserRole::SuperAdmin)) {
+            return false;
+        }
+
+        $status = $invoice->status instanceof PaymentStatus
+            ? $invoice->status
+            : PaymentStatus::tryFrom((string) $invoice->status);
+
+        if (in_array($status, [PaymentStatus::Paid, PaymentStatus::Pending], true)) {
+            return false;
+        }
+
+        if ($invoice->hasPaymentHistory()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function deleteAny(User $user): bool
+    {
         return $user->hasUserRole(UserRole::SuperAdmin);
+    }
+
+    public function recordManual(User $user, Invoice $invoice): bool
+    {
+        if ($this->hasTemporaryAccess($user, 'recordManual', $invoice)) {
+            return true;
+        }
+
+        if (! $user->hasUserRole(UserRole::SuperAdmin)) {
+            return false;
+        }
+
+        $status = $invoice->status instanceof PaymentStatus
+            ? $invoice->status
+            : PaymentStatus::tryFrom((string) $invoice->status);
+
+        return $status !== PaymentStatus::Paid;
     }
 
     public function restore(User $user, Invoice $invoice): bool

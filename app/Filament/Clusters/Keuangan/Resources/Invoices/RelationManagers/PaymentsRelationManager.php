@@ -4,7 +4,9 @@ namespace App\Filament\Clusters\Keuangan\Resources\Invoices\RelationManagers;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Models\Invoice;
 use App\Services\PaymentService;
+use DomainException;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
@@ -29,7 +31,7 @@ class PaymentsRelationManager extends RelationManager
                 ->required(),
             Select::make('status')
                 ->label('Status')
-                ->options(PaymentStatus::options())
+                ->options(PaymentStatus::optionsForManualRecording())
                 ->default(PaymentStatus::Paid->value)
                 ->required(),
         ]);
@@ -61,6 +63,8 @@ class PaymentsRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->label('Catat pembayaran')
+                    ->authorize(fn (): bool => auth()->user()?->can('recordManual', $this->getOwnerRecord()) ?? false)
+                    ->visible(fn (): bool => $this->canRecordManualPayment())
                     ->mutateFormDataUsing(function (array $data): array {
                         $invoice = $this->getOwnerRecord();
                         $data['invoice_id'] = $invoice->id;
@@ -73,7 +77,13 @@ class PaymentsRelationManager extends RelationManager
                         $method = PaymentMethod::from($data['payment_method']);
                         $status = PaymentStatus::from($data['status']);
 
-                        return app(PaymentService::class)->recordManualPayment($invoice, $method, $status);
+                        try {
+                            return app(PaymentService::class)->recordManualPayment($invoice, $method, $status);
+                        } catch (DomainException $exception) {
+                            Notification::make()->title($exception->getMessage())->danger()->send();
+
+                            throw $exception;
+                        }
                     }),
             ])
             ->recordActions([
@@ -82,21 +92,43 @@ class PaymentsRelationManager extends RelationManager
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
+                    ->authorize(fn ($record): bool => auth()->user()?->can('verify', $record) ?? false)
                     ->visible(fn ($record): bool => $record->status === PaymentStatus::Pending)
                     ->action(function ($record): void {
-                        app(PaymentService::class)->verifyPayment($record);
-                        Notification::make()->title(__('pembayaran.notifications.verified'))->success()->send();
+                        try {
+                            app(PaymentService::class)->verifyPayment($record);
+                            Notification::make()->title(__('pembayaran.notifications.verified'))->success()->send();
+                        } catch (DomainException $exception) {
+                            Notification::make()->title($exception->getMessage())->danger()->send();
+                        }
                     }),
                 Action::make('reject')
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
+                    ->authorize(fn ($record): bool => auth()->user()?->can('reject', $record) ?? false)
                     ->visible(fn ($record): bool => $record->status === PaymentStatus::Pending)
                     ->action(function ($record): void {
-                        app(PaymentService::class)->rejectPayment($record);
-                        Notification::make()->title(__('pembayaran.notifications.rejected'))->warning()->send();
+                        try {
+                            app(PaymentService::class)->rejectPayment($record);
+                            Notification::make()->title(__('pembayaran.notifications.rejected'))->warning()->send();
+                        } catch (DomainException $exception) {
+                            Notification::make()->title($exception->getMessage())->danger()->send();
+                        }
                     }),
             ]);
+    }
+
+    protected function canRecordManualPayment(): bool
+    {
+        /** @var Invoice $invoice */
+        $invoice = $this->getOwnerRecord();
+
+        if ($invoice->status === PaymentStatus::Paid) {
+            return false;
+        }
+
+        return auth()->user()?->can('recordManual', $invoice) ?? false;
     }
 }

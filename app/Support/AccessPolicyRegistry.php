@@ -233,7 +233,7 @@ class AccessPolicyRegistry
                 'name' => 'Manajemen Tagihan SPP',
                 'description' => 'Akses melihat, membuat, mengubah, dan menghapus tagihan SPP siswa.',
                 'target_model' => 'App\\Models\\Invoice',
-                'abilities' => ['viewAny', 'view', 'create', 'update', 'delete'],
+                'abilities' => ['viewAny', 'view', 'create', 'update', 'delete', 'recordManual'],
                 'permanent_roles' => ['super_admin'],
             ],
             [
@@ -242,7 +242,7 @@ class AccessPolicyRegistry
                 'name' => 'Manajemen Pembayaran SPP',
                 'description' => 'Akses melihat dan mengelola data pembayaran tagihan SPP.',
                 'target_model' => 'App\\Models\\Payment',
-                'abilities' => ['viewAny', 'view', 'create', 'update', 'delete'],
+                'abilities' => ['viewAny', 'view', 'create', 'update', 'delete', 'verify', 'reject'],
                 'permanent_roles' => ['super_admin'],
             ],
             [

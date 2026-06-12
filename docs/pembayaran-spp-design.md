@@ -22,8 +22,18 @@ Action bayar siswa: `App\Filament\Shared\Actions\PayInvoiceAction`.
 
 - `payment_gateway_logs` — audit request/response PG
 - Index `invoices(student_id, status)`
+- Kolom `billing_period` (YYYY-MM) + unique `(student_id, academic_year_id, billing_period)`
+
+## Invariants (hardening)
+
+- Satu tagihan lunas (`PAID`) tidak menerima pembayaran baru.
+- Status tagihan diturunkan dari alur pembayaran, bukan edit form manual.
+- `amount`, `student_id`, `academic_year_id`, `billing_period` terkunci setelah ada pembayaran atau status `PAID`; hanya `description` dan `due_date` dapat diedit.
+- Duplikat tagihan per `(siswa, tahun akademik, billing_period)` ditolak.
+- Gateway siswa: `config('payment.student_gateway_enabled')` — default `false`.
 
 ## Fase 2 (belum diimplementasi)
 
-- Driver PG nyata + webhook `POST /webhooks/payment/{driver}`
+- Set `PAYMENT_STUDENT_GATEWAY_ENABLED=true` + driver PG nyata
+- Webhook `POST /webhooks/payment/{driver}`
 - Notifikasi ke siswa saat lunas
