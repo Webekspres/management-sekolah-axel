@@ -51,6 +51,49 @@ test('teacher import service creates user teacher and address from row data', fu
         ->and($teacher->user->address_id)->not->toBeNull();
 });
 
+test('teacher import service resolves kota bandung separately from kabupaten bandung', function () {
+    $province = Province::factory()->create(['name' => 'Jawa Barat']);
+    $kotaBandung = City::factory()->create([
+        'province_id' => $province->id,
+        'name' => 'Kota Bandung',
+    ]);
+    City::factory()->create([
+        'province_id' => $province->id,
+        'name' => 'Kabupaten Bandung',
+    ]);
+    $subDistrict = SubDistrict::factory()->create([
+        'city_id' => $kotaBandung->id,
+        'name' => 'Coblong',
+    ]);
+    $village = Village::factory()->create([
+        'sub_district_id' => $subDistrict->id,
+        'name' => 'Dago',
+    ]);
+
+    $row = [
+        'nama' => 'Test',
+        'email' => 'test@test.com',
+        'password' => 'password123',
+        'jenis_kelamin' => 'L',
+        'telepon' => '081234567890',
+        'provinsi_lahir' => $province->name,
+        'kota_kabupaten_lahir' => 'Kota Bandung',
+        'tanggal_lahir' => '2010-05-15',
+        'provinsi' => $province->name,
+        'kota_kabupaten' => 'Kota Bandung',
+        'kecamatan' => 'Coblong',
+        'desa_kelurahan' => 'Dago',
+        'jalan_nomor' => 'Jl. Mawar No. 10',
+        'kode_pos' => '40135',
+        'nip' => '198001012010011001',
+        'status_kepegawaian' => 'Guru Kelas',
+    ];
+
+    $teacher = app(TeacherImportService::class)->createFromRow($row);
+
+    expect($teacher->user->address->city_id)->toBe($kotaBandung->id);
+});
+
 test('teacher import service rejects duplicate email', function () {
     User::factory()->asGuru()->create(['email' => 'guru.duplikat@import.test']);
 

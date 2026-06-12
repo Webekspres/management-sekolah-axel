@@ -52,8 +52,25 @@ class RegionLookupService
             $query->where('province_id', $province->id);
         }
 
-        return $query->get()
-            ->first(fn (City $city): bool => $this->normalizer->matches($name, $city->name));
+        $cities = $query->get();
+
+        $exact = $cities->first(
+            fn (City $city): bool => mb_strtolower(trim($name)) === mb_strtolower(trim($city->name)),
+        );
+
+        if ($exact) {
+            return $exact;
+        }
+
+        $matches = $cities->filter(
+            fn (City $city): bool => $this->normalizer->matches($name, $city->name),
+        );
+
+        if ($matches->count() === 1) {
+            return $matches->first();
+        }
+
+        return null;
     }
 
     public function requireCity(?string $name, ?Province $province, string $provinceLabel): City
