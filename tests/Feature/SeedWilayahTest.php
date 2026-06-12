@@ -48,8 +48,12 @@ test('wilayah seeder runs for super admin', function () {
         ])
         ->andReturn(0);
 
-    Artisan::shouldReceive('output')
+    Artisan::shouldReceive('call')
         ->once()
+        ->with('personalia:cache-import-templates', [])
+        ->andReturn(0);
+
+    Artisan::shouldReceive('output')
         ->andReturn('OK');
 
     $this->actingAs($user)
@@ -60,7 +64,7 @@ test('wilayah seeder runs for super admin', function () {
             'message' => 'Seeder wilayah dijalankan.',
             'output' => 'OK',
             'cache_import_templates' => [
-                'mode' => 'background',
+                'mode' => 'after_response',
             ],
         ]);
 });
@@ -75,8 +79,6 @@ test('deploy seed wilayah is forbidden with invalid token', function () {
 test('deploy seed wilayah runs with valid token', function () {
     config()->set('app.deploy_secret', 'deploy-token');
 
-    Process::fake();
-
     Artisan::shouldReceive('call')
         ->once()
         ->with('db:seed', [
@@ -85,8 +87,12 @@ test('deploy seed wilayah runs with valid token', function () {
         ])
         ->andReturn(0);
 
-    Artisan::shouldReceive('output')
+    Artisan::shouldReceive('call')
         ->once()
+        ->with('personalia:cache-import-templates', [])
+        ->andReturn(0);
+
+    Artisan::shouldReceive('output')
         ->andReturn('OK');
 
     $this->get('/deploy/deploy-token/seed-wilayah')
@@ -97,7 +103,7 @@ test('deploy seed wilayah runs with valid token', function () {
             'output' => 'OK',
             'cache_import_templates' => [
                 'command' => 'personalia:cache-import-templates',
-                'mode' => 'background',
+                'mode' => 'after_response',
             ],
         ]);
 });
@@ -109,16 +115,22 @@ test('deploy cache import templates is forbidden with invalid token', function (
         ->assertForbidden();
 });
 
-test('deploy cache import templates starts in background by default', function () {
+test('deploy cache import templates starts after http response by default', function () {
     config()->set('app.deploy_secret', 'deploy-token');
 
-    Process::fake();
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('personalia:cache-import-templates', [])
+        ->andReturn(0);
+
+    Artisan::shouldReceive('output')
+        ->andReturn('Template impor tersimpan.');
 
     $this->get('/deploy/deploy-token/cache-import-templates')
         ->assertAccepted()
         ->assertJson([
             'command' => 'personalia:cache-import-templates',
-            'mode' => 'background',
+            'mode' => 'after_response',
         ]);
 });
 
@@ -127,7 +139,7 @@ test('deploy cache import templates can run synchronously with sync flag', funct
 
     Artisan::shouldReceive('call')
         ->once()
-        ->with('personalia:cache-import-templates')
+        ->with('personalia:cache-import-templates', [])
         ->andReturn(0);
 
     Artisan::shouldReceive('output')
@@ -206,7 +218,7 @@ test('deploy release runs migrate and optimize with valid token', function () {
             ],
             'cache_import_templates' => [
                 'command' => 'personalia:cache-import-templates',
-                'mode' => 'background',
+                'mode' => 'after_response',
             ],
             'optimize' => [
                 'output' => 'OK',

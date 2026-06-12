@@ -3,11 +3,9 @@
 namespace App\Support\Import;
 
 use App\Models\Level;
-use App\Support\ComposerInstallRunner;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Process;
 
 class ImportTemplateCacheRunner
 {
@@ -74,87 +72,107 @@ class ImportTemplateCacheRunner
     }
 
     /**
-     * @return array{status: 'success'|'error', exit_code: int, output: string, mode: 'sync'}
+     * @return array{status: 'success'|'error', exit_code: int, output: string, mode: 'sync', target: string|null}
      */
-    public static function runSynchronously(): array
+    public static function runSynchronously(?string $target = null): array
     {
         File::ensureDirectoryExists(storage_path('app/import-templates'));
 
-        $exitCode = Artisan::call('personalia:cache-import-templates');
+        $exitCode = self::runCacheCommand($target);
 
         return [
             'status' => $exitCode === 0 ? 'success' : 'error',
             'exit_code' => $exitCode,
             'output' => trim(Artisan::output()),
             'mode' => 'sync',
+            'target' => $target,
         ];
     }
 
     /**
      * @return array{
      *     status: 'started'|'running'|'error',
-     *     mode: 'background',
+     *     mode: 'after_response',
      *     message: string,
-     *     status_path: string
+     *     status_path: string,
+     *     target: string|null
      * }
      */
-    public static function dispatchInBackground(): array
+    public static function dispatchInBackground(?string $target = null): array
     {
         $statusPath = '/deploy/'.config('app.deploy_secret').'/cache-import-templates/status';
 
         if (self::isRunning()) {
             return [
                 'status' => 'running',
-                'mode' => 'background',
+                'mode' => 'after_response',
                 'message' => 'Proses cache template impor sedang berjalan di server.',
                 'status_path' => $statusPath,
+                'target' => $target,
             ];
         }
 
-        if (! self::startInBackground()) {
-            return [
-                'status' => 'error',
-                'mode' => 'background',
-                'message' => 'Gagal memulai proses cache template impor di background.',
-                'status_path' => $statusPath,
-            ];
-        }
+        self::scheduleAfterResponse($target);
+
+        $message = filled($target)
+            ? 'Cache template "'.$target.'" dijadwalkan setelah response HTTP. Cek status endpoint dalam 1-2 menit.'
+            : 'Proses cache template impor dijadwalkan setelah response HTTP. Cek status endpoint dalam beberapa menit.';
 
         return [
             'status' => 'started',
-            'mode' => 'background',
-            'message' => 'Proses cache template impor dimulai di background. Cek status beberapa menit lagi.',
+            'mode' => 'after_response',
+            'message' => $message,
             'status_path' => $statusPath,
+            'target' => $target,
         ];
     }
 
-    public static function startInBackground(): bool
+    public static function scheduleAfterResponse(?string $target = null): void
     {
-        if (self::isRunning()) {
-            return false;
-        }
-
         File::ensureDirectoryExists(storage_path('app/import-templates'));
         File::ensureDirectoryExists(dirname(self::logPath()));
 
-        self::appendLog('Memulai cache template impor di background...');
+        $targetLabel = filled($target) ? ' ('.$target.')' : '';
 
-        try {
-            Process::path(base_path())
-                ->timeout(7200)
-                ->env(ComposerInstallRunner::environment())
-                ->start([
-                    ComposerInstallRunner::phpBinary(),
-                    base_path('artisan'),
-                    'personalia:cache-import-templates',
-                ]);
+        self::appendLog('Menjadwalkan cache template impor'.$targetLabel.' setelah response HTTP dikirim...');
 
-            return true;
-        } catch (\Throwable $exception) {
-            self::appendLog('Gagal memulai proses background: '.$exception->getMessage());
+        app()->terminating(function () use ($target, $targetLabel): void {
+            if (function_exists('set_time_limit')) {
+                @set_time_limit(0);
+            }
 
-            return false;
+            if (function_exists('ignore_user_abort')) {
+                @ignore_user_abort(true);
+            }
+
+            self::appendLog('Worker melanjutkan cache template impor'.$targetLabel.'.');
+
+            try {
+                $exitCode = self::runCacheCommand($target);
+                $output = trim(Artisan::output());
+
+                if ($output !== '') {
+                    self::appendLog($output);
+                }
+
+                self::appendLog($exitCode === 0
+                    ? 'Cache template impor'.$targetLabel.' selesai.'
+                    : 'Cache template impor'.$targetLabel.' gagal (exit code '.$exitCode.').');
+            } catch (\Throwable $exception) {
+                self::appendLog('Cache template impor'.$targetLabel.' gagal: '.$exception->getMessage());
+            }
+        });
+    }
+
+    public static function runCacheCommand(?string $target = null): int
+    {
+        $parameters = [];
+
+        if (filled($target)) {
+            $parameters['--target'] = $target;
         }
+
+        return Artisan::call('personalia:cache-import-templates', $parameters);
     }
 
     public static function appendLog(string $message): void

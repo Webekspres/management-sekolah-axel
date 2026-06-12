@@ -9,6 +9,7 @@
  *   - Cache template impor: https://yourdomain.com/deploy/{token}/cache-import-templates
  *     (runs in background; poll status at .../cache-import-templates/status)
  *   - Cache sync (slow): .../cache-import-templates?sync=1
+ *   - Cache one template: .../cache-import-templates?sync=1&target=teacher (or sd|smp|sma)
  *   - Migrate+Seed:  https://yourdomain.com/deploy/{token}/migrate-seed
  *   - Create user:   https://yourdomain.com/deploy/{token}/create-user?name=Admin&email=admin@hstkb.sch.id&password=secret123&role=super_admin
  *   - Link storage:  https://yourdomain.com/deploy/{token}/storage-link
@@ -95,8 +96,12 @@ Route::prefix('deploy/{token}')->group(function () {
         abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
 
         try {
+            $target = $request->query('target');
+
             if ($request->boolean('sync')) {
-                $result = ImportTemplateCacheRunner::runSynchronously();
+                $result = ImportTemplateCacheRunner::runSynchronously(
+                    is_string($target) && $target !== '' ? $target : null,
+                );
 
                 return response()->json(array_merge(
                     ['command' => 'personalia:cache-import-templates'],
@@ -104,7 +109,9 @@ Route::prefix('deploy/{token}')->group(function () {
                 ), $result['exit_code'] === 0 ? 200 : 500);
             }
 
-            $result = ImportTemplateCacheRunner::dispatchInBackground();
+            $result = ImportTemplateCacheRunner::dispatchInBackground(
+                is_string($target) && $target !== '' ? $target : null,
+            );
 
             return response()->json(array_merge(
                 ['command' => 'personalia:cache-import-templates'],

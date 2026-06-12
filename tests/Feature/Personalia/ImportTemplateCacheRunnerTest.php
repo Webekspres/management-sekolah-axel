@@ -1,11 +1,9 @@
 <?php
 
 use App\Models\Level;
-use App\Support\ComposerInstallRunner;
 use App\Support\Import\ImportTemplateCacheRunner;
 use App\Support\Import\ImportTemplateExporter;
-use Illuminate\Process\PendingProcess;
-use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Artisan;
 
 beforeEach(function () {
     ImportTemplateCacheRunner::releaseLock();
@@ -15,18 +13,21 @@ afterEach(function () {
     ImportTemplateCacheRunner::releaseLock();
 });
 
-test('import template cache runner starts artisan without shell helpers', function () {
-    Process::fake();
+test('dispatch runs cache command after http response via terminating callback', function () {
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('personalia:cache-import-templates', [])
+        ->andReturn(0);
 
-    expect(ImportTemplateCacheRunner::startInBackground())->toBeTrue();
+    Artisan::shouldReceive('output')
+        ->andReturn('OK');
 
-    Process::assertRan(function (PendingProcess $process): bool {
-        return $process->command === [
-            ComposerInstallRunner::phpBinary(),
-            base_path('artisan'),
-            'personalia:cache-import-templates',
-        ];
-    });
+    $result = ImportTemplateCacheRunner::dispatchInBackground();
+
+    expect($result['status'])->toBe('started')
+        ->and($result['mode'])->toBe('after_response');
+
+    app()->terminate();
 });
 
 test('import template cache runner manages lock lifecycle', function () {

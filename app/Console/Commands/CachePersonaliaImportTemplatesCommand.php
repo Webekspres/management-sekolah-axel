@@ -9,7 +9,9 @@ use Illuminate\Console\Command;
 
 class CachePersonaliaImportTemplatesCommand extends Command
 {
-    protected $signature = 'personalia:cache-import-templates {--force : Jalankan meskipun proses cache lain sedang berjalan}';
+    protected $signature = 'personalia:cache-import-templates
+                            {--force : Jalankan meskipun proses cache lain sedang berjalan}
+                            {--target= : Hanya satu template: teacher, sd, smp, atau sma}';
 
     protected $description = 'Pre-cache template Excel impor siswa dan guru ke storage';
 
@@ -30,7 +32,15 @@ class CachePersonaliaImportTemplatesCommand extends Command
 
             $this->components->info('Membuat template impor personalia...');
 
-            foreach ($exporter->cacheTargets() as $target) {
+            $targets = $this->resolveTargets($exporter);
+
+            if ($targets === []) {
+                $this->components->error('Target template tidak dikenali. Gunakan: teacher, sd, smp, sma.');
+
+                return self::FAILURE;
+            }
+
+            foreach ($targets as $target) {
                 $type = $target['type'];
                 $levelId = $target['level_id'];
 
@@ -57,5 +67,37 @@ class CachePersonaliaImportTemplatesCommand extends Command
         } finally {
             ImportTemplateCacheRunner::releaseLock();
         }
+    }
+
+    /**
+     * @return list<array{type: 'student'|'teacher', level_id: string|null}>
+     */
+    private function resolveTargets(ImportTemplateExporter $exporter): array
+    {
+        $targets = $exporter->cacheTargets();
+        $only = $this->option('target');
+
+        if (blank($only)) {
+            return $targets;
+        }
+
+        $only = strtolower((string) $only);
+
+        return array_values(array_filter(
+            $targets,
+            function (array $target) use ($only): bool {
+                if ($only === 'teacher') {
+                    return $target['type'] === 'teacher';
+                }
+
+                if ($target['type'] !== 'student') {
+                    return false;
+                }
+
+                $levelName = Level::query()->find($target['level_id'])?->name;
+
+                return str($levelName)->slug() === $only;
+            },
+        ));
     }
 }
