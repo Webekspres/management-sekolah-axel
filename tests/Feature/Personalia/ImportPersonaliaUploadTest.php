@@ -175,6 +175,49 @@ test('unggah data siswa tanpa tingkat sekolah dihentikan dengan notifikasi error
     expect(Student::query()->where('nipd', '99999')->exists())->toBeFalse();
 });
 
+test('unggah data siswa mengizinkan kolom tanggal opsional kosong', function () {
+    $level = Level::factory()->create();
+    $class = SchoolClass::factory()->create([
+        'level_id' => $level->id,
+        'name' => 'IX C',
+    ]);
+
+    session(['active_academic_level_id' => $level->id]);
+
+    $csv = buildPersonaliaCsv([
+        [
+            'nama' => 'Siswa Tanpa Ijazah',
+            'email' => 'siswa.tanpa.ijazah@example.test',
+            'password' => 'password123',
+            'jenis_kelamin' => 'L',
+            'kelas' => 'IX C',
+            'nipd' => '2024990099',
+            'nik' => '3201234567890099',
+            'nisn' => '0059990099',
+            'tanggal_ijazah' => '',
+            'tanggal_masuk' => '',
+        ],
+    ]);
+
+    $columnMap = buildPersonaliaColumnMap(StudentImporter::getColumns(), [
+        'nama', 'email', 'password', 'jenis_kelamin', 'kelas', 'nipd', 'nik', 'nisn', 'tanggal_ijazah', 'tanggal_masuk',
+    ]);
+
+    Livewire::test(ListStudents::class)
+        ->callAction('importStudents', [
+            'file' => UploadedFile::fake()->createWithContent('siswa.csv', $csv),
+            'columnMap' => $columnMap,
+        ])
+        ->assertHasNoActionErrors()
+        ->assertNotified();
+
+    $student = Student::query()->where('nipd', '2024990099')->first();
+
+    expect($student)->not->toBeNull()
+        ->and($student->diploma_date)->toBeNull()
+        ->and($student->admission_date)->toBeNull();
+});
+
 test('unggah data guru membuat record teacher melalui import action', function () {
     $csv = buildPersonaliaCsv([
         [

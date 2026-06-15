@@ -30,6 +30,10 @@ class ImportColumnFactory
                 }
 
                 if (Str::startsWith($definition->hintKey, 'personalia.import.hints.tanggal')) {
+                    if (! $definition->required) {
+                        $rules[] = 'nullable';
+                    }
+
                     $rules[] = 'date';
                 }
 
