@@ -124,19 +124,19 @@ class TeacherImportService
                 'email' => $row['email'],
                 'password' => $row['password'],
                 'gender' => strtoupper((string) ($row['jenis_kelamin'] ?? 'L')),
-                'phone_number' => $row['telepon'] ?? null,
+                'phone_number' => $this->blankAsNull($row['telepon'] ?? null),
                 'date_of_birth' => filled($row['tanggal_lahir'] ?? null) ? (string) $row['tanggal_lahir'] : null,
                 'place_of_birth' => $birthCityName,
-                'address_detail' => $row['detail_alamat'] ?? null,
+                'address_detail' => $this->blankAsNull($row['detail_alamat'] ?? null),
             ],
             'address_province_id' => $addressIds['province_id'],
             'address_city_id' => $addressIds['city_id'],
             'address_sub_district_id' => $addressIds['sub_district_id'],
             'address_village_id' => $addressIds['village_id'],
-            'address_street' => $row['jalan_nomor'] ?? null,
-            'address_postal_code' => $row['kode_pos'] ?? null,
-            'nip' => $row['nip'] ?? null,
-            'employment_status' => $this->mapEmploymentStatus($row['status_kepegawaian'] ?? null),
+            'address_street' => $this->blankAsNull($row['jalan_nomor'] ?? null),
+            'address_postal_code' => $this->blankAsNull($row['kode_pos'] ?? null),
+            'nip' => $this->blankAsNull($row['nip'] ?? null),
+            'employment_status' => $this->mapEmploymentStatus($this->blankAsNull($row['status_kepegawaian'] ?? null)),
         ];
 
         /** @var Teacher $teacher */
@@ -258,5 +258,10 @@ class TeacherImportService
         }
 
         return $mapped;
+    }
+
+    private function blankAsNull(mixed $value): mixed
+    {
+        return blank($value) ? null : $value;
     }
 }

@@ -238,8 +238,107 @@ test('unggah data guru membuat record teacher melalui import action', function (
             'columnMap' => $columnMap,
         ])
         ->assertHasNoActionErrors()
+        ->assertNotified(__('personalia.import.notifications.completed_success_title'));
+
+    $teacher = Teacher::query()->whereHas('user', fn ($query) => $query->where('email', 'guru.impor@example.test'))->first();
+
+    expect($teacher)->not->toBeNull()
+        ->and($teacher->user->name)->toBe('Guru Impor Test');
+});
+
+test('unggah data guru menampilkan guru baru di tabel setelah impor', function () {
+    $csv = buildPersonaliaCsv([
+        [
+            'nama' => 'Guru Tabel Test',
+            'email' => 'guru.tabel@example.test',
+            'password' => 'password123',
+            'jenis_kelamin' => 'L',
+        ],
+    ]);
+
+    $columnMap = buildPersonaliaColumnMap(TeacherImporter::getColumns(), [
+        'nama', 'email', 'password', 'jenis_kelamin',
+    ]);
+
+    Livewire::test(ListTeachers::class)
+        ->callAction('importTeachers', [
+            'file' => UploadedFile::fake()->createWithContent('guru.csv', $csv),
+            'columnMap' => $columnMap,
+        ])
+        ->assertHasNoActionErrors()
+        ->assertCanSeeTableRecords(
+            Teacher::query()->whereHas('user', fn ($query) => $query->where('email', 'guru.tabel@example.test'))->get(),
+        );
+});
+
+test('unggah data guru mengizinkan kolom opsional kosong', function () {
+    $csv = buildPersonaliaCsv([
+        [
+            'nama' => 'Guru Minimal',
+            'email' => 'guru.minimal@example.test',
+            'password' => 'password123',
+            'jenis_kelamin' => 'P',
+            'tanggal_lahir' => '',
+            'nip' => '',
+            'status_kepegawaian' => '',
+            'telepon' => '',
+        ],
+    ]);
+
+    $columnMap = buildPersonaliaColumnMap(TeacherImporter::getColumns(), [
+        'nama', 'email', 'password', 'jenis_kelamin', 'tanggal_lahir', 'nip', 'status_kepegawaian', 'telepon',
+    ]);
+
+    Livewire::test(ListTeachers::class)
+        ->callAction('importTeachers', [
+            'file' => UploadedFile::fake()->createWithContent('guru.csv', $csv),
+            'columnMap' => $columnMap,
+        ])
+        ->assertHasNoActionErrors()
         ->assertNotified();
 
-    expect(User::query()->where('email', 'guru.impor@example.test')->exists())->toBeTrue()
-        ->and(Teacher::query()->whereHas('user', fn ($query) => $query->where('email', 'guru.impor@example.test'))->exists())->toBeTrue();
+    $teacher = Teacher::query()->whereHas('user', fn ($query) => $query->where('email', 'guru.minimal@example.test'))->first();
+
+    expect($teacher)->not->toBeNull()
+        ->and($teacher->nip)->toBeNull()
+        ->and($teacher->employment_status)->toBeNull()
+        ->and($teacher->user->date_of_birth)->toBeNull();
+});
+
+test('unggah data guru dari file excel membuat record teacher', function () {
+    $xlsxPath = sys_get_temp_dir().'/unggah-guru-'.uniqid('', true).'.xlsx';
+
+    $writer = new Writer;
+    $writer->openToFile($xlsxPath);
+    $writer->getCurrentSheet()->setName(XlsxToCsvConverter::DATA_SHEET_NAME);
+
+    $headers = ['nama', 'email', 'password', 'jenis_kelamin'];
+    $writer->addRow(Row::fromValues($headers));
+    $writer->addRow(Row::fromValues([
+        'Guru Excel Test',
+        'guru.excel@example.test',
+        'password123',
+        'L',
+    ]));
+    $writer->close();
+
+    $columnMap = buildPersonaliaColumnMap(TeacherImporter::getColumns(), $headers);
+
+    Livewire::test(ListTeachers::class)
+        ->callAction('importTeachers', [
+            'file' => UploadedFile::fake()->createWithContent('guru.xlsx', file_get_contents($xlsxPath)),
+            'columnMap' => $columnMap,
+        ])
+        ->assertHasNoActionErrors()
+        ->assertNotified();
+
+    @unlink($xlsxPath);
+
+    expect(User::query()->where('email', 'guru.excel@example.test')->exists())->toBeTrue();
+});
+
+test('modal unggah data guru dapat dibuka tanpa error', function () {
+    Livewire::test(ListTeachers::class)
+        ->mountAction('importTeachers')
+        ->assertActionMounted('importTeachers');
 });

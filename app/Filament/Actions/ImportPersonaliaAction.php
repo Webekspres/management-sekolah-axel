@@ -10,6 +10,7 @@ use App\Support\Import\ImportPersonaliaFileInspector;
 use App\Support\Import\ImportPersonaliaPreValidator;
 use App\Support\Import\XlsxToCsvConverter;
 use Filament\Actions\ImportAction;
+use Filament\Actions\Imports\Exceptions\RowImportFailedException;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
@@ -23,6 +24,7 @@ use Illuminate\Validation\ValidationException;
 use League\Csv\Reader as CsvReader;
 use Livewire\Component as LivewireComponent;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Throwable;
 
 class ImportPersonaliaAction extends ImportAction
 {
@@ -231,40 +233,62 @@ class ImportPersonaliaAction extends ImportAction
                     throw $exception;
                 }
 
-                $csvStream = $this->getUploadedFileStream($state);
+                try {
+                    $csvStream = $this->getUploadedFileStream($state);
 
-                if (! $csvStream) {
-                    return;
+                    if (! $csvStream) {
+                        return;
+                    }
+
+                    $csvReader = CsvReader::from($csvStream);
+
+                    if (filled($csvDelimiter = $this->getCsvDelimiter($csvReader))) {
+                        $csvReader->setDelimiter($csvDelimiter);
+                    }
+
+                    $csvReader->setHeaderOffset($action->getHeaderOffset() ?? 0);
+
+                    $csvColumns = $csvReader->getHeader();
+
+                    $lowercaseCsvColumnValues = array_map(Str::lower(...), $csvColumns);
+                    $lowercaseCsvColumnKeys = array_combine(
+                        $lowercaseCsvColumnValues,
+                        $csvColumns,
+                    );
+
+                    $set('columnMap', array_reduce($action->getImporter()::getColumns(), function (array $carry, ImportColumn $column) use ($lowercaseCsvColumnKeys, $lowercaseCsvColumnValues) {
+                        $carry[$column->getName()] = $lowercaseCsvColumnKeys[
+                            Arr::first(
+                                array_intersect(
+                                    $lowercaseCsvColumnValues,
+                                    $column->getGuesses(),
+                                ),
+                            )
+                        ] ?? null;
+
+                        return $carry;
+                    }, []));
+                } catch (RowImportFailedException $exception) {
+                    $component->state([]);
+
+                    Notification::make()
+                        ->title(__('personalia.import.errors.pre_validation_title'))
+                        ->body($exception->getMessage())
+                        ->danger()
+                        ->persistent()
+                        ->send();
+                } catch (Throwable $exception) {
+                    report($exception);
+
+                    $component->state([]);
+
+                    Notification::make()
+                        ->title(__('personalia.import.errors.pre_validation_title'))
+                        ->body(__('personalia.import.errors.file_read_failed'))
+                        ->danger()
+                        ->persistent()
+                        ->send();
                 }
-
-                $csvReader = CsvReader::from($csvStream);
-
-                if (filled($csvDelimiter = $this->getCsvDelimiter($csvReader))) {
-                    $csvReader->setDelimiter($csvDelimiter);
-                }
-
-                $csvReader->setHeaderOffset($action->getHeaderOffset() ?? 0);
-
-                $csvColumns = $csvReader->getHeader();
-
-                $lowercaseCsvColumnValues = array_map(Str::lower(...), $csvColumns);
-                $lowercaseCsvColumnKeys = array_combine(
-                    $lowercaseCsvColumnValues,
-                    $csvColumns,
-                );
-
-                $set('columnMap', array_reduce($action->getImporter()::getColumns(), function (array $carry, ImportColumn $column) use ($lowercaseCsvColumnKeys, $lowercaseCsvColumnValues) {
-                    $carry[$column->getName()] = $lowercaseCsvColumnKeys[
-                        Arr::first(
-                            array_intersect(
-                                $lowercaseCsvColumnValues,
-                                $column->getGuesses(),
-                            ),
-                        )
-                    ] ?? null;
-
-                    return $carry;
-                }, []));
             })
             ->storeFiles(false)
             ->visibility('private')

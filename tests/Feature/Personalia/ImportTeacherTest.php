@@ -94,6 +94,26 @@ test('teacher import service resolves kota bandung separately from kabupaten ban
     expect($teacher->user->address->city_id)->toBe($kotaBandung->id);
 });
 
+test('teacher import service allows minimal row without optional fields', function () {
+    $row = [
+        'nama' => 'Guru Minimal Service',
+        'email' => 'guru.minimal.service@import.test',
+        'password' => 'password123',
+        'jenis_kelamin' => 'L',
+        'tanggal_lahir' => '',
+        'nip' => '',
+        'status_kepegawaian' => '',
+    ];
+
+    $teacher = app(TeacherImportService::class)->createFromRow($row);
+
+    expect($teacher)->toBeInstanceOf(Teacher::class)
+        ->and($teacher->nip)->toBeNull()
+        ->and($teacher->employment_status)->toBeNull()
+        ->and($teacher->user->date_of_birth)->toBeNull()
+        ->and($teacher->user->address_id)->toBeNull();
+});
+
 test('teacher import service rejects duplicate email', function () {
     User::factory()->asGuru()->create(['email' => 'guru.duplikat@import.test']);
 
