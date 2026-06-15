@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Http\Controllers\DownloadImportFailureXlsxController;
 use App\Http\Controllers\PersonaliaImportTemplateController;
 use App\Models\Rapor;
 use App\Models\User;
@@ -31,6 +32,9 @@ Route::get('/', function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/personalia/import-template/{type}', PersonaliaImportTemplateController::class)
         ->name('personalia.import-template');
+
+    Route::get('/personalia/imports/{import}/failed-rows/download', DownloadImportFailureXlsxController::class)
+        ->name('personalia.imports.failed-rows.download');
 
     Route::get('/rapor/{rapor}/download', function (Rapor $rapor) {
         Gate::authorize('download', $rapor);

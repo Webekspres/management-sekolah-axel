@@ -71,10 +71,15 @@ return [
             'completed_success_title' => 'Impor selesai — semua baris berhasil',
             'completed_partial_title' => 'Impor selesai — sebagian baris gagal',
             'completed_all_failed_title' => 'Impor selesai — tidak ada baris yang berhasil',
+            'download_failed_rows_xlsx' => 'Unduh baris gagal (Excel)',
             'student_completed' => 'Pengunggahan data siswa selesai. :successful baris berhasil.',
             'student_completed_with_failures' => 'Pengunggahan data siswa selesai. :successful baris berhasil, :failed baris gagal.',
             'teacher_completed' => 'Pengunggahan data guru selesai. :successful baris berhasil.',
             'teacher_completed_with_failures' => 'Pengunggahan data guru selesai. :successful baris berhasil, :failed baris gagal.',
+        ],
+        'failure_xlsx' => [
+            'file_name' => 'impor-:import_id-:csv_name-gagal',
+            'error_header' => 'kesalahan',
         ],
         'errors' => [
             'pre_validation_title' => 'Unggahan tidak dapat diproses',

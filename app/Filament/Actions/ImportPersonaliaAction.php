@@ -149,6 +149,8 @@ class ImportPersonaliaAction extends ImportAction
         $this->modalHeading(__('personalia.import.upload_heading'));
         $this->modalSubmitActionLabel(__('personalia.import.upload_data'));
         $this->modalDescription(__('personalia.import.upload_helper'));
+        $this->modalWidth('2xl');
+        $this->closeModalByClickingAway(false);
         $this->successNotificationTitle(__('personalia.import.notifications.processing_title'));
 
         $this->options(fn (): array => [
@@ -267,6 +269,6 @@ class ImportPersonaliaAction extends ImportAction
             ->storeFiles(false)
             ->visibility('private')
             ->required()
-            ->hiddenLabel();
+            ->columnSpanFull();
     }
 }

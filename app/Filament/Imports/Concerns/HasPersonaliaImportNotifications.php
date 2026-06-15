@@ -2,8 +2,11 @@
 
 namespace App\Filament\Imports\Concerns;
 
+use Filament\Actions\Action;
 use Filament\Actions\Imports\Models\Import;
+use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\HtmlString;
 
 trait HasPersonaliaImportNotifications
@@ -36,6 +39,19 @@ trait HasPersonaliaImportNotifications
             'successPercent' => (int) round(($successfulRows / $totalRows) * 100),
             'failedPercent' => (int) round(($failedRowsCount / $totalRows) * 100),
         ])->render()));
+
+        if ($failedRowsCount > 0) {
+            $notification->actions([
+                Action::make('downloadFailedRowsXlsx')
+                    ->label(__('personalia.import.notifications.download_failed_rows_xlsx'))
+                    ->color('danger')
+                    ->url(URL::signedRoute('personalia.imports.failed-rows.download', [
+                        'authGuard' => Filament::getAuthGuard(),
+                        'import' => $import,
+                    ], absolute: false), shouldOpenInNewTab: true)
+                    ->markAsRead(),
+            ]);
+        }
 
         return $notification;
     }
