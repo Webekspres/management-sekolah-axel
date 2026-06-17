@@ -4,6 +4,7 @@
  * Web-based deployment routes for cPanel environments without terminal access.
  *
  * Usage (from browser):
+ *   - Composer install (no Laravel boot): https://yourdomain.com/deploy-composer-install.php?token={DEPLOY_SECRET}
  *   - Migrate:       https://yourdomain.com/deploy/{token}/migrate
  *   - Seed wilayah:  https://yourdomain.com/deploy/{token}/seed-wilayah
  *   - Cache template impor (RECOMMENDED, shared-hosting safe):
