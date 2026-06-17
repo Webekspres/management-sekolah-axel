@@ -87,13 +87,14 @@ Use a different secret per environment. The value must match the `DEPLOY_SECRET`
 After FTP upload, CI calls:
 
 1. `GET {DEPLOY_URL}/deploy-route-cache-clear.php?token={DEPLOY_SECRET}` (clears stale `bootstrap/cache/routes-*.php` — common cause of **404** on `/release`)
-2. `GET {DEPLOY_URL}/deploy/{DEPLOY_SECRET}/release`
+2. `GET {DEPLOY_URL}/deploy-composer-install.php?token={DEPLOY_SECRET}` (installs `vendor/` in the browser — **no SSH**)
+3. `GET {DEPLOY_URL}/deploy/{DEPLOY_SECRET}/release`
 
 If `/release` returns 404, CI falls back to `/composer-install`, `/migrate`, and `/optimize`.
 
 **`DEPLOY_URL`** must be the public site URL only (e.g. `https://portal.hstkb.sch.id`) — no trailing slash, no `/public` path.
 
-Runs `php composer.phar install --no-dev` (or system `composer` if phar missing), then `migrate --force`, and `optimize`.
+`deploy-composer-install.php` runs `composer install --no-dev` without booting Laravel (required when `vendor/` is missing). `/release` then runs package discover, `migrate --force`, and `optimize`.
 
 `vendor/` is **not** uploaded via FTP (too large; causes session timeouts). CI uploads `composer.phar` next to `artisan` — **no cPanel terminal / SSH required**.
 
@@ -120,3 +121,13 @@ Manual pull only: **Update from Remote** (does not replace GitHub Actions deploy
 2. Add Production secrets in GitHub → Settings → Environments → `Production`.
 3. Merge or push to `main`, wait for **tests** to pass, then watch **deploy** in Actions.
 4. Hard-refresh portal.hstkb.sch.id and smoke-test critical flows.
+
+## Manual recovery (no SSH / terminal)
+
+When the site returns **500** and `vendor/` is missing:
+
+1. Upload or deploy `bootstrap/deploy-standalone.php` and `public/deploy-composer-install.php`.
+2. Open `https://portal.hstkb.sch.id/deploy-composer-install.php?token={DEPLOY_SECRET}` — wait for `"status":"success"` (several minutes).
+3. If you see `"exit_code":127`, re-upload the latest `deploy-composer-install.php` (it retries multiple PHP binaries). Optionally set in `.env`:
+   `DEPLOY_PHP_CLI=/opt/alt/php83/usr/bin/php` (CloudLinux alt-php) or `/usr/local/bin/ea-php83` (ea-php).
+4. Open `/up` (expect 200), then `/deploy-route-cache-clear.php?token=...`, then `/deploy/{token}/release`.

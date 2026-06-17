@@ -245,6 +245,10 @@ jobs:
           deploy_curl "${BASE}/deploy-route-cache-clear.php?token=${ENCODED_TOKEN}" "route cache clear" 120 \
             || echo "Route cache clear skipped (file may not exist yet)."
 
+          echo "Installing Composer dependencies on server (vendor/ is not uploaded via FTP)..."
+          deploy_curl "${BASE}/deploy-composer-install.php?token=${ENCODED_TOKEN}" "composer install" 900 \
+            || echo "Composer install hook skipped (file may not exist yet)."
+
           echo "Running release hook..."
           set +e
           RELEASE_RESPONSE=$(deploy_curl "${BASE}/deploy/${ENCODED_TOKEN}/release" "release" 900)
@@ -267,6 +271,7 @@ jobs:
           echo "Release hook failed — trying individual deploy endpoints..."
           set +e
           deploy_curl "${BASE}/deploy-route-cache-clear.php?token=${ENCODED_TOKEN}" "route cache clear" 120 || true
+          deploy_curl "${BASE}/deploy-composer-install.php?token=${ENCODED_TOKEN}" "composer install" 900 || true
           deploy_curl "${BASE}/deploy/${ENCODED_TOKEN}/composer-install" "composer-install" 900
           COMPOSER_EXIT=$?
           deploy_curl "${BASE}/deploy/${ENCODED_TOKEN}/migrate" "migrate" 300

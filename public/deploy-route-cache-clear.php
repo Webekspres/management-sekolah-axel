@@ -7,45 +7,19 @@
 
 declare(strict_types=1);
 
-header('Content-Type: application/json');
+require dirname(__DIR__).'/bootstrap/deploy-standalone.php';
 
 $token = (string) ($_GET['token'] ?? '');
-$envPath = dirname(__DIR__).'/.env';
+$basePath = deploy_standalone_base_path();
+$envPath = $basePath.'/.env';
 
-if (! is_file($envPath)) {
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => '.env not found']);
-    exit;
+$tokenError = deploy_standalone_token_error($token, $envPath);
+
+if ($tokenError !== null) {
+    deploy_standalone_json_response($tokenError['http_code'], $tokenError['payload']);
 }
 
-$deploySecret = null;
-
-foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-    $line = trim($line);
-
-    if ($line === '' || str_starts_with($line, '#')) {
-        continue;
-    }
-
-    if (str_starts_with($line, 'DEPLOY_SECRET=')) {
-        $deploySecret = trim(substr($line, strlen('DEPLOY_SECRET=')), " \t\"'");
-        break;
-    }
-}
-
-if ($deploySecret === null || $deploySecret === '') {
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'DEPLOY_SECRET not configured in .env']);
-    exit;
-}
-
-if (! hash_equals($deploySecret, $token)) {
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid deploy token']);
-    exit;
-}
-
-$cacheDir = dirname(__DIR__).'/bootstrap/cache';
+$cacheDir = $basePath.'/bootstrap/cache';
 $removed = [];
 
 foreach (glob($cacheDir.'/routes*.php') ?: [] as $file) {
@@ -54,7 +28,7 @@ foreach (glob($cacheDir.'/routes*.php') ?: [] as $file) {
     }
 }
 
-echo json_encode([
+deploy_standalone_json_response(200, [
     'status' => 'success',
     'removed' => $removed,
 ]);
