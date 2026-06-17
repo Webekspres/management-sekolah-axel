@@ -71,19 +71,14 @@ jobs:
     steps:
       - name: Resolve target from branch or manual input
         id: target
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          INPUT_TARGET: ${{ github.event.inputs.target }}
-          WORKFLOW_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-          WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          set -eo pipefail
+          set -euo pipefail
 
-          if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
-            target="${INPUT_TARGET}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            target="${{ github.event.inputs.target }}"
             checkout_ref="${GITHUB_SHA}"
           else
-            case "${WORKFLOW_HEAD_BRANCH}" in
+            case "${{ github.event.workflow_run.head_branch }}" in
               main)
                 target="portal.hstkb.sch.id"
                 ;;
@@ -95,7 +90,7 @@ jobs:
                 exit 1
                 ;;
             esac
-            checkout_ref="${WORKFLOW_HEAD_SHA}"
+            checkout_ref="${{ github.event.workflow_run.head_sha }}"
           fi
 
           case "${target}" in
@@ -244,6 +239,10 @@ jobs:
           echo "Clearing stale route cache on server (no SSH)..."
           deploy_curl "${BASE}/deploy-route-cache-clear.php?token=${ENCODED_TOKEN}" "route cache clear" 120 \
             || echo "Route cache clear skipped (file may not exist yet)."
+
+          echo "Installing Composer dependencies on server (vendor/ is not uploaded via FTP)..."
+          deploy_curl "${BASE}/deploy-composer-install.php?token=${ENCODED_TOKEN}" "composer install" 900 \
+            || echo "Composer install hook skipped (file may not exist yet)."
 
           echo "Running release hook..."
           set +e
