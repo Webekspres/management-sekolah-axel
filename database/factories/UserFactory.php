@@ -2,44 +2,89 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
+use App\Models\Address;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-/**
- * @extends Factory<User>
- */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
+        $gender = fake()->randomElement(['L', 'P']);
+
         return [
-            'name' => fake()->name(),
+            'name' => fake()->name($gender === 'L' ? 'male' : 'female'),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => fake()->randomElement(['super_admin', 'kepala_sekolah', 'guru', 'siswa_ortu']),
+            'gender' => $gender,
+            'phone_number' => fake()->numerify('08##########'),
+            'address_id' => null,
+            'place_of_birth' => fake()->city(),
+            'date_of_birth' => fake()->dateTimeBetween('-50 years', '-15 years')->format('Y-m-d'),
+            'is_active' => true,
+            'city_id' => null,
+            'address_detail' => fake()->boolean(40) ? fake()->sentence() : null,
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
+    }
+
+    public function asGuru(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'guru',
+        ]);
+    }
+
+    public function asSiswa(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'siswa_ortu',
+        ]);
+    }
+
+    public function asAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'super_admin',
+        ]);
+    }
+
+    public function asKepalaSekolah(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'kepala_sekolah',
+        ]);
+    }
+
+    public function withAddress(): static
+    {
+        return $this->state(function (array $attributes): array {
+            $address = Address::factory()->create();
+
+            return [
+                'address_id' => $address->id,
+                'city_id' => $address->city_id,
+                'place_of_birth' => $address->city?->name ?? $attributes['place_of_birth'],
+            ];
+        });
     }
 }

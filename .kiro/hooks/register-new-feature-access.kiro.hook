@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Register New Feature to Access Control",
+  "description": "When a new feature is completed, reminds the agent to also add it to the temporary access/permission list so admins can grant the feature to other users.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Fitur baru telah selesai dibuat. Pastikan fitur tersebut sudah didaftarkan di sistem akses/permission (misalnya di panel admin, shield permissions, atau konfigurasi akses sementara) agar admin dapat memberikan akses fitur baru ini ke user lain. Periksa apakah ada file konfigurasi akses, policy, atau permission yang perlu diperbarui untuk mencakup fitur yang baru dibuat.\n\nLalu pastikan juga, setelah diberikan akses, user tersebut dapat mengakses fitur sementara nya. Jangan sampai kejadian, dimana admin sudah meng-assign sebuah akses ke fitur tertentu, tapi user tersebut tidak dapat mengakses fiturnya."
+  },
+  "workspaceFolderName": "axel-manajemen-sekolah",
+  "shortName": "register-new-feature-access"
+}

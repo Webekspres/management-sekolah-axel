@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Asia/Jakarta',
 
     /*
     |--------------------------------------------------------------------------
@@ -117,6 +117,33 @@ return [
     | Supported drivers: "file", "cache"
     |
     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Deploy Secret (Web-Based Artisan)
+    |--------------------------------------------------------------------------
+    |
+    | A secret token to protect the /deploy/{token}/* routes used for
+    | running migrations, seeders, and other artisan commands via browser
+    | when terminal access is not available (e.g. shared hosting / cPanel).
+    | Remove or change this value after deployment is complete!
+    |
+    */
+
+    'deploy_secret' => env('DEPLOY_SECRET'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Deploy PHP CLI Binary
+    |--------------------------------------------------------------------------
+    |
+    | Path to the PHP CLI binary on shared hosting (cPanel). Required when
+    | Composer is invoked from browser deploy hooks instead of SSH.
+    | Example: /opt/cpanel/ea-php84/root/usr/bin/php
+    |
+    */
+
+    'deploy_php_cli' => env('DEPLOY_PHP_CLI'),
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),

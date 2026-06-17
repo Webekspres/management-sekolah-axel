@@ -1,0 +1,585 @@
+<?php
+
+namespace App\Support\Import;
+
+use App\Models\Level;
+use App\Models\SchoolClass;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Common\Entity\Style\Color;
+use OpenSpout\Common\Entity\Style\Style;
+use OpenSpout\Writer\XLSX\Writer;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Throwable;
+
+class ImportTemplateExporter
+{
+    private const GUIDE_COLUMN_COUNT = 5;
+
+    private const MIN_TEMPLATE_BYTES = 1024;
+
+    private const REGIONS_CSV_FILENAME = '.regions-export.csv';
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    public function downloadFilename(string $type): string
+    {
+        return $type === 'teacher'
+            ? 'template-import-guru.xlsx'
+            : 'template-import-siswa.xlsx';
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    public function cachedPath(string $type, ?string $academicLevelId = null): string
+    {
+        if ($type === 'teacher') {
+            return $this->cacheDirectory().'/template-import-guru.xlsx';
+        }
+
+        $levelSlug = $this->resolveLevelSlug($academicLevelId);
+
+        return $this->cacheDirectory()."/template-import-siswa-{$levelSlug}.xlsx";
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    public function isCached(string $type, ?string $academicLevelId = null): bool
+    {
+        $path = $this->cachedPath($type, $academicLevelId);
+
+        return is_file($path) && (filesize($path) ?: 0) > 0;
+    }
+
+    /**
+     * @return list<array{type: 'student'|'teacher', level_id: string|null}>
+     */
+    public function cacheTargets(): array
+    {
+        $targets = [
+            ['type' => 'teacher', 'level_id' => null],
+        ];
+
+        foreach (Level::query()->orderedForDisplay()->get() as $level) {
+            $targets[] = ['type' => 'student', 'level_id' => $level->id];
+        }
+
+        return $targets;
+    }
+
+    public function warmAll(): int
+    {
+        $built = 0;
+
+        foreach ($this->cacheTargets() as $target) {
+            $this->warm($target['type'], $target['level_id']);
+            $built++;
+        }
+
+        return $built;
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    public function warm(string $type, ?string $academicLevelId = null, bool $includeFullRegions = true): string
+    {
+        $path = $this->cachedPath($type, $academicLevelId);
+
+        $this->buildFile($path, $type, $academicLevelId, $includeFullRegions);
+        $this->validateBuiltFile($path);
+
+        return $path;
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    public function ensureFreshDownload(string $type, ?string $academicLevelId = null, bool $includeFullRegions = false): void
+    {
+        $path = $this->cachedPath($type, $academicLevelId);
+
+        if (is_file($path)) {
+            @unlink($path);
+        }
+
+        $this->warm($type, $academicLevelId, $includeFullRegions);
+
+        abort_unless(
+            $this->isCached($type, $academicLevelId),
+            500,
+            __('personalia.import.errors.template_build_failed'),
+        );
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    public function download(string $type, ?string $academicLevelId = null): BinaryFileResponse
+    {
+        $path = $this->cachedPath($type, $academicLevelId);
+
+        abort_unless(
+            $this->isCached($type, $academicLevelId),
+            404,
+            __('personalia.import.errors.template_not_cached'),
+        );
+
+        return response()->download($path, $this->downloadFilename($type), [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    public function buildFile(string $path, string $type, ?string $academicLevelId = null, bool $includeFullRegions = true): void
+    {
+        if (function_exists('ini_set')) {
+            @ini_set('memory_limit', '512M');
+        }
+
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
+        $directory = dirname($path);
+        File::ensureDirectoryExists($directory);
+
+        $tempPath = $directory.'/.'.basename($path).'.tmp-'.Str::uuid().'.xlsx';
+        $writer = new Writer;
+        $isClosed = false;
+
+        try {
+            $writer->openToFile($tempPath);
+
+            $this->writeDataSheet($writer, $type);
+            $this->writeGuideSheet($writer, $type);
+            $this->writeChoicesSheet($writer, $type, $academicLevelId);
+            $this->writeRegionsSheet($writer, $includeFullRegions);
+
+            $writer->close();
+            $isClosed = true;
+
+            $this->validateBuiltFile($tempPath);
+
+            File::move($tempPath, $path);
+        } catch (Throwable $exception) {
+            if (! $isClosed) {
+                $writer->close();
+            }
+
+            if (is_file($tempPath)) {
+                @unlink($tempPath);
+            }
+
+            throw $exception;
+        }
+    }
+
+    private function cacheDirectory(): string
+    {
+        return storage_path('app/import-templates');
+    }
+
+    private function resolveLevelSlug(?string $academicLevelId): string
+    {
+        if (blank($academicLevelId)) {
+            return 'semua';
+        }
+
+        $levelName = Level::query()->find($academicLevelId)?->name;
+
+        return Str::slug($levelName ?? 'unknown');
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    private function writeDataSheet(Writer $writer, string $type): void
+    {
+        $writer->getCurrentSheet()->setName(__('personalia.import.sheet.data'));
+
+        $definitions = $type === 'teacher'
+            ? ImportColumnCatalog::teacherColumns()
+            : ImportColumnCatalog::studentColumns();
+
+        $hintStyle = (new Style)->setFontItalic()->setFontColor(Color::rgb(100, 100, 100));
+
+        $writer->addRow(Row::fromValues(array_map(
+            fn (ImportColumnDefinition $column): string => $column->label(),
+            $definitions,
+        )));
+
+        $writer->addRow(Row::fromValuesWithStyles(
+            array_map(fn (ImportColumnDefinition $column): string => $column->formatHint(), $definitions),
+            $hintStyle,
+        ));
+
+        $writer->addRow(Row::fromValues(array_map(
+            fn (ImportColumnDefinition $column): string => $column->example() ?? '',
+            $definitions,
+        )));
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    private function writeGuideSheet(Writer $writer, string $type): void
+    {
+        $writer->addNewSheetAndMakeItCurrent();
+        $writer->getCurrentSheet()->setName(__('personalia.import.sheet.guide'));
+
+        $warningStyle = (new Style)->setFontColor(Color::rgb(180, 83, 9));
+
+        if ($type === 'student') {
+            $this->addGuideSectionTitle($writer, __('personalia.import.guide.sections.important'));
+            $this->addGuideTextRow($writer, __('personalia.import.warnings.class_scope'), $warningStyle);
+            $this->addGuideTextRow($writer, __('personalia.import.warnings.class_duplicate'), $warningStyle);
+            $this->addGuideEmptyRow($writer);
+        }
+
+        $this->addGuideSectionTitle($writer, __('personalia.import.guide.sections.steps'));
+
+        $steps = __('personalia.import.guide.steps');
+
+        if (is_array($steps)) {
+            foreach ($steps as $index => $step) {
+                $this->addGuideTextRow($writer, ((string) ($index + 1)).'. '.$step);
+            }
+        }
+
+        $this->addGuideEmptyRow($writer);
+
+        $definitions = $type === 'teacher'
+            ? ImportColumnCatalog::teacherColumns()
+            : ImportColumnCatalog::studentColumns();
+
+        $writer->addRow(Row::fromValues([
+            __('personalia.import.guide.columns.column'),
+            __('personalia.import.guide.columns.how_to_fill'),
+            __('personalia.import.guide.columns.example'),
+            __('personalia.import.guide.columns.required'),
+            __('personalia.import.guide.columns.notes'),
+        ]));
+
+        foreach ($definitions as $definition) {
+            $writer->addRow(Row::fromValues([
+                $definition->label(),
+                $definition->formatHint(),
+                $definition->example() ?? '',
+                $definition->required
+                    ? __('personalia.import.guide.columns.yes')
+                    : __('personalia.import.guide.columns.no'),
+                '',
+            ]));
+        }
+    }
+
+    private function addGuideSectionTitle(Writer $writer, string $title): void
+    {
+        $values = array_fill(0, self::GUIDE_COLUMN_COUNT, '');
+        $values[0] = $title;
+
+        $writer->addRow(Row::fromValuesWithStyles(
+            $values,
+            null,
+            [0 => (new Style)->setFontBold()],
+        ));
+    }
+
+    private function addGuideTextRow(Writer $writer, string $text, ?Style $style = null): void
+    {
+        $values = array_fill(0, self::GUIDE_COLUMN_COUNT, '');
+        $values[1] = $text;
+
+        $columnStyles = $style !== null ? [1 => $style] : [];
+
+        $writer->addRow(Row::fromValuesWithStyles($values, null, $columnStyles));
+    }
+
+    private function addGuideEmptyRow(Writer $writer): void
+    {
+        $writer->addRow(Row::fromValues(array_fill(0, self::GUIDE_COLUMN_COUNT, '')));
+    }
+
+    /**
+     * @param  'student'|'teacher'  $type
+     */
+    private function writeChoicesSheet(Writer $writer, string $type, ?string $academicLevelId): void
+    {
+        $writer->addNewSheetAndMakeItCurrent();
+        $writer->getCurrentSheet()->setName(__('personalia.import.sheet.choices'));
+
+        $infoStyle = (new Style)->setFontItalic()->setFontColor(Color::rgb(80, 80, 80));
+
+        $this->addGuideSectionTitle($writer, __('personalia.import.choices.notes_title'));
+        $this->addGuideTextRow($writer, __('personalia.import.choices.notes_sync'), $infoStyle);
+        $this->addGuideTextRow($writer, __('personalia.import.choices.notes_empty'), $infoStyle);
+        $this->addGuideEmptyRow($writer);
+
+        $levelName = $academicLevelId
+            ? Level::query()->find($academicLevelId)?->name
+            : null;
+
+        if ($type === 'student' && $levelName) {
+            $this->addGuideTextRow($writer, __('personalia.import.choices.level_heading', ['level' => $levelName]));
+            $this->addGuideEmptyRow($writer);
+        }
+
+        $writer->addRow(Row::fromValues([
+            __('personalia.import.choices.gender'),
+            __('personalia.import.choices.religion'),
+            $type === 'teacher' ? __('personalia.import.choices.employment_status') : __('personalia.import.choices.classes'),
+        ]));
+
+        $genders = ['L', 'P'];
+        $religions = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'];
+        $employment = ['Staff TU', 'Guru Kelas', 'Lainnya'];
+
+        $classes = $type === 'student'
+            ? SchoolClass::query()
+                ->withoutGlobalScopes()
+                ->when($academicLevelId, fn ($query) => $query->where('level_id', $academicLevelId))
+                ->orderBy('name')
+                ->pluck('name')
+                ->all()
+            : [];
+
+        $maxRows = max(count($genders), count($religions), count($classes), count($employment));
+
+        for ($i = 0; $i < $maxRows; $i++) {
+            $writer->addRow(Row::fromValues([
+                $genders[$i] ?? '',
+                $religions[$i] ?? '',
+                $type === 'teacher'
+                    ? ($employment[$i] ?? '')
+                    : ($classes[$i] ?? ''),
+            ]));
+        }
+    }
+
+    private function writeRegionsSheet(Writer $writer, bool $includeFullRegions): void
+    {
+        $writer->addNewSheetAndMakeItCurrent();
+        $writer->getCurrentSheet()->setName(__('personalia.import.sheet.regions'));
+
+        $writer->addRow(Row::fromValues([
+            __('personalia.import.columns.provinsi'),
+            __('personalia.import.columns.kota_kabupaten'),
+            __('personalia.import.columns.kecamatan'),
+            __('personalia.import.columns.desa_kelurahan'),
+        ]));
+
+        if (! $includeFullRegions) {
+            $infoStyle = (new Style)->setFontItalic()->setFontColor(Color::rgb(80, 80, 80));
+            $this->addGuideTextRow($writer, __('personalia.import.regions.web_limited_note'), $infoStyle);
+
+            return;
+        }
+
+        if (! Schema::hasTable('villages')) {
+            return;
+        }
+
+        $this->ensureRegionsCsvCache();
+
+        $csvPath = $this->regionsCsvPath();
+
+        if (! is_file($csvPath)) {
+            return;
+        }
+
+        $handle = fopen($csvPath, 'r');
+
+        if ($handle === false) {
+            return;
+        }
+
+        try {
+            while (($row = fgetcsv($handle)) !== false) {
+                $writer->addRow(Row::fromValues($row));
+            }
+        } finally {
+            fclose($handle);
+        }
+    }
+
+    public function regionsCsvPath(): string
+    {
+        return $this->cacheDirectory().'/'.self::REGIONS_CSV_FILENAME;
+    }
+
+    public function regionsCsvPartialPath(): string
+    {
+        return $this->regionsCsvPath().'.partial';
+    }
+
+    public function hasRegionsCsv(): bool
+    {
+        $path = $this->regionsCsvPath();
+
+        return is_file($path) && (filesize($path) ?: 0) > 0;
+    }
+
+    public function countRegionRows(): int
+    {
+        if (! Schema::hasTable('villages')) {
+            return 0;
+        }
+
+        return (int) DB::table('villages')->count();
+    }
+
+    /**
+     * Appends up to $limit wilayah rows (starting at $offset) to the partial
+     * regions CSV. Returns the number of rows written, so callers can resume
+     * across multiple short HTTP requests.
+     */
+    public function appendRegionsCsvChunk(int $offset, int $limit): int
+    {
+        if (! Schema::hasTable('villages')) {
+            return 0;
+        }
+
+        File::ensureDirectoryExists($this->cacheDirectory());
+
+        $handle = fopen($this->regionsCsvPartialPath(), 'a');
+
+        if ($handle === false) {
+            throw new RuntimeException('Gagal menulis cache wilayah untuk template impor.');
+        }
+
+        $written = 0;
+
+        try {
+            $rows = DB::table('villages')
+                ->join('sub_districts', 'villages.sub_district_id', '=', 'sub_districts.id')
+                ->join('cities', 'sub_districts.city_id', '=', 'cities.id')
+                ->join('provinces', 'cities.province_id', '=', 'provinces.id')
+                ->orderBy('provinces.name')
+                ->orderBy('cities.name')
+                ->orderBy('sub_districts.name')
+                ->orderBy('villages.name')
+                ->orderBy('villages.id')
+                ->select([
+                    'provinces.name as province_name',
+                    'cities.name as city_name',
+                    'sub_districts.name as sub_district_name',
+                    'villages.name as village_name',
+                ])
+                ->offset($offset)
+                ->limit($limit)
+                ->get();
+
+            foreach ($rows as $row) {
+                fputcsv($handle, [
+                    (string) $row->province_name,
+                    (string) $row->city_name,
+                    (string) $row->sub_district_name,
+                    (string) $row->village_name,
+                ]);
+
+                $written++;
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $written;
+    }
+
+    public function finalizeRegionsCsv(): void
+    {
+        $partialPath = $this->regionsCsvPartialPath();
+
+        if (! is_file($partialPath)) {
+            return;
+        }
+
+        $finalPath = $this->regionsCsvPath();
+
+        if (is_file($finalPath)) {
+            @unlink($finalPath);
+        }
+
+        File::move($partialPath, $finalPath);
+    }
+
+    public function clearRegionsCsv(): void
+    {
+        foreach ([$this->regionsCsvPath(), $this->regionsCsvPartialPath()] as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+    }
+
+    public function ensureRegionsCsvCache(): void
+    {
+        $path = $this->regionsCsvPath();
+
+        if (is_file($path) && (filesize($path) ?: 0) > 0) {
+            return;
+        }
+
+        if (! Schema::hasTable('villages')) {
+            return;
+        }
+
+        File::ensureDirectoryExists(dirname($path));
+
+        $tempPath = $path.'.tmp-'.Str::uuid();
+        $handle = fopen($tempPath, 'w');
+
+        if ($handle === false) {
+            throw new RuntimeException('Gagal menulis cache wilayah untuk template impor.');
+        }
+
+        try {
+            DB::table('villages')
+                ->join('sub_districts', 'villages.sub_district_id', '=', 'sub_districts.id')
+                ->join('cities', 'sub_districts.city_id', '=', 'cities.id')
+                ->join('provinces', 'cities.province_id', '=', 'provinces.id')
+                ->orderBy('provinces.name')
+                ->orderBy('cities.name')
+                ->orderBy('sub_districts.name')
+                ->orderBy('villages.name')
+                ->select([
+                    'provinces.name as province_name',
+                    'cities.name as city_name',
+                    'sub_districts.name as sub_district_name',
+                    'villages.name as village_name',
+                ])
+                ->lazy()
+                ->each(function (object $row) use ($handle): void {
+                    fputcsv($handle, [
+                        (string) $row->province_name,
+                        (string) $row->city_name,
+                        (string) $row->sub_district_name,
+                        (string) $row->village_name,
+                    ]);
+                });
+        } finally {
+            fclose($handle);
+        }
+
+        File::move($tempPath, $path);
+    }
+
+    private function validateBuiltFile(string $path): void
+    {
+        $size = is_file($path) ? (filesize($path) ?: 0) : 0;
+
+        if ($size < self::MIN_TEMPLATE_BYTES) {
+            throw new RuntimeException("Template impor gagal dibuat (ukuran file tidak valid: {$size} byte).");
+        }
+    }
+}

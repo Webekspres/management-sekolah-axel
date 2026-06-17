@@ -1,0 +1,57 @@
+
+  [31;1m⨯[39;22m[31;1m⨯[39;22m[90;1m.[39;22m[31;1m⨯[39;22m[90;1m.[39;22m[90;1m.[39;22m[90;1m.[39;22m
+  [31m────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\Filament\Guru\LessonPlanPreservationTest[22m [90m>[39m 2… [41;1m Error [49;22m  
+[39;1m  Call to undefined function Pest\Livewire\livewire()[39;22m
+
+  at [32mtests/Feature/Filament/Guru/LessonPlanPreservationTest.php[39m:[32m47[39m
+     43▕         'status' => 'DRAFT',
+     44▕     ]);
+     45▕ 
+     46▕     // Preservation: form RPP berstatus DRAFT harus tetap aktif (tidak dikunci)
+  ➜  47▕     livewire(EditLessonPlan::class, ['record' => $lessonPlan->getRouteKey()])
+     48▕         ->assertFormFieldEnabled('file_path');
+     49▕ });
+     50▕ 
+     51▕ // ─────────────────────────────────────────────────────────────────────────────
+
+  [33m1   [39m[39;1mtests/Feature/Filament/Guru/LessonPlanPreservationTest.php[39;22m:[39;1m47[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\Filament\Guru\LessonPlanPreservationTest[22m [90m>[39m 2… [41;1m Error [49;22m  
+[39;1m  Call to undefined function Pest\Livewire\livewire()[39;22m
+
+  at [32mtests/Feature/Filament/Guru/LessonPlanPreservationTest.php[39m:[32m62[39m
+     58▕         'teacher_id' => $this->teacher->id,
+     59▕     ]);
+     60▕ 
+     61▕     // Preservation: form RPP berstatus APPROVED harus tetap terkunci
+  ➜  62▕     livewire(EditLessonPlan::class, ['record' => $lessonPlan->getRouteKey()])
+     63▕         ->assertFormFieldDisabled('file_path');
+     64▕ });
+     65▕ 
+     66▕ // ─────────────────────────────────────────────────────────────────────────────
+
+  [33m1   [39m[39;1mtests/Feature/Filament/Guru/LessonPlanPreservationTest.php[39;22m:[39;1m62[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\Filament\Guru\LessonPlanPreservationTest[22m [90m>[39m 2.4 save…   
+[39;1m  Failed asserting that an instance of class Error is an instance of class Illuminate\Validation\ValidationException.[39;22m
+
+  at [32mtests/Feature/Filament/Guru/LessonPlanPreservationTest.php[39m:[32m104[39m
+    100▕             ->fillForm([
+    101▕                 'topic' => 'Topik yang diperbarui',
+    102▕             ])
+    103▕             ->call('save');
+  ➜ 104▕     })->toThrow(ValidationException::class);
+    105▕ });
+    106▕ 
+    107▕ // ─────────────────────────────────────────────────────────────────────────────
+    108▕ // Test 2.5 — Alur submitForApproval (DRAFT → PENDING) tetap berjalan
+
+  [33m1   [39m[39;1mtests/Feature/Filament/Guru/LessonPlanPreservationTest.php[39;22m:[39;1m104[39;22m
+
+
+  [90mTests:[39m    [31;1m3 failed[39;22m[90m,[39m[39m [39m[32;1m4 passed[39;22m[90m (5 assertions)[39m
+  [90mDuration:[39m [39m44.70s[39m
+

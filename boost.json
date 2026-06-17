@@ -1,10 +1,17 @@
 {
     "agents": [
-        "copilot"
+        "copilot",
+        "cursor",
+        "kiro",
+        "gemini"
     ],
+    "cloud": false,
     "guidelines": true,
     "mcp": true,
-    "nightwatch_mcp": false,
+    "nightwatch": false,
+    "packages": [
+        "filament/filament"
+    ],
     "sail": false,
     "skills": [
         "laravel-best-practices",

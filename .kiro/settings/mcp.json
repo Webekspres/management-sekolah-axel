@@ -1,0 +1,25 @@
+{
+    "mcpServers": {
+        "fetch": {
+            "command": "wsl.exe",
+            "args": [
+                "--shell-type",
+                "login",
+                "uvx",
+                "mcp-server-fetch"
+            ],
+            "env": [],
+            "disabled": false,
+            "autoApprove": [
+                "fetch"
+            ]
+        },
+        "laravel-boost": {
+            "command": "php",
+            "args": [
+                "artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}

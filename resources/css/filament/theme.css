@@ -1,0 +1,105 @@
+@import "../../../vendor/filament/filament/resources/css/theme.css";
+
+@source '../../../app/Filament/**/*';
+@source '../../../resources/views/filament/**/*';
+
+@layer components {
+    .fi-body {
+        @apply bg-[#f4f4f4] dark:bg-[#1A1C20];
+    }
+}
+
+/*
+ * Shared interactive transitions (light & dark).
+ * Unlayered so overrides win over Filament's duration-75 defaults.
+ */
+html.fi {
+    --fi-hover-transition:
+        background-color 150ms ease-in-out, color 150ms ease-in-out,
+        box-shadow 150ms ease-in-out;
+
+    .fi-sidebar-item > .fi-sidebar-item-btn,
+    .fi-sidebar-group-dropdown-trigger-btn,
+    .fi-sidebar-database-notifications-btn,
+    .fi-topbar-item-btn,
+    .fi-tenant-menu-trigger,
+    .fi-theme-switcher-btn,
+    .fi-tabs-item,
+    .fi-dropdown-list-item,
+    .fi-btn:not(.fi-outlined):not(.fi-color),
+    .fi-pagination .fi-pagination-item-btn,
+    .fi-global-search-result,
+    .fi-ta-row.fi-clickable,
+    .fi-ta-content-ctn .fi-ta-content .fi-ta-record.fi-clickable,
+    .fi-fo-markdown-editor .EasyMDEContainer .editor-toolbar button,
+    .fi-fo-rich-editor .fi-fo-rich-editor-dropdown-tool-trigger,
+    .fi-fo-rich-editor .fi-fo-rich-editor-dropdown-tool-option,
+    .fi-fo-rich-editor .fi-fo-rich-editor-tool {
+        transition: var(--fi-hover-transition) !important;
+    }
+}
+
+/*
+ * Light mode hover surfaces.
+ * Avoid :where() here; it zeroes specificity and breaks sidebar hover.
+ */
+html:not(.dark) {
+    --fi-light-hover-bg: #cacaca;
+
+    @media (hover: hover) {
+        .fi-sidebar-item > .fi-sidebar-item-btn:hover,
+        .fi-sidebar-group-dropdown-trigger-btn:hover,
+        .fi-sidebar-database-notifications-btn:hover,
+        .fi-topbar-item-btn:hover,
+        .fi-tenant-menu-trigger:hover,
+        .fi-theme-switcher-btn:hover,
+        .fi-tabs-item:hover,
+        .fi-dropdown-list-item:not(.fi-disabled):not([disabled]):hover,
+        .fi-global-search-result:hover,
+        :is(
+            .fi-btn:not(.fi-outlined):not(.fi-color).fi-force-enabled,
+            .fi-btn:not(.fi-outlined):not(.fi-color):not(.fi-disabled):not(
+                    [disabled]
+                )
+        ):hover,
+        .fi-pagination .fi-pagination-item-btn:enabled:hover,
+        .fi-fo-markdown-editor .EasyMDEContainer .editor-toolbar button:hover,
+        .fi-fo-rich-editor .fi-fo-rich-editor-dropdown-tool-trigger:hover,
+        .fi-fo-rich-editor .fi-fo-rich-editor-dropdown-tool-option:hover,
+        .fi-fo-rich-editor .fi-fo-rich-editor-tool:hover {
+            background-color: var(--fi-light-hover-bg);
+            border-radius: var(--radius-lg);
+        }
+
+        .fi-ta-row.fi-clickable:hover,
+        .fi-ta-content-ctn .fi-ta-content .fi-ta-record.fi-clickable:hover {
+            background-color: var(--fi-light-hover-bg);
+        }
+    }
+
+    .fi-sidebar-item > .fi-sidebar-item-btn:focus-visible,
+    .fi-sidebar-group-dropdown-trigger-btn:focus-visible,
+    .fi-sidebar-database-notifications-btn:focus-visible,
+    .fi-topbar-item-btn:focus-visible,
+    .fi-tenant-menu-trigger:focus-visible,
+    .fi-theme-switcher-btn:focus-visible,
+    .fi-tabs-item:focus-visible,
+    .fi-dropdown-list-item:not(.fi-disabled):not([disabled]):focus-visible,
+    .fi-global-search-result:focus-within,
+    :is(
+        .fi-btn:not(.fi-outlined):not(.fi-color).fi-force-enabled,
+        .fi-btn:not(.fi-outlined):not(.fi-color):not(.fi-disabled):not(
+                [disabled]
+            )
+    ):focus-visible,
+    .fi-fo-markdown-editor
+        .EasyMDEContainer
+        .editor-toolbar
+        button:focus-visible,
+    .fi-fo-rich-editor .fi-fo-rich-editor-dropdown-tool-trigger:focus-visible,
+    .fi-fo-rich-editor .fi-fo-rich-editor-dropdown-tool-option:focus-visible,
+    .fi-fo-rich-editor .fi-fo-rich-editor-tool:focus-visible {
+        background-color: var(--fi-light-hover-bg);
+        border-radius: var(--radius-lg);
+    }
+}

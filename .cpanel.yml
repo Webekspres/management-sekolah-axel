@@ -1,5 +1,18 @@
+# cPanel Git deployment (optional / legacy)
+#
+# Canonical deploy: GitHub Actions workflow ".github/workflows/deploy.yml"
+# on push to branch "dev" → FTP to public_html/dev.portal.hstkb.sch.id
+#
+# Disable automatic deployment in cPanel Git Version Control to avoid
+# conflicting with GitHub Actions FTP uploads.
+#
+# If you deploy manually from cPanel: use "Update from Remote" then
+# "Deploy HEAD Commit" — this only copies source; run composer and
+# npm build separately or rely on GitHub Actions for full deploy.
+
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/u7720792/public_html/portal.hstkb.sch.id
-    - /bin/cp -R * $DEPLOYPATH
+    - export DEPLOYPATH=/home/u7720792/public_html/dev.portal.hstkb.sch.id
+    - /bin/cp -R app bootstrap config database lang public resources routes vendor artisan composer.json composer.lock $DEPLOYPATH/ 2>/dev/null || true
+    - test -f .env.example && /bin/cp -n .env.example $DEPLOYPATH/.env.example || true
