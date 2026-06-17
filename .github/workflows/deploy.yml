@@ -55,33 +55,73 @@ env:
     **/composer.lock.bak
 
 jobs:
-  deploy:
-    name: Deploy to ${{ matrix.deploy_host }}
+  resolve-target:
+    name: Resolve deployment target
     runs-on: ubuntu-latest
-    timeout-minutes: 120
     if: >-
+      github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
         github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == matrix.branch) ||
-      (github.event_name == 'workflow_dispatch' &&
-        github.event.inputs.target == matrix.deploy_host)
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - branch: dev
-            deploy_host: dev.portal.hstkb.sch.id
-            environment: Development
-          - branch: main
-            deploy_host: portal.hstkb.sch.id
-            environment: Production
-    environment: ${{ matrix.environment }}
+        (github.event.workflow_run.head_branch == 'dev' ||
+          github.event.workflow_run.head_branch == 'main'))
+    outputs:
+      deploy_host: ${{ steps.target.outputs.deploy_host }}
+      environment: ${{ steps.target.outputs.environment }}
+      checkout_ref: ${{ steps.target.outputs.checkout_ref }}
+    steps:
+      - name: Resolve target from branch or manual input
+        id: target
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            target="${{ github.event.inputs.target }}"
+            checkout_ref="${GITHUB_SHA}"
+          else
+            case "${{ github.event.workflow_run.head_branch }}" in
+              main)
+                target="portal.hstkb.sch.id"
+                ;;
+              dev)
+                target="dev.portal.hstkb.sch.id"
+                ;;
+              *)
+                echo "Unsupported branch for deploy."
+                exit 1
+                ;;
+            esac
+            checkout_ref="${{ github.event.workflow_run.head_sha }}"
+          fi
+
+          case "${target}" in
+            portal.hstkb.sch.id)
+              environment="Production"
+              ;;
+            dev.portal.hstkb.sch.id)
+              environment="Development"
+              ;;
+            *)
+              echo "Unsupported deployment target: ${target}"
+              exit 1
+              ;;
+          esac
+
+          echo "deploy_host=${target}" >> "${GITHUB_OUTPUT}"
+          echo "environment=${environment}" >> "${GITHUB_OUTPUT}"
+          echo "checkout_ref=${checkout_ref}" >> "${GITHUB_OUTPUT}"
+
+  deploy:
+    name: Deploy to ${{ needs.resolve-target.outputs.deploy_host }}
+    runs-on: ubuntu-latest
+    needs: resolve-target
+    timeout-minutes: 120
+    environment: ${{ needs.resolve-target.outputs.environment }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ needs.resolve-target.outputs.checkout_ref }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
