@@ -266,6 +266,7 @@ jobs:
           echo "Release hook failed — trying individual deploy endpoints..."
           set +e
           deploy_curl "${BASE}/deploy-route-cache-clear.php?token=${ENCODED_TOKEN}" "route cache clear" 120 || true
+          deploy_curl "${BASE}/deploy-composer-install.php?token=${ENCODED_TOKEN}" "composer install" 900 || true
           deploy_curl "${BASE}/deploy/${ENCODED_TOKEN}/composer-install" "composer-install" 900
           COMPOSER_EXIT=$?
           deploy_curl "${BASE}/deploy/${ENCODED_TOKEN}/migrate" "migrate" 300
