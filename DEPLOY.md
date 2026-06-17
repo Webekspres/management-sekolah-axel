@@ -1,13 +1,15 @@
 # Deploy (GitHub Actions)
 
-Automatic deploy runs via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+Deploy runs via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) **after** the [`tests`](.github/workflows/tests.yml) workflow succeeds on `dev` or `main`. That gate includes Unit, Feature, and Playwright browser tests — deploy no longer runs its own duplicate Pest suite.
 
 | Branch | GitHub environment | Target                            |
 | ------ | ------------------ | --------------------------------- |
 | `dev`  | `Development`      | `https://dev.portal.hstkb.sch.id` |
 | `main` | `Production`       | `https://portal.hstkb.sch.id`     |
 
-Each environment has its own secrets. The workflow picks the environment from the branch that was pushed.
+Each environment has its own secrets. The deploy job matrix picks the target from the branch that passed tests.
+
+You can also trigger deploy manually from **Actions → deploy → Run workflow** and choose the target host.
 
 ## GitHub Secrets
 
@@ -109,12 +111,12 @@ Manual pull only: **Update from Remote** (does not replace GitHub Actions deploy
 
 1. Backup server `.env` and database.
 2. Add Development secrets in GitHub → Settings → Environments → `Development`.
-3. Push to `dev` and watch the **deploy** workflow in Actions.
+3. Push to `dev`, wait for **tests** to pass, then watch **deploy** in Actions.
 4. Hard-refresh dev.portal and smoke-test login + student pages.
 
 ### Production
 
 1. Backup production `.env` and database.
 2. Add Production secrets in GitHub → Settings → Environments → `Production`.
-3. Merge or push to `main` and watch the **deploy** workflow in Actions.
+3. Merge or push to `main`, wait for **tests** to pass, then watch **deploy** in Actions.
 4. Hard-refresh portal.hstkb.sch.id and smoke-test critical flows.
