@@ -15,7 +15,7 @@ uses(TestCase::class, RefreshDatabase::class);
 test('Property 1: Rapor_Score equals formula for all valid grade combinations', function (): void {
     $service = app(RaporService::class);
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         // Generate partial PH scores (0–4 scores, each optional)
         $phScores = array_filter(
             array_map(fn () => fake()->optional(0.7)->randomFloat(2, 0, 100), range(1, 4)),
@@ -59,7 +59,7 @@ test('Property 1: Rapor_Score equals formula for all valid grade combinations', 
 test('Property 2: Grade predicate is deterministic and consistent with defined ranges', function (): void {
     $service = app(RaporService::class);
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $score = fake()->randomFloat(2, 0, 100);
 
         // Determine expected predicate based on spec ranges
@@ -98,7 +98,7 @@ test('Property 2: Grade predicate is deterministic and consistent with defined r
 test('Property 3: Upsert Grade does not create duplicate records for any composite key', function (): void {
     $service = app(RaporService::class);
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $student = Student::factory()->create();
         $subject = Subject::factory()->create();
         $academicYear = AcademicYear::factory()->create();
@@ -148,7 +148,7 @@ test('Property 3: Upsert Grade does not create duplicate records for any composi
 test('Property 4: Rapor score is always consistent with formula after any save sequence', function (): void {
     $service = app(RaporService::class);
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $student = Student::factory()->create();
         $subject = Subject::factory()->create();
         $academicYear = AcademicYear::factory()->create();

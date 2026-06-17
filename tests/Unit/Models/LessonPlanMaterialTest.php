@@ -13,7 +13,7 @@ it('menghapus material selalu menghapus file fisik dari storage', function (): v
     // Validates: Requirements 5.1, 5.3
     Storage::fake('public');
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $material = LessonPlanMaterial::factory()->withFakeFile()->create();
         $filePath = $material->file_path;
 
@@ -30,7 +30,7 @@ it('menghapus material tidak throw exception jika file fisik tidak ada', functio
     // Validates: Requirements 5.3
     Storage::fake('public');
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         // Buat material tanpa membuat file fisik di storage
         $material = LessonPlanMaterial::factory()->create();
 
@@ -48,7 +48,7 @@ it('menghapus LessonPlan menghapus semua materials beserta file fisiknya', funct
     // Validates: Requirements 5.2
     Storage::fake('public');
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $count = fake()->numberBetween(1, 5);
 
         $lessonPlan = LessonPlan::factory()

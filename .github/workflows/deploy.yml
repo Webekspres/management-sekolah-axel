@@ -4,6 +4,44 @@ on:
   push:
     branches:
       - dev
+      - main
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FTP_DEPLOY_EXCLUDE: |
+    **/.git*
+    **/.git/**
+    **/.github/**
+    **/node_modules/**
+    **/vendor/**
+    **/.env
+    **/.env.*
+    **/.env.example
+    **/tests/**
+    **/storage/**
+    **/.phpunit*
+    **/Homestead.*
+    **/.idea/**
+    **/.vscode/**
+    **/.cursor/**
+    **/.fleet/**
+    **/.nova/**
+    **/.zed/**
+    **/.kiro/**
+    **/.kiro_tmp/**
+    **/.claude/**
+    **/.agents/**
+    **/database/factories/**
+    **/scripts/**
+    **/*.md
+    **/pest-last.json
+    **/debug-*.log
+    **/auth.json
+    **/.cpanel.yml
+    **/composer.lock.bak
 
 jobs:
   test:
@@ -45,11 +83,11 @@ jobs:
         run: ./vendor/bin/pest
 
   deploy:
-    name: Deploy to dev.portal
+    name: Deploy to ${{ github.ref_name == 'main' && 'portal.hstkb.sch.id' || 'dev.portal.hstkb.sch.id' }}
     runs-on: ubuntu-latest
     needs: test
     timeout-minutes: 120
-    environment: Development
+    environment: ${{ github.ref_name == 'main' && 'Production' || 'Development' }}
 
     steps:
       - name: Checkout code
@@ -93,37 +131,7 @@ jobs:
           timeout: 120000
           log-level: minimal
           dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git/**
-            **/.github/**
-            **/node_modules/**
-            **/vendor/**
-            **/.env
-            **/.env.*
-            **/.env.example
-            **/tests/**
-            **/storage/**
-            **/.phpunit*
-            **/Homestead.*
-            **/.idea/**
-            **/.vscode/**
-            **/.cursor/**
-            **/.fleet/**
-            **/.nova/**
-            **/.zed/**
-            **/.kiro/**
-            **/.kiro_tmp/**
-            **/.claude/**
-            **/.agents/**
-            **/database/factories/**
-            **/scripts/**
-            **/*.md
-            **/pest-last.json
-            **/debug-*.log
-            **/auth.json
-            **/.cpanel.yml
-            **/composer.lock.bak
+          exclude: ${{ env.FTP_DEPLOY_EXCLUDE }}
 
       - name: Retry FTP deploy (resume from sync state)
         id: ftp_deploy_retry
@@ -138,37 +146,7 @@ jobs:
           timeout: 120000
           log-level: minimal
           dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git/**
-            **/.github/**
-            **/node_modules/**
-            **/vendor/**
-            **/.env
-            **/.env.*
-            **/.env.example
-            **/tests/**
-            **/storage/**
-            **/.phpunit*
-            **/Homestead.*
-            **/.idea/**
-            **/.vscode/**
-            **/.cursor/**
-            **/.fleet/**
-            **/.nova/**
-            **/.zed/**
-            **/.kiro/**
-            **/.kiro_tmp/**
-            **/.claude/**
-            **/.agents/**
-            **/database/factories/**
-            **/scripts/**
-            **/*.md
-            **/pest-last.json
-            **/debug-*.log
-            **/auth.json
-            **/.cpanel.yml
-            **/composer.lock.bak
+          exclude: ${{ env.FTP_DEPLOY_EXCLUDE }}
 
       - name: Verify FTP deploy succeeded
         run: |

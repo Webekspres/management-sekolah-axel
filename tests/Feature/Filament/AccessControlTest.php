@@ -113,7 +113,7 @@ test('guru hanya melihat RPP miliknya sendiri — tidak ada RPP guru lain yang m
     // Feature: rpp-materi-upload, Property 10: Akses kontrol berdasarkan role
     Filament::setCurrentPanel(Filament::getPanel('guru'));
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         // Buat dua guru berbeda
         $guruUser = User::factory()->asGuru()->create();
         $teacher = Teacher::factory()->create(['user_id' => $guruUser->id]);

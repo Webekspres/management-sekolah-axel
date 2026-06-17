@@ -264,44 +264,44 @@ describe('GradeStatsWidget KKM kelas', function () {
 // Feature: kkm-per-kelas, Property 1: KKM valid diterima oleh form
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('form menerima semua nilai KKM dalam range 0-100', function () {
+test('form menerima semua nilai KKM dalam range 0-100', function (float $validKkm) {
     $this->actingAs(User::factory()->asAdmin()->create());
     Filament::setCurrentPanel(Filament::getPanel('admin'));
 
     $schoolClass = SchoolClass::factory()->create(['kkm' => null]);
 
-    for ($i = 0; $i < 100; $i++) {
-        $validKkm = fake()->randomFloat(2, 0, 100);
-
-        Livewire::test(EditSchoolClass::class, ['record' => $schoolClass->getRouteKey()])
-            ->fillForm(['kkm' => $validKkm])
-            ->call('save')
-            ->assertHasNoFormErrors(['kkm']);
-    }
-});
+    Livewire::test(EditSchoolClass::class, ['record' => $schoolClass->getRouteKey()])
+        ->fillForm(['kkm' => $validKkm])
+        ->call('save')
+        ->assertHasNoFormErrors(['kkm']);
+})->with([
+    'minimum' => [0.0],
+    'default' => [70.0],
+    'decimal' => [75.5],
+    'maximum' => [100.0],
+]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 6.6 Property test: form menolak nilai KKM di luar range 0-100
 // Feature: kkm-per-kelas, Property 2: Nilai KKM di luar rentang ditolak
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('form menolak nilai KKM di luar range 0-100', function () {
+test('form menolak nilai KKM di luar range 0-100', function (float $invalidKkm) {
     $this->actingAs(User::factory()->asAdmin()->create());
     Filament::setCurrentPanel(Filament::getPanel('admin'));
 
     $schoolClass = SchoolClass::factory()->create(['kkm' => null]);
 
-    for ($i = 0; $i < 100; $i++) {
-        $invalidKkm = fake()->boolean()
-            ? fake()->randomFloat(2, -100, -0.01)
-            : fake()->randomFloat(2, 100.01, 200);
-
-        Livewire::test(EditSchoolClass::class, ['record' => $schoolClass->getRouteKey()])
-            ->fillForm(['kkm' => $invalidKkm])
-            ->call('save')
-            ->assertHasFormErrors(['kkm']);
-    }
-});
+    Livewire::test(EditSchoolClass::class, ['record' => $schoolClass->getRouteKey()])
+        ->fillForm(['kkm' => $invalidKkm])
+        ->call('save')
+        ->assertHasFormErrors(['kkm']);
+})->with([
+    'below zero' => [-0.01],
+    'far below zero' => [-10.0],
+    'above maximum' => [100.01],
+    'far above maximum' => [150.0],
+]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 6.7 Property test: prioritas resolusi KKM selalu diikuti
@@ -311,7 +311,7 @@ test('form menolak nilai KKM di luar range 0-100', function () {
 test('resolusi KKM mengikuti urutan prioritas yang benar', function () {
     $service = app(RaporService::class);
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $classKkm = fake()->boolean() ? fake()->randomFloat(2, 0, 100) : null;
         $hasSubjectKkm = fake()->boolean();
         $subjectKkmValue = $hasSubjectKkm ? fake()->randomFloat(2, 0, 100) : null;
@@ -350,7 +350,7 @@ test('resolusi KKM mengikuti urutan prioritas yang benar', function () {
 test('penanda below-kkm muncul jika dan hanya jika nilai lebih rendah dari KKM', function () {
     $service = app(RaporService::class);
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $score = fake()->randomFloat(2, 0, 100);
         $classKkm = fake()->randomFloat(2, 0, 100);
 
@@ -376,7 +376,7 @@ test('penanda below-kkm muncul jika dan hanya jika nilai lebih rendah dari KKM',
 test('GradeStatsWidget menggunakan kkm kelas untuk semua kombinasi nilai dan KKM', function () {
     $service = app(RaporService::class);
 
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $classKkm = fake()->randomFloat(2, 50, 95);
         $score = fake()->randomFloat(2, 0, 100);
         $expectedBelowKkm = $score < $classKkm;

@@ -19,7 +19,7 @@ it('calculates percentage correctly for any valid hadir and total pair', functio
     expect($this->service->calculatePercentage($hadir, $total))->toBe($expected);
 })->with(function (): array {
     $cases = [];
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $total = random_int(1, 40);
         $hadir = random_int(0, $total);
         $cases[] = [$hadir, $total];
@@ -41,7 +41,7 @@ it('flags warning correctly for any percentage value', function (float $percenta
     $cases = [];
 
     // 100 random float values across the full range 0.0–100.0
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         $cases[] = [round(mt_rand(0, 10000) / 100, 2)];
     }
 

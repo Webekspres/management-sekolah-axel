@@ -15,7 +15,7 @@ uses(TestCase::class, RefreshDatabase::class);
  * Validates: Requirements 5.1
  */
 test('Property 5: rapor stats are computed correctly for any combination of rapor statuses', function (): void {
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         // Arrange: create a student and rapors with random status combinations
         $student = Student::factory()->create();
 
