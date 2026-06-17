@@ -233,6 +233,10 @@ jobs:
           deploy_curl "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" 120 \
             || echo "Route cache clear skipped (file may not exist yet)."
 
+          echo "Installing Composer dependencies on server (vendor/ is not uploaded via FTP)..."
+          deploy_curl "${BASE}/deploy-composer-install.php?token=${ENCODED_TOKEN}" "composer install" 900 \
+            || echo "Composer install hook skipped (file may not exist yet)."
+
           echo "Running release hook..."
           set +e
           RELEASE_RESPONSE=$(deploy_curl "${BASE}/deploy/${TOKEN}/release" 900)
