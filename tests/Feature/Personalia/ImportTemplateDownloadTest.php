@@ -6,8 +6,17 @@ use App\Models\Province;
 use App\Models\SubDistrict;
 use App\Models\User;
 use App\Models\Village;
+use App\Support\Import\ImportTemplateCacheRunner;
 use App\Support\Import\ImportTemplateExporter;
 use OpenSpout\Reader\Common\Creator\ReaderFactory;
+
+beforeEach(function () {
+    ImportTemplateCacheRunner::releaseLock();
+});
+
+afterEach(function () {
+    ImportTemplateCacheRunner::releaseLock();
+});
 
 /**
  * @return list<list<string>>

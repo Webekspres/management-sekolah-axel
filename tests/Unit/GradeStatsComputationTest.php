@@ -19,7 +19,7 @@ uses(TestCase::class, RefreshDatabase::class);
  * Validates: Requirements 1.1
  */
 test('Property 1: grade stats are computed correctly for any collection of RAPOR grades', function (): void {
-    for ($i = 0; $i < 100; $i++) {
+    for ($i = 0; $i < propertyIterationCount(); $i++) {
         // Arrange: create a student with a school class (for level_id)
         $schoolClass = SchoolClass::factory()->create();
         $student = Student::factory()->create(['class_id' => $schoolClass->id]);

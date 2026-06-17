@@ -86,7 +86,7 @@ it('guru hanya bisa akses absensi KBM miliknya sendiri', function (int $kbmCount
     expect($allBelongToA)->toBeTrue();
 })->with(function (): array {
     $cases = [];
-    for ($i = 0; $i < 50; $i++) {
+    for ($i = 0; $i < propertyDatasetCount(); $i++) {
         $cases[] = [
             random_int(1, 3), // kbmCountA
             random_int(1, 3), // kbmCountB
@@ -164,7 +164,7 @@ it('siswa hanya melihat absensi dirinya sendiri', function (int $attendanceCount
     expect($hasStudentBRecords)->toBeFalse();
 })->with(function (): array {
     $cases = [];
-    for ($i = 0; $i < 50; $i++) {
+    for ($i = 0; $i < propertyDatasetCount(); $i++) {
         $cases[] = [
             random_int(1, 5), // attendanceCountA
             random_int(1, 5), // attendanceCountB

@@ -88,7 +88,7 @@ it('creates exactly one attendance record per student for any class size', funct
     expect($uniquePairs)->toBe($studentCount);
 })->with(function (): array {
     $cases = [];
-    for ($i = 0; $i < 50; $i++) {
+    for ($i = 0; $i < propertyDatasetCount(); $i++) {
         $cases[] = [random_int(1, 5)];
     }
 
@@ -113,7 +113,7 @@ it('upsert is idempotent and never creates duplicate records', function (int $st
     expect(Attendance::where('kbm_id', $kbm->id)->count())->toBe($studentCount);
 })->with(function (): array {
     $cases = [];
-    for ($i = 0; $i < 50; $i++) {
+    for ($i = 0; $i < propertyDatasetCount(); $i++) {
         $cases[] = [random_int(1, 5), random_int(2, 3)];
     }
 
@@ -157,7 +157,7 @@ it('fillForm logic returns statuses that match existing attendance records', fun
     }
 })->with(function (): array {
     $cases = [];
-    for ($i = 0; $i < 50; $i++) {
+    for ($i = 0; $i < propertyDatasetCount(); $i++) {
         $cases[] = [random_int(1, 5)];
     }
 
