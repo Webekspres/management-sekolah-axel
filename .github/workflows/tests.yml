@@ -114,14 +114,6 @@ jobs:
           node-version: "22"
           cache: npm
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: playwright-${{ runner.os }}-
-
       - name: Install Composer Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
@@ -137,13 +129,15 @@ jobs:
       - name: Build Assets
         run: npm run build
 
-      - name: Install Playwright Browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
 
-      - name: Install Playwright OS Dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
       - name: Run Browser Tests
         run: ./vendor/bin/pest --parallel --testsuite=Browser
