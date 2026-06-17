@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Validation\ValidationException;
 
 class Teacher extends Model
 {
@@ -30,7 +29,11 @@ class Teacher extends Model
     protected static function booted(): void
     {
         static::deleting(function (Teacher $teacher): void {
-            $teacher->ensureDeletable();
+            $teacher->classesHandled()->update(['teacher_id' => null]);
+        });
+
+        static::deleted(function (Teacher $teacher): void {
+            $teacher->user()->delete();
         });
     }
 
@@ -52,41 +55,5 @@ class Teacher extends Model
     public function lessonPlans(): HasMany
     {
         return $this->hasMany(LessonPlan::class);
-    }
-
-    public function ensureDeletable(): void
-    {
-        $blockingRelations = $this->getBlockingRelations();
-
-        if ($blockingRelations === []) {
-            return;
-        }
-
-        $details = collect($blockingRelations)
-            ->map(fn (array $relation): string => "{$relation['label']} ({$relation['count']})")
-            ->implode(', ');
-
-        throw ValidationException::withMessages([
-            'teacher' => "Guru tidak dapat dihapus karena masih dipakai pada: {$details}.",
-        ]);
-    }
-
-    /**
-     * @return array<int, array{label: string, count: int}>
-     */
-    public function getBlockingRelations(): array
-    {
-        $this->loadCount(['classesHandled', 'schedules', 'lessonPlans']);
-
-        $relations = [
-            ['label' => 'Kelas', 'count' => (int) $this->classes_handled_count],
-            ['label' => 'Jadwal', 'count' => (int) $this->schedules_count],
-            ['label' => 'RPP', 'count' => (int) $this->lesson_plans_count],
-        ];
-
-        return array_values(array_filter(
-            $relations,
-            fn (array $relation): bool => $relation['count'] > 0,
-        ));
     }
 }

@@ -41,74 +41,33 @@ function deploy_standalone_deploy_secret(string $envPath): ?string
     return deploy_standalone_read_env_value($envPath, 'DEPLOY_SECRET');
 }
 
-/**
- * @return list<string>
- */
-function deploy_standalone_php_binary_candidates(string $envPath): array
+function deploy_standalone_php_binary(string $envPath): string
 {
-    $candidates = [];
-
     $configured = deploy_standalone_read_env_value($envPath, 'DEPLOY_PHP_CLI');
 
     if (is_string($configured) && $configured !== '') {
-        $candidates[] = $configured;
-    }
-
-    // When triggered from the browser, the PHP binary already running this script
-    // is the most reliable choice on cPanel (ea-php paths often return exit 127).
-    if (php_sapi_name() !== 'cli') {
-        if (defined('PHP_BINARY') && is_string(PHP_BINARY) && PHP_BINARY !== '') {
-            $candidates[] = PHP_BINARY;
-        }
-
-        $bindir = defined('PHP_BINDIR') ? PHP_BINDIR : null;
-
-        if (is_string($bindir) && $bindir !== '') {
-            $candidates[] = rtrim($bindir, '/').'/php';
-        }
+        return $configured;
     }
 
     foreach (['84', '83', '82', '81'] as $version) {
-        $candidates[] = "/opt/alt/php{$version}/usr/bin/php";
-        $candidates[] = "/usr/local/bin/alt-php{$version}";
-        $candidates[] = "/usr/local/bin/ea-php{$version}";
-        $candidates[] = "/opt/cpanel/ea-php{$version}/root/usr/bin/php";
+        $candidate = "/opt/cpanel/ea-php{$version}/root/usr/bin/php";
+
+        if (is_executable($candidate)) {
+            return $candidate;
+        }
     }
 
-    $candidates[] = '/usr/local/bin/php';
-    $candidates[] = '/usr/bin/php';
-    $candidates[] = 'php';
+    foreach (['/usr/local/bin/php', '/usr/bin/php'] as $candidate) {
+        if (is_executable($candidate)) {
+            return $candidate;
+        }
+    }
 
     if (defined('PHP_BINARY') && is_string(PHP_BINARY) && PHP_BINARY !== '') {
-        $candidates[] = PHP_BINARY;
+        return PHP_BINARY;
     }
 
-    $unique = [];
-
-    foreach ($candidates as $candidate) {
-        if ($candidate === '' || in_array($candidate, $unique, true)) {
-            continue;
-        }
-
-        $isConfiguredCli = $configured !== null && $configured !== '' && $candidate === $configured;
-
-        if (! $isConfiguredCli && $candidate !== 'php' && ! is_executable($candidate)) {
-            continue;
-        }
-
-        $unique[] = $candidate;
-    }
-
-    if ($unique === []) {
-        return ['php'];
-    }
-
-    return $unique;
-}
-
-function deploy_standalone_php_binary(string $envPath): string
-{
-    return deploy_standalone_php_binary_candidates($envPath)[0];
+    return 'php';
 }
 
 /**
@@ -195,17 +154,6 @@ function deploy_standalone_composer_environment(string $basePath): array
     ];
 }
 
-function deploy_standalone_process_disabled(): bool
-{
-    if (! function_exists('proc_open')) {
-        return true;
-    }
-
-    $disabled = array_filter(array_map('trim', explode(',', (string) ini_get('disable_functions'))));
-
-    return in_array('proc_open', $disabled, true);
-}
-
 /**
  * @param  list<string>  $command
  * @param  array<string, string>  $environment
@@ -213,10 +161,6 @@ function deploy_standalone_process_disabled(): bool
  */
 function deploy_standalone_run_command(array $command, array $environment, string $workingDirectory, int $timeoutSeconds = 900): array
 {
-    if (deploy_standalone_process_disabled()) {
-        return deploy_standalone_run_command_via_shell($command, $environment, $workingDirectory, $timeoutSeconds);
-    }
-
     $descriptors = [
         0 => ['pipe', 'r'],
         1 => ['pipe', 'w'],
@@ -232,7 +176,10 @@ function deploy_standalone_run_command(array $command, array $environment, strin
     );
 
     if (! is_resource($process)) {
-        return deploy_standalone_run_command_via_shell($command, $environment, $workingDirectory, $timeoutSeconds);
+        return [
+            'exit_code' => 1,
+            'output' => 'Unable to start composer process (proc_open unavailable).',
+        ];
     }
 
     fclose($pipes[0]);
@@ -271,93 +218,11 @@ function deploy_standalone_run_command(array $command, array $environment, strin
     fclose($pipes[1]);
     fclose($pipes[2]);
 
+    $exitCode = proc_close($process);
+
     return [
-        'exit_code' => proc_close($process),
+        'exit_code' => $exitCode,
         'output' => $output,
-    ];
-}
-
-/**
- * @param  list<string>  $command
- * @param  array<string, string>  $environment
- * @return array{exit_code: int, output: string}
- */
-function deploy_standalone_run_command_via_shell(array $command, array $environment, string $workingDirectory, int $timeoutSeconds = 900): array
-{
-    if (function_exists('set_time_limit')) {
-        set_time_limit($timeoutSeconds);
-    }
-
-    $escaped = implode(' ', array_map(
-        static fn (string $part): string => escapeshellarg($part),
-        $command,
-    ));
-
-    $envPrefix = '';
-
-    foreach ($environment as $key => $value) {
-        $envPrefix .= escapeshellarg($key).'='.escapeshellarg($value).' ';
-    }
-
-    $shellCommand = 'cd '.escapeshellarg($workingDirectory).' && '.$envPrefix.$escaped.' 2>&1';
-
-    if (function_exists('shell_exec') && ! in_array('shell_exec', array_filter(array_map('trim', explode(',', (string) ini_get('disable_functions')))), true)) {
-        $output = shell_exec($shellCommand);
-
-        return [
-            'exit_code' => $output === null ? 127 : 0,
-            'output' => (string) $output,
-        ];
-    }
-
-    return [
-        'exit_code' => 127,
-        'output' => 'Unable to run composer (proc_open and shell_exec unavailable).',
-    ];
-}
-
-/**
- * @param  list<string>  $phpBinaries
- * @return array{exit_code: int, output: string, php_binary: string, attempts: list<array{php_binary: string, exit_code: int, output: string}>}
- */
-function deploy_standalone_run_composer_install(string $basePath, array $phpBinaries, array $environment): array
-{
-    $attempts = [];
-    $lastResult = [
-        'exit_code' => 127,
-        'output' => '',
-        'php_binary' => $phpBinaries[0] ?? 'php',
-    ];
-
-    foreach ($phpBinaries as $phpBinary) {
-        $command = deploy_standalone_composer_install_command($basePath, $phpBinary);
-        $result = deploy_standalone_run_command($command, $environment, $basePath);
-
-        $attempts[] = [
-            'php_binary' => $phpBinary,
-            'exit_code' => $result['exit_code'],
-            'output' => $result['output'],
-        ];
-
-        $lastResult = [
-            'exit_code' => $result['exit_code'],
-            'output' => $result['output'],
-            'php_binary' => $phpBinary,
-        ];
-
-        if ($result['exit_code'] === 0) {
-            break;
-        }
-
-        // 127 = command not found — try the next PHP binary candidate.
-        if ($result['exit_code'] !== 127) {
-            break;
-        }
-    }
-
-    return [
-        ...$lastResult,
-        'attempts' => $attempts,
     ];
 }
 

@@ -55,6 +55,13 @@ class Student extends Model
         'custom_spp',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleted(function (Student $student): void {
+            $student->user()->delete();
+        });
+    }
+
     protected function casts(): array
     {
         return [

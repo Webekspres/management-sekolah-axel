@@ -2,25 +2,47 @@
 
 use App\Models\SchoolClass;
 use App\Models\Teacher;
-use Illuminate\Validation\ValidationException;
+use App\Models\User;
 
-test('teacher tidak bisa dihapus jika masih dipakai oleh data akademik', function () {
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\assertDatabaseMissing;
+
+test('teacher dihapus akan melepas wali kelas menjadi null', function () {
     $teacher = Teacher::factory()->create();
 
-    SchoolClass::factory()->create([
+    $schoolClass = SchoolClass::factory()->create([
         'teacher_id' => $teacher->id,
     ]);
 
-    expect(fn () => $teacher->delete())
-        ->toThrow(ValidationException::class);
+    $teacher->delete();
+
+    assertDatabaseMissing('teachers', [
+        'id' => $teacher->id,
+    ]);
+
+    assertDatabaseHas('classes', [
+        'id' => $schoolClass->id,
+        'teacher_id' => null,
+    ]);
 });
 
-test('teacher bisa dihapus jika tidak punya relasi pemakaian akademik', function () {
+test('teacher dihapus ikut menghapus akun user agar email bisa dipakai ulang', function () {
     $teacher = Teacher::factory()->create();
+    $email = $teacher->user->email;
 
     $teacher->delete();
 
-    $this->assertDatabaseMissing('teachers', [
+    assertDatabaseMissing('teachers', [
         'id' => $teacher->id,
     ]);
+
+    assertDatabaseMissing('users', [
+        'id' => $teacher->user_id,
+    ]);
+
+    $user = User::factory()->asGuru()->create([
+        'email' => $email,
+    ]);
+
+    expect($user->email)->toBe($email);
 });
