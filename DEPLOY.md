@@ -80,7 +80,7 @@ On each server (dev and prod), set:
 DEPLOY_SECRET=your-long-random-string
 ```
 
-Use a different secret per environment. The value must match the `DEPLOY_SECRET` GitHub secret for that environment.
+Use a different secret per environment. The value must match the `DEPLOY_SECRET` GitHub secret for that environment. Special characters (`[`, `]`, `$`, etc.) are supported — CI URL-encodes the token before calling deploy hooks.
 
 ## Post-deploy hook
 

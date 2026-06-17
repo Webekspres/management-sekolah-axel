@@ -202,19 +202,23 @@ jobs:
           DEPLOY_SECRET: ${{ secrets.DEPLOY_SECRET }}
         run: |
           set -eo pipefail
-          BASE="${DEPLOY_URL}"
-          TOKEN="${DEPLOY_SECRET}"
+          BASE="${DEPLOY_URL//$'\r'/}"
+          BASE="${BASE//$'\n'/}"
+          BASE="${BASE%/}"
+
+          ENCODED_TOKEN="$(python3 -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["DEPLOY_SECRET"].strip(), safe=""))')"
 
           # Shared hosting (cPanel/LiteSpeed) often drops HTTP/2 streams during long
           # composer/migrate requests — curl exit 92. Force HTTP/1.1 and retry.
           deploy_curl() {
             local url="$1"
-            local max_time="${2:-900}"
+            local label="${2:-deploy hook}"
+            local max_time="${3:-900}"
             local attempt response exit_code
 
             for attempt in 1 2 3; do
               set +e
-              response=$(curl -sS --http1.1 \
+              response=$(curl -sS --globoff --http1.1 \
                 --connect-timeout 30 \
                 --max-time "${max_time}" \
                 -H "Accept: application/json, text/plain, */*" \
@@ -229,7 +233,7 @@ jobs:
                 return 0
               fi
 
-              echo "curl attempt ${attempt}/3 failed for ${url} (exit ${exit_code}); retrying in 5s..." >&2
+              echo "curl attempt ${attempt}/3 failed for ${label} (exit ${exit_code}); retrying in 5s..." >&2
               sleep 5
             done
 
@@ -238,12 +242,12 @@ jobs:
           }
 
           echo "Clearing stale route cache on server (no SSH)..."
-          deploy_curl "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" 120 \
+          deploy_curl "${BASE}/deploy-route-cache-clear.php?token=${ENCODED_TOKEN}" "route cache clear" 120 \
             || echo "Route cache clear skipped (file may not exist yet)."
 
           echo "Running release hook..."
           set +e
-          RELEASE_RESPONSE=$(deploy_curl "${BASE}/deploy/${TOKEN}/release" 900)
+          RELEASE_RESPONSE=$(deploy_curl "${BASE}/deploy/${ENCODED_TOKEN}/release" "release" 900)
           RELEASE_CURL_EXIT=$?
           set -e
 
@@ -261,8 +265,19 @@ jobs:
           fi
 
           echo "Release hook failed — trying individual deploy endpoints..."
-          deploy_curl "${BASE}/deploy-route-cache-clear.php?token=${TOKEN}" 120 || true
-          deploy_curl "${BASE}/deploy/${TOKEN}/composer-install" 900
-          deploy_curl "${BASE}/deploy/${TOKEN}/migrate" 300
-          deploy_curl "${BASE}/deploy/${TOKEN}/optimize" 300
+          set +e
+          deploy_curl "${BASE}/deploy-route-cache-clear.php?token=${ENCODED_TOKEN}" "route cache clear" 120 || true
+          deploy_curl "${BASE}/deploy/${ENCODED_TOKEN}/composer-install" "composer-install" 900
+          COMPOSER_EXIT=$?
+          deploy_curl "${BASE}/deploy/${ENCODED_TOKEN}/migrate" "migrate" 300
+          MIGRATE_EXIT=$?
+          deploy_curl "${BASE}/deploy/${ENCODED_TOKEN}/optimize" "optimize" 300
+          OPTIMIZE_EXIT=$?
+          set -e
+
+          if [ "${COMPOSER_EXIT}" -ne 0 ] || [ "${MIGRATE_EXIT}" -ne 0 ] || [ "${OPTIMIZE_EXIT}" -ne 0 ]; then
+            echo "One or more individual deploy hooks failed."
+            exit 1
+          fi
+
           echo "Individual deploy hooks completed."
