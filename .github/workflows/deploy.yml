@@ -71,14 +71,19 @@ jobs:
     steps:
       - name: Resolve target from branch or manual input
         id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TARGET: ${{ github.event.inputs.target }}
+          WORKFLOW_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          set -euo pipefail
+          set -eo pipefail
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            target="${{ github.event.inputs.target }}"
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
+            target="${INPUT_TARGET}"
             checkout_ref="${GITHUB_SHA}"
           else
-            case "${{ github.event.workflow_run.head_branch }}" in
+            case "${WORKFLOW_HEAD_BRANCH}" in
               main)
                 target="portal.hstkb.sch.id"
                 ;;
@@ -90,7 +95,7 @@ jobs:
                 exit 1
                 ;;
             esac
-            checkout_ref="${{ github.event.workflow_run.head_sha }}"
+            checkout_ref="${WORKFLOW_HEAD_SHA}"
           fi
 
           case "${target}" in
@@ -192,10 +197,13 @@ jobs:
           exit 1
 
       - name: Run post-deploy release hook
+        env:
+          DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
+          DEPLOY_SECRET: ${{ secrets.DEPLOY_SECRET }}
         run: |
-          set -euo pipefail
-          BASE="${{ secrets.DEPLOY_URL }}"
-          TOKEN="${{ secrets.DEPLOY_SECRET }}"
+          set -eo pipefail
+          BASE="${DEPLOY_URL}"
+          TOKEN="${DEPLOY_SECRET}"
 
           # Shared hosting (cPanel/LiteSpeed) often drops HTTP/2 streams during long
           # composer/migrate requests — curl exit 92. Force HTTP/1.1 and retry.
