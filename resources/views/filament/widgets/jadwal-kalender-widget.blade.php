@@ -103,6 +103,19 @@
             </x-slot>
         @endif
 
+        @if ($this->isInDayView)
+            <div class="mb-3 flex justify-end">
+                <x-filament::button
+                    wire:click="backToMonthView"
+                    color="gray"
+                    size="sm"
+                    icon="heroicon-o-calendar-days"
+                >
+                    Lihat Semua Tanggal
+                </x-filament::button>
+            </div>
+        @endif
+
         <div
             wire:ignore
             x-load

@@ -7,13 +7,12 @@ use App\Models\User;
 use App\Support\TemporaryAccessManager;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Filament\Actions\Action;
-use Filament\Support\Icons\Heroicon;
 use Guava\Calendar\Enums\CalendarViewType;
 use Guava\Calendar\Filament\CalendarWidget;
 use Guava\Calendar\ValueObjects\CalendarEvent;
 use Guava\Calendar\ValueObjects\DateClickInfo;
 use Guava\Calendar\ValueObjects\FetchInfo;
+use Guava\Calendar\ValueObjects\ViewDidMountInfo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
@@ -26,27 +25,16 @@ class JadwalKalenderWidget extends CalendarWidget
 
     protected bool $dateClickEnabled = true;
 
+    protected bool $viewDidMountEnabled = true;
+
     protected string|HtmlString|null|bool $heading = 'Kalender Jadwal Pelajaran';
 
     public bool $isInDayView = false;
 
-    /**
-     * @return array<Action>
-     */
-    public function getHeaderActions(): array
+    public function backToMonthView(): void
     {
-        return [
-            Action::make('backToMonth')
-                ->label('Lihat Semua Tanggal')
-                ->icon(Heroicon::OutlinedArrowLeft)
-                ->color('gray')
-                ->size('sm')
-                ->visible($this->isInDayView)
-                ->action(function (): void {
-                    $this->isInDayView = false;
-                    $this->setOption('view', 'dayGridMonth');
-                }),
-        ];
+        $this->isInDayView = false;
+        $this->setOption('view', 'dayGridMonth');
     }
 
     /**
@@ -117,6 +105,11 @@ class JadwalKalenderWidget extends CalendarWidget
         $this->isInDayView = true;
         $this->setOption('view', 'timeGridDay');
         $this->setOption('date', $info->date->toIso8601String());
+    }
+
+    protected function onViewDidMount(ViewDidMountInfo $info): void
+    {
+        $this->isInDayView = $info->view->type === CalendarViewType::TimeGridDay;
     }
 
     /**
