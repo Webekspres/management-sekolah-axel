@@ -42,6 +42,10 @@ test('ensure replaces a regular public storage directory with a symlink', functi
 });
 
 test('ensure returns true when symlink already points to public disk', function () {
+    if (! function_exists('symlink')) {
+        test()->markTestSkipped('symlink() unavailable on this PHP build.');
+    }
+
     EnsurePublicStorageLink::run();
 
     expect(EnsurePublicStorageLink::run())->toBeTrue();
