@@ -95,7 +95,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        EnsurePublicStorageLink::run();
+        $storageLinkMarker = storage_path('framework/.public_storage_link_checked');
+
+        if (! is_file($storageLinkMarker)) {
+            EnsurePublicStorageLink::run();
+            @file_put_contents($storageLinkMarker, date('c'));
+        }
 
         $this->configureFilament();
         $this->configureDefaults();
