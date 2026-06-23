@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Throwable;
 
 /**
- * Memastikan symlink public/storage → storage/app/public ada.
- * Diperlukan agar URL /storage/... dapat dilayani web server (RPP, materi, rapor, dll.).
+ * Memastikan symlink public/storage → storage/app/public ada bila memungkinkan.
  *
- * Di shared hosting, public/storage sering dibuat sebagai folder biasa (bukan symlink).
- * Perintah artisan storage:link --force tidak mengganti folder tersebut.
+ * Di shared hosting (cPanel), symlink() dan exec() sering dinonaktifkan.
+ * Bila symlink gagal, folder public/storage yang salah dihapus agar permintaan
+ * /storage/... ditangani rute Laravel (disk public dengan serve => true).
  */
 final class EnsurePublicStorageLink
 {
@@ -34,6 +33,12 @@ final class EnsurePublicStorageLink
 
         if (file_exists($link)) {
             self::logAttempt($link, $target, false, 'blocking_path_remains');
+
+            return false;
+        }
+
+        if (! function_exists('symlink')) {
+            self::logAttempt($link, $target, false, 'symlink_unavailable');
 
             return false;
         }
@@ -132,16 +137,10 @@ final class EnsurePublicStorageLink
     private static function createLink(string $link, string $target): bool
     {
         try {
-            if (@symlink($target, $link)) {
-                return self::isValidLink($link, $target);
-            }
+            return @symlink($target, $link) && self::isValidLink($link, $target);
         } catch (Throwable) {
-            // Fall through to artisan.
+            return false;
         }
-
-        Artisan::call('storage:link');
-
-        return self::isValidLink($link, $target);
     }
 
     private static function logAttempt(string $link, string $target, bool $linked, string $outcome): void
@@ -158,11 +157,12 @@ final class EnsurePublicStorageLink
                 'data' => [
                     'outcome' => $outcome,
                     'linked' => $linked,
+                    'symlinkFunctionExists' => function_exists('symlink'),
                     'publicSymlinkIsLink' => is_link($link),
                     'publicStorageIsDir' => is_dir($link) && ! is_link($link),
+                    'publicStorageExists' => file_exists($link),
                     'resolvedLink' => file_exists($link) ? realpath($link) : null,
                     'resolvedTarget' => realpath($target),
-                    'artisanOutput' => Artisan::output(),
                 ],
                 'timestamp' => (int) (microtime(true) * 1000),
             ], JSON_UNESCAPED_SLASHES)."\n",
