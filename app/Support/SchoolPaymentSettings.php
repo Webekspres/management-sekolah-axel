@@ -25,6 +25,14 @@ class SchoolPaymentSettings
         return $value;
     }
 
+    public static function set(string $key, string $value): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => $key],
+            ['value' => $value],
+        );
+    }
+
     /**
      * @return array{bank_name: ?string, account_number: ?string, account_holder: ?string}
      */
