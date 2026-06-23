@@ -30,8 +30,30 @@ class RichText
     public static function display(?string $html, string $fallback = '-'): string
     {
         $text = self::toPlainText($html);
+        $result = $text !== '' ? $text : $fallback;
 
-        return $text !== '' ? $text : $fallback;
+        // #region agent log
+        file_put_contents(
+            base_path('debug-cb6ab0.log'),
+            json_encode([
+                'sessionId' => 'cb6ab0',
+                'runId' => 'pre-fix',
+                'hypothesisId' => 'C,E',
+                'location' => 'RichText.php:display',
+                'message' => 'RichText::display called',
+                'data' => [
+                    'inputContainsHtml' => is_string($html) && $html !== strip_tags($html),
+                    'inputPreview' => is_string($html) ? mb_substr($html, 0, 120) : null,
+                    'outputPreview' => mb_substr($result, 0, 120),
+                    'outputIsPlainText' => $result === strip_tags($result),
+                ],
+                'timestamp' => (int) (microtime(true) * 1000),
+            ], JSON_UNESCAPED_SLASHES)."\n",
+            FILE_APPEND
+        );
+        // #endregion
+
+        return $result;
     }
 
     public static function excerpt(?string $html, int $limit = 80, string $fallback = '-'): string

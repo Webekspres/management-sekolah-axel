@@ -73,6 +73,26 @@ class NotificationService
         $title = "RPP {$subject->name} Anda perlu direvisi";
         $message = "Catatan: {$lessonPlan->revision_note}";
 
+        // #region agent log
+        file_put_contents(
+            base_path('debug-cb6ab0.log'),
+            json_encode([
+                'sessionId' => 'cb6ab0',
+                'runId' => 'pre-fix',
+                'hypothesisId' => 'D',
+                'location' => 'NotificationService.php:createForLessonPlanRevised',
+                'message' => 'Lesson plan revised notification message composed',
+                'data' => [
+                    'messageContainsHtml' => str_contains($message, '<') && str_contains($message, '>'),
+                    'messagePreview' => mb_substr($message, 0, 160),
+                    'revisionNotePreview' => is_string($lessonPlan->revision_note) ? mb_substr($lessonPlan->revision_note, 0, 120) : null,
+                ],
+                'timestamp' => (int) (microtime(true) * 1000),
+            ], JSON_UNESCAPED_SLASHES)."\n",
+            FILE_APPEND
+        );
+        // #endregion
+
         $this->sendDatabaseNotification($user, $title, $message);
     }
 
