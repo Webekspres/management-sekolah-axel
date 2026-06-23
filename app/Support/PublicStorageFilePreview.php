@@ -23,19 +23,20 @@ final class PublicStorageFilePreview
             base_path('debug-0f345b.log'),
             json_encode([
                 'sessionId' => '0f345b',
-                'runId' => 'pre-fix',
-                'hypothesisId' => 'A,B,C,D',
+                'runId' => 'post-fix-verify',
+                'hypothesisId' => 'A',
                 'location' => 'PublicStorageFilePreview.php:render',
                 'message' => 'RPP preview link generated',
                 'data' => [
                     'dbPath' => $path,
                     'generatedUrl' => $url,
                     'publicDiskExists' => Storage::disk('public')->exists($normalizedPath),
-                    'localDiskExists' => Storage::disk('local')->exists($normalizedPath),
-                    'publicSymlinkIsLink' => is_link(public_path('storage')),
-                    'publicFileExists' => file_exists(public_path('storage/'.$normalizedPath)),
-                    'storageAppPublicExists' => file_exists(storage_path('app/public/'.$normalizedPath)),
-                    'defaultDisk' => config('filesystems.default'),
+                    'publicDiskServeEnabled' => (bool) config('filesystems.disks.public.serve'),
+                    'localDiskServeEnabled' => (bool) config('filesystems.disks.local.serve'),
+                    'publicStoragePathExists' => file_exists(public_path('storage')),
+                    'servedViaLaravelRoute' => ! file_exists(public_path('storage/'.$normalizedPath))
+                        && Storage::disk('public')->exists($normalizedPath)
+                        && (bool) config('filesystems.disks.public.serve'),
                 ],
                 'timestamp' => (int) (microtime(true) * 1000),
             ], JSON_UNESCAPED_SLASHES)."\n",

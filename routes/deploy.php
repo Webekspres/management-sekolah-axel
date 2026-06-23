@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 Route::prefix('deploy/{token}')->group(function () {
 
@@ -263,6 +264,21 @@ Route::prefix('deploy/{token}')->group(function () {
         ]);
     });
 
+    Route::get('/storage-verify', function (string $token) {
+        abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
+
+        $samplePath = 'lesson-plans/1-1585023758.pdf';
+
+        return response()->json([
+            'public_disk_serve' => (bool) config('filesystems.disks.public.serve'),
+            'local_disk_serve' => (bool) config('filesystems.disks.local.serve'),
+            'public_storage_path_exists' => file_exists(public_path('storage')),
+            'sample_file_on_public_disk' => Storage::disk('public')->exists($samplePath),
+            'sample_static_public_path_exists' => file_exists(public_path('storage/'.$samplePath)),
+            'symlink_function_exists' => function_exists('symlink'),
+        ]);
+    });
+
     Route::get('/seed-access-policies', function (string $token) {
         abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
 
@@ -356,6 +372,7 @@ Route::prefix('deploy/{token}')->group(function () {
             }
         }
 
+        Artisan::call('config:clear');
         Artisan::call('optimize');
         $optimizeOutput = Artisan::output();
 
