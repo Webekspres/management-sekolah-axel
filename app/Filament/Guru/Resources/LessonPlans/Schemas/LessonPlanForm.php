@@ -135,6 +135,27 @@ class LessonPlanForm
                             ->readOnly()
                             ->dehydrated(false)
                             ->placeholder('Tidak ada catatan revisi.')
+                            ->afterStateHydrated(function (?string $state): void {
+                                // #region agent log
+                                file_put_contents(
+                                    base_path('debug-cb6ab0.log'),
+                                    json_encode([
+                                        'sessionId' => 'cb6ab0',
+                                        'runId' => 'pre-fix',
+                                        'hypothesisId' => 'A,B',
+                                        'location' => 'Guru/LessonPlanForm.php:revision_note',
+                                        'message' => 'Guru RPP edit form hydrated revision_note into Textarea',
+                                        'data' => [
+                                            'component' => 'Textarea',
+                                            'stateContainsHtml' => is_string($state) && $state !== strip_tags($state),
+                                            'statePreview' => is_string($state) ? mb_substr($state, 0, 120) : null,
+                                        ],
+                                        'timestamp' => (int) (microtime(true) * 1000),
+                                    ], JSON_UNESCAPED_SLASHES)."\n",
+                                    FILE_APPEND
+                                );
+                                // #endregion
+                            })
                             ->hiddenOn('create')
                             ->columnSpanFull(),
                     ]),
