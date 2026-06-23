@@ -54,6 +54,7 @@ use App\Policies\SubjectKkmPolicy;
 use App\Policies\SubjectPolicy;
 use App\Policies\TeacherPolicy;
 use App\Services\PaymentGateways\LogPaymentGateway;
+use App\Support\EnsurePublicStorageLink;
 use App\Support\ForeignKeyDeleteGuard;
 use Carbon\CarbonImmutable;
 use Filament\Panel;
@@ -94,6 +95,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        EnsurePublicStorageLink::run();
+
         $this->configureFilament();
         $this->configureDefaults();
         $this->registerGlobalDeletionValidation();

@@ -28,6 +28,7 @@
 use App\Models\User;
 use App\Support\AccessPolicyRegistry;
 use App\Support\ComposerInstallRunner;
+use App\Support\EnsurePublicStorageLink;
 use App\Support\Import\ImportTemplateCacheRunner;
 use App\Support\Import\ImportTemplateExporter;
 use Database\Seeders\IndonesianRegionSeeder;
@@ -250,13 +251,15 @@ Route::prefix('deploy/{token}')->group(function () {
     Route::get('/storage-link', function (string $token) {
         abort_unless($token === config('app.deploy_secret'), 403, 'Invalid deploy token.');
 
-        $exitCode = Artisan::call('storage:link', ['--force' => true]);
-        $output = Artisan::output();
+        $linked = EnsurePublicStorageLink::run();
 
         return response()->json([
-            'status' => $exitCode === 0 ? 'success' : 'error',
+            'status' => $linked ? 'success' : 'error',
             'command' => 'storage:link',
-            'output' => $output,
+            'linked' => $linked,
+            'public_symlink' => is_link(public_path('storage')),
+            'resolved_target' => realpath(storage_path('app/public')) ?: null,
+            'resolved_link' => is_link(public_path('storage')) ? (realpath(public_path('storage')) ?: null) : null,
         ]);
     });
 
@@ -334,6 +337,8 @@ Route::prefix('deploy/{token}')->group(function () {
         $migrateExit = Artisan::call('migrate', ['--force' => true]);
         $migrateOutput = Artisan::output();
 
+        $storageLinked = EnsurePublicStorageLink::run();
+
         $cacheExit = 0;
         $cacheOutput = '';
 
@@ -373,6 +378,9 @@ Route::prefix('deploy/{token}')->group(function () {
             'migrate' => [
                 'exit_code' => $migrateExit,
                 'output' => $migrateOutput,
+            ],
+            'storage_link' => [
+                'linked' => $storageLinked,
             ],
             'cache_import_templates' => array_merge(
                 ['command' => 'personalia:cache-import-templates'],
