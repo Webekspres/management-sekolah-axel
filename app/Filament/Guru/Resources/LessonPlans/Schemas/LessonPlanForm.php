@@ -82,26 +82,6 @@ class LessonPlanForm
                                 if ($shouldFetchFileInformation) {
                                     try {
                                         if (! $storage->exists($file)) {
-                                            // #region agent log
-                                            file_put_contents(
-                                                base_path('debug-0f345b.log'),
-                                                json_encode([
-                                                    'sessionId' => '0f345b',
-                                                    'runId' => 'pre-fix',
-                                                    'hypothesisId' => 'B,D',
-                                                    'location' => 'LessonPlanForm.php:getUploadedFileUsing',
-                                                    'message' => 'RPP file missing on public disk when loading form',
-                                                    'data' => [
-                                                        'filePath' => $file,
-                                                        'disk' => 'public',
-                                                        'publicSymlinkIsLink' => is_link(public_path('storage')),
-                                                    ],
-                                                    'timestamp' => (int) (microtime(true) * 1000),
-                                                ], JSON_UNESCAPED_SLASHES)."\n",
-                                                FILE_APPEND
-                                            );
-                                            // #endregion
-
                                             return null;
                                         }
                                     } catch (UnableToCheckFileExistence $exception) {

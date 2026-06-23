@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 final class PublicStorageFilePreview
@@ -16,34 +15,6 @@ final class PublicStorageFilePreview
         }
 
         $url = PublicStorageUrl::fromPublicDiskPath($path);
-        $normalizedPath = ltrim(str_replace('\\', '/', $path), '/');
-
-        // #region agent log
-        file_put_contents(
-            base_path('debug-0f345b.log'),
-            json_encode([
-                'sessionId' => '0f345b',
-                'runId' => 'post-fix-verify',
-                'hypothesisId' => 'A',
-                'location' => 'PublicStorageFilePreview.php:render',
-                'message' => 'RPP preview link generated',
-                'data' => [
-                    'dbPath' => $path,
-                    'generatedUrl' => $url,
-                    'publicDiskExists' => Storage::disk('public')->exists($normalizedPath),
-                    'publicDiskServeEnabled' => (bool) config('filesystems.disks.public.serve'),
-                    'localDiskServeEnabled' => (bool) config('filesystems.disks.local.serve'),
-                    'publicStoragePathExists' => file_exists(public_path('storage')),
-                    'servedViaLaravelRoute' => ! file_exists(public_path('storage/'.$normalizedPath))
-                        && Storage::disk('public')->exists($normalizedPath)
-                        && (bool) config('filesystems.disks.public.serve'),
-                ],
-                'timestamp' => (int) (microtime(true) * 1000),
-            ], JSON_UNESCAPED_SLASHES)."\n",
-            FILE_APPEND
-        );
-        // #endregion
-
         $fileName = basename($path);
         $escapedUrl = e($url);
         $escapedFileName = e($fileName);
