@@ -17,6 +17,8 @@ test('admin dapat menyimpan custom_spp dengan nilai besar', function () {
 
     Livewire::test(EditStudent::class, ['record' => $student->getRouteKey()])
         ->fillForm([
+            'user.birth_province_id' => null,
+            'user.place_of_birth' => null,
             'custom_spp' => '6.000.000.000',
         ])
         ->call('save')
@@ -30,6 +32,8 @@ test('custom_spp di atas batas kolom ditolak validasi form', function () {
 
     Livewire::test(EditStudent::class, ['record' => $student->getRouteKey()])
         ->fillForm([
+            'user.birth_province_id' => null,
+            'user.place_of_birth' => null,
             'custom_spp' => (string) (MonetaryAmount::MAX + 1),
         ])
         ->call('save')
