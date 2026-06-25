@@ -1,6 +1,6 @@
 # cPanel Git deployment (optional / legacy)
 #
-# Canonical deploy: GitHub Actions workflow ".github/workflows/deploy.yml"
+# Canonical deploy: GitHub Actions workflow ".github/workflows/ci.yml"
 # on push to branch "dev" → FTP to public_html/dev.portal.hstkb.sch.id
 #
 # Disable automatic deployment in cPanel Git Version Control to avoid
