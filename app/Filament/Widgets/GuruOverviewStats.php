@@ -3,7 +3,6 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Clusters\Academic\Resources\Schedules\ScheduleResource;
-use App\Filament\Guru\Resources\Attendances\AttendanceResource;
 use App\Filament\Guru\Resources\Kbms\KbmResource;
 use App\Filament\Guru\Resources\LessonPlans\LessonPlanResource;
 use App\Models\Attendance;
@@ -118,7 +117,7 @@ class GuruOverviewStats extends StatsOverviewWidget
                 value: number_format($attendanceTodayCount),
                 description: "Entri hari ini — HADIR: {$hadirCount} ({$pctHadir}%){$ctx}",
                 color: 'success',
-                url: AttendanceResource::getUrl(panel: 'guru'),
+                url: KbmResource::getUrl(panel: 'guru'),
             ),
             $this->makeNavigableStat(
                 label: 'RPP saya (draft)',

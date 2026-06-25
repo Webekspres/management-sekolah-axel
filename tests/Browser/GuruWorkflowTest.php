@@ -2,6 +2,7 @@
 
 use App\Models\AcademicYear;
 use App\Models\Grade;
+use App\Models\Kbm;
 use App\Models\Schedule;
 use App\Models\SchoolClass;
 use App\Models\Student;
@@ -63,6 +64,38 @@ test('guru can save a PH grade from the grade input page', function (): void {
         ->whereIn('student_id', $this->students->pluck('id'))
         ->where('score', 85)
         ->exists())->toBeTrue();
+});
+
+test('guru can input attendance for students in KBM class', function (): void {
+    $studentName = $this->students->first()->user->name;
+    $kbm = Kbm::factory()->create([
+        'schedule_id' => $this->schedule->id,
+        'date' => today()->toDateString(),
+    ]);
+
+    visitAuthenticated($this->guruUser, "/guru/kbms/{$kbm->getRouteKey()}/attendance")
+        ->assertSee('Input Absensi')
+        ->assertSee($studentName)
+        ->assertNoSmoke();
+});
+
+test('guru can open isi absensi from dashboard checklist for today schedule', function (): void {
+    $this->schedule->update(['day_of_week' => now()->dayOfWeekIso]);
+
+    $studentName = $this->students->first()->user->name;
+    $kbm = Kbm::factory()->create([
+        'schedule_id' => $this->schedule->id,
+        'date' => today()->toDateString(),
+    ]);
+
+    visitAuthenticated($this->guruUser, '/guru')
+        ->assertSee('Checklist mengajar hari ini')
+        ->click('Isi Absensi')
+        ->assertSee('Input Absensi')
+        ->assertSee($studentName)
+        ->assertNoSmoke();
+
+    expect($kbm->id)->not->toBeEmpty();
 });
 
 test('guru academic resource pages load without javascript errors', function (): void {

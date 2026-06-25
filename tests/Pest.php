@@ -66,7 +66,6 @@ $browserMigratedFeatureTests = [
     'Feature/SystemLogViewerTest.php',
     'Feature/StaffResourceTest.php',
     'Feature/GradeDisplayPropertyTest.php',
-    'Feature/Guru/Resources/Attendances/GuruAttendanceTest.php',
     'Feature/Student/Resources/Attendances/StudentAttendanceTest.php',
     'Feature/Kepsek/Resources/Attendances/KepsekAttendanceTest.php',
     'Feature/Kepsek/Resources/AcademicApprovalEditPageTest.php',
