@@ -1,6 +1,6 @@
 # Deploy (GitHub Actions)
 
-Deploy runs via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) **after** the [`tests`](.github/workflows/tests.yml) workflow succeeds on `dev` or `main`. That gate includes Unit, Feature, and Playwright browser tests — deploy no longer runs its own duplicate Pest suite.
+Deploy runs as the final job in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) **after** lint and tests succeed on `dev` or `main`. That gate includes Pint, Unit, Feature, and Playwright browser tests — deploy does not run its own duplicate Pest suite.
 
 | Branch | GitHub environment | Target                            |
 | ------ | ------------------ | --------------------------------- |
@@ -9,7 +9,7 @@ Deploy runs via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) *
 
 Each environment has its own secrets. The deploy job matrix picks the target from the branch that passed tests.
 
-You can also trigger deploy manually from **Actions → deploy → Run workflow** and choose the target host.
+You can also trigger deploy manually from **Actions → CI → Run workflow** and choose the target host.
 
 ## GitHub Secrets
 
@@ -41,7 +41,7 @@ Optional: restrict the `Production` environment to the `main` branch and/or requ
 
 ## FTP exclude list (`FTP_DEPLOY_EXCLUDE`)
 
-This is **not** a GitHub secret. It is defined at the top of `deploy.yml` under the workflow-level `env:` block:
+This is **not** a GitHub secret. It is defined at the top of `ci.yml` under the workflow-level `env:` block:
 
 ```yaml
 env:
@@ -53,7 +53,7 @@ env:
 
 Those patterns are passed to [FTP-Deploy-Action](https://github.com/SamKirkland/FTP-Deploy-Action) and tell it which files **not** to upload. To change what gets excluded:
 
-1. Edit `.github/workflows/deploy.yml`.
+1. Edit `.github/workflows/ci.yml`.
 2. Add or remove lines under `FTP_DEPLOY_EXCLUDE` (one glob pattern per line).
 3. Commit and push — no GitHub UI configuration needed.
 
@@ -98,7 +98,19 @@ If `/release` returns 404, CI falls back to `/composer-install`, `/migrate`, and
 
 `vendor/` is **not** uploaded via FTP (too large; causes session timeouts). CI uploads `composer.phar` next to `artisan` — **no cPanel terminal / SSH required**.
 
-FTP deploy **auto-retries once** if the host drops the connection (`.ftp-deploy-sync-state.json` resumes upload). If FTPS keeps failing with `FIN packet`, try changing `protocol` to `ftp` in `deploy.yml` (less secure) or ask host to raise FTP session timeout.
+FTP deploy **auto-retries once** if the host drops the connection (`.ftp-deploy-sync-state.json` resumes upload). If FTPS keeps failing with `FIN packet`, try changing `protocol` to `ftp` in `ci.yml` (less secure) or ask host to raise FTP session timeout.
+
+## Concurrency (rapid pushes)
+
+CI uses **job-level** concurrency so lint/test and deploy behave differently:
+
+| Phase | Behavior on a new push to the same branch |
+| ----- | ------------------------------------------- |
+| Lint / test | In-progress checks are **cancelled** — only the latest commit is validated. |
+| Deploy | In-flight FTP upload is **never cancelled** — it runs to completion. |
+| Deploy queue | If another run finishes tests while deploy is busy, its deploy job **waits** until the current upload finishes, then deploys in order. |
+
+The server always ends up on the newest commit that passed CI; you may briefly see an older commit live while a deploy is finishing, then the next queued deploy updates it.
 
 ## cPanel Git
 
@@ -112,14 +124,14 @@ Manual pull only: **Update from Remote** (does not replace GitHub Actions deploy
 
 1. Backup server `.env` and database.
 2. Add Development secrets in GitHub → Settings → Environments → `Development`.
-3. Push to `dev`, wait for **tests** to pass, then watch **deploy** in Actions.
+3. Push to `dev` and watch the **CI** workflow in Actions (lint → test → deploy).
 4. Hard-refresh dev.portal and smoke-test login + student pages.
 
 ### Production
 
 1. Backup production `.env` and database.
 2. Add Production secrets in GitHub → Settings → Environments → `Production`.
-3. Merge or push to `main`, wait for **tests** to pass, then watch **deploy** in Actions.
+3. Merge or push to `main` and watch the **CI** workflow in Actions (lint → test → deploy).
 4. Hard-refresh portal.hstkb.sch.id and smoke-test critical flows.
 
 ## Manual recovery (no SSH / terminal)
