@@ -26,11 +26,13 @@ test('generates PDF using v2 template without errors', function (): void {
 
     // Create base models
     $student = Student::factory()->create();
-    $academicYear = AcademicYear::factory()->create(['semester' => 'Ganjil']);
+    $academicYear = AcademicYear::factory()->create(['semester' => 'Ganjil', 'name' => '2025/2026']);
     $rapor = Rapor::factory()->create([
         'student_id' => $student->id,
         'academic_year_id' => $academicYear->id,
         'status' => 'DRAFT',
+        'program' => 'Reguler',
+        'sumber_pembelajaran' => 'Buku teks',
     ]);
 
     // Create subjects and grades
@@ -207,6 +209,23 @@ test('generates PDF using v2 template without errors', function (): void {
     $rapor->refresh();
     expect($rapor->file_path)->toBe($filePath);
     expect($rapor->generated_at)->not->toBeNull();
+
+    $pdfPath = Storage::path($filePath);
+    $textFile = sys_get_temp_dir().'/rapor-pdf-v2-'.uniqid().'.txt';
+    exec('pdftotext '.escapeshellarg($pdfPath).' '.escapeshellarg($textFile).' 2>&1', $pdftotextOutput, $pdftotextCode);
+
+    if ($pdftotextCode === 0 && file_exists($textFile)) {
+        $pdfText = file_get_contents($textFile);
+        @unlink($textFile);
+
+        expect($pdfText)->toContain('2025/2026');
+        expect($pdfText)->toContain('Reguler');
+        expect($pdfText)->not->toContain('TPeahmubnelaja');
+
+        $pdfBinary = Storage::get($filePath);
+        expect($pdfBinary)->not->toContain('DejaVuSans-BoldOblique');
+        expect($pdfBinary)->toMatch('/Times-BoldItalic|times_new_roman/i');
+    }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -216,7 +235,7 @@ test('generates PDF using v2 template without errors', function (): void {
 test('renders pdf_v2 view without throwing exceptions', function (): void {
     // Create minimal valid data
     $student = Student::factory()->create();
-    $academicYear = AcademicYear::factory()->create(['semester' => 'Ganjil']);
+    $academicYear = AcademicYear::factory()->create(['semester' => 'Ganjil', 'name' => '2025/2026']);
     $schoolClass = $student->schoolClass;
     $rapor = Rapor::factory()->create([
         'student_id' => $student->id,
@@ -245,6 +264,7 @@ test('renders pdf_v2 view without throwing exceptions', function (): void {
             9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
         ],
         'waliKelasName' => $schoolClass?->homeroomTeacher?->user?->name,
+        'titimangsaFormatted' => 'Jakarta, 20 Juni 2025',
     ];
 
     $html = view('rapor.pdf_v2', $viewData)->render();
@@ -254,6 +274,10 @@ test('renders pdf_v2 view without throwing exceptions', function (): void {
     expect($html)->toContain('Reguler');
     expect($html)->toContain('Buku teks dan LKS');
     expect($html)->toContain('Sumber Pembelajaran');
+    expect($html)->toContain($academicYear->name);
+    expect($html)->not->toContain('@font-face');
+    expect($html)->toContain("'times new roman', serif");
+    expect($html)->not->toContain('courgette');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

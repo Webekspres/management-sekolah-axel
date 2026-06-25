@@ -3,52 +3,36 @@
 
     @include('rapor.partials._header')
 
-    {{-- Identitas 2 kolom --}}
-    <table style="border: none; margin-bottom: 4px;">
+    {{-- Identitas 2 kolom (satu tabel datar — DomPDF gagal pada tabel bersarang) --}}
+    <table style="border: none; margin-bottom: 4px; width: 100%;">
         <tr>
-            <td style="border: none; width: 50%; vertical-align: top; padding: 0 4px 0 0;">
-                <table style="border: none; width: 100%;">
-                    <tr>
-                        <td style="border: none;" class="identitas-label">Nama</td>
-                        <td style="border: none;" class="identitas-sep">:</td>
-                        <td style="border: none;" class="identitas-val">{{ $student->user?->name ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: none;" class="identitas-label">NIS/NISN</td>
-                        <td style="border: none;" class="identitas-sep">:</td>
-                        <td style="border: none;" class="identitas-val">{{ $student->nis ?? '' }} / {{ $student->nisn ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: none;" class="identitas-label">Program</td>
-                        <td style="border: none;" class="identitas-sep">:</td>
-                        <td style="border: none;" class="identitas-val">{{ $rapor->program ?? '' }}</td>
-                    </tr>
-                </table>
-            </td>
-            <td style="border: none; width: 50%; vertical-align: top; padding: 0 0 0 4px;">
-                <table style="border: none; width: 100%;">
-                    <tr>
-                        <td style="border: none;" class="identitas-label">Kelas</td>
-                        <td style="border: none;" class="identitas-sep">:</td>
-                        <td style="border: none;" class="identitas-val">{{ $schoolClass->name ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: none;" class="identitas-label">Semester</td>
-                        <td style="border: none;" class="identitas-sep">:</td>
-                        <td style="border: none;" class="identitas-val">{{ $academicYear->semester ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: none;" class="identitas-label">Tahun Pembelajaran</td>
-                        <td style="border: none;" class="identitas-sep">:</td>
-                        <td style="border: none;" class="identitas-val identitas-nowrap">{{ $academicYear->year ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: none;" class="identitas-label">Sumber Pembelajaran</td>
-                        <td style="border: none;" class="identitas-sep">:</td>
-                        <td style="border: none;" class="identitas-val">{{ $rapor->sumber_pembelajaran ?? '' }}</td>
-                    </tr>
-                </table>
-            </td>
+            <td style="border: none;" class="identitas-label">Nama</td>
+            <td style="border: none;" class="identitas-sep">:</td>
+            <td style="border: none;" class="identitas-val">{{ $student->user?->name ?? '' }}</td>
+            <td style="border: none;" class="identitas-label">Kelas</td>
+            <td style="border: none;" class="identitas-sep">:</td>
+            <td style="border: none;" class="identitas-val">{{ $schoolClass->name ?? '' }}</td>
+        </tr>
+        <tr>
+            <td style="border: none;" class="identitas-label">NIS/NISN</td>
+            <td style="border: none;" class="identitas-sep">:</td>
+            <td style="border: none;" class="identitas-val">{{ $student->nis ?? '' }} / {{ $student->nisn ?? '' }}</td>
+            <td style="border: none;" class="identitas-label">Semester</td>
+            <td style="border: none;" class="identitas-sep">:</td>
+            <td style="border: none;" class="identitas-val">{{ $academicYear->semester ?? '' }}</td>
+        </tr>
+        <tr>
+            <td style="border: none;" class="identitas-label">Program</td>
+            <td style="border: none;" class="identitas-sep">:</td>
+            <td style="border: none;" class="identitas-val">{{ $rapor->program ?? '' }}</td>
+            <td style="border: none;" class="identitas-label">Tahun Pembelajaran</td>
+            <td style="border: none;" class="identitas-sep">:</td>
+            <td style="border: none;" class="identitas-val">{{ $academicYear->name ?? '' }}</td>
+        </tr>
+        <tr>
+            <td style="border: none;" class="identitas-label">Sumber Pembelajaran</td>
+            <td style="border: none;" class="identitas-sep">:</td>
+            <td style="border: none;" class="identitas-val" colspan="4">{{ $rapor->sumber_pembelajaran ?? '' }}</td>
         </tr>
     </table>
 

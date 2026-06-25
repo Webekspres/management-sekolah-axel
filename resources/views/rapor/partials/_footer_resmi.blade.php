@@ -1,12 +1,5 @@
 {{-- Footer Resmi: Halaman 1 & 3 --}}
-@php
-    $titimangsaRaw = \App\Models\Setting::where('key', 'titimangsa')->value('value');
-    $titimangsaFormatted = $titimangsaRaw
-        ? 'Jakarta, ' . \Carbon\Carbon::parse($titimangsaRaw)->locale('id')->isoFormat('D MMMM YYYY')
-        : '—';
-@endphp
-
-<div class="footer-date">{{ $titimangsaFormatted }}</div>
+<div class="footer-date">{{ $titimangsaFormatted ?? '—' }}</div>
 
 <table style="border: none;">
     <tr>

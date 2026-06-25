@@ -72,17 +72,17 @@
         </thead>
         <tbody>
             <tr>
-                <td style="text-align: center;">86 – 100</td>
+                <td style="text-align: center;">86 - 100</td>
                 <td style="text-align: center;">A</td>
                 <td>Sangat Baik</td>
             </tr>
             <tr>
-                <td style="text-align: center;">73 – 85</td>
+                <td style="text-align: center;">73 - 85</td>
                 <td style="text-align: center;">B</td>
                 <td>Baik</td>
             </tr>
             <tr>
-                <td style="text-align: center;">60 – 72</td>
+                <td style="text-align: center;">60 - 72</td>
                 <td style="text-align: center;">C</td>
                 <td>Cukup</td>
             </tr>
