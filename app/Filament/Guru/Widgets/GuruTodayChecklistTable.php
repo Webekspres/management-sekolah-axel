@@ -2,11 +2,11 @@
 
 namespace App\Filament\Guru\Widgets;
 
-use App\Filament\Guru\Resources\Attendances\AttendanceResource;
 use App\Filament\Guru\Resources\Kbms\KbmResource;
 use App\Models\Kbm;
 use App\Models\Schedule;
 use Filament\Actions\Action;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
@@ -88,9 +88,20 @@ class GuruTodayChecklistTable extends TableWidget
                         return KbmResource::getUrl('create', panel: 'guru').'?schedule_id='.$record->id.'&date='.today()->toDateString();
                     }),
                 Action::make('absensi')
-                    ->label('Absensi')
-                    ->url(fn (): string => AttendanceResource::getUrl(panel: 'guru'))
-                    ->color('gray'),
+                    ->label('Isi Absensi')
+                    ->icon(Heroicon::OutlinedClipboardDocumentCheck)
+                    ->url(function (Schedule $record): string {
+                        $kbm = $record->kbms->first();
+
+                        return $kbm instanceof Kbm
+                            ? KbmResource::getUrl('attendance', ['record' => $kbm], panel: 'guru')
+                            : KbmResource::getUrl(panel: 'guru');
+                    })
+                    ->disabled(fn (Schedule $record): bool => ! ($record->kbms->first() instanceof Kbm))
+                    ->tooltip(fn (Schedule $record): ?string => $record->kbms->first() instanceof Kbm
+                        ? null
+                        : 'Buat laporan KBM terlebih dahulu untuk mengisi absensi')
+                    ->color('primary'),
             ])
             ->defaultPaginationPageOption(6)
             ->paginated([6, 12]);

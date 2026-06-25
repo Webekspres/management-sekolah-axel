@@ -27,6 +27,24 @@ test('admin dapat menyimpan custom_spp dengan nilai besar', function () {
     expect((float) $student->refresh()->custom_spp)->toBe(6_000_000_000.0);
 });
 
+test('custom_spp tetap benar setelah simpan dan buka ulang form edit', function () {
+    $student = Student::factory()->create(['custom_spp' => null]);
+
+    Livewire::test(EditStudent::class, ['record' => $student->getRouteKey()])
+        ->fillForm([
+            'user.birth_province_id' => null,
+            'user.place_of_birth' => null,
+            'custom_spp' => '6.000',
+        ])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect((float) $student->refresh()->custom_spp)->toBe(6000.0);
+
+    Livewire::test(EditStudent::class, ['record' => $student->getRouteKey()])
+        ->assertSet('data.custom_spp', '6.000');
+});
+
 test('custom_spp di atas batas kolom ditolak validasi form', function () {
     $student = Student::factory()->create();
 

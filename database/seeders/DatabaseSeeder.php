@@ -335,19 +335,81 @@ class DatabaseSeeder extends Seeder
                 'subject_id' => $subject->id,
             ]);
         }
+
+        $this->ensureStudentsInGuruDemoClass($demoClass);
+    }
+
+    private function ensureStudentsInGuruDemoClass(SchoolClass $demoClass): void
+    {
+        $hasStudent = Student::withoutGlobalScopes()
+            ->where('class_id', $demoClass->id)
+            ->exists();
+
+        if ($hasStudent) {
+            return;
+        }
+
+        $siswaDemo = User::query()->where('email', 'siswa@example.com')->first();
+
+        if ($siswaDemo?->student) {
+            $siswaDemo->student->update(['class_id' => $demoClass->id]);
+
+            return;
+        }
+
+        if ($siswaDemo) {
+            Student::firstOrCreate(
+                ['user_id' => $siswaDemo->id],
+                [
+                    'class_id' => $demoClass->id,
+                    'nipd' => fake()->unique()->numerify('##########'),
+                    'nisn' => fake()->unique()->numerify('##########'),
+                    'nik' => fake()->unique()->numerify('################'),
+                    'kk_number' => fake()->numerify('################'),
+                    'birth_cert_number' => fake()->numerify('####/####/####'),
+                    'religion' => 'Islam',
+                    'student_phone' => fake()->numerify('08##########'),
+                    'admission_date' => now()->format('Y-m-d'),
+                    'father_name' => fake()->name('male'),
+                    'father_phone' => fake()->numerify('08##########'),
+                    'mother_name' => fake()->name('female'),
+                    'mother_phone' => fake()->numerify('08##########'),
+                ],
+            );
+
+            return;
+        }
+
+        $user = User::factory()->asSiswa()->withAddress()->create();
+        Student::factory()->create([
+            'user_id' => $user->id,
+            'class_id' => $demoClass->id,
+        ]);
     }
 
     private function ensureSiswaDemoProfile(): void
     {
         $siswaDemo = User::query()->where('email', 'siswa@example.com')->first();
 
-        if (! $siswaDemo || $siswaDemo->student) {
+        if (! $siswaDemo) {
             return;
         }
 
-        $class = SchoolClass::query()->first();
+        $guruDemoClass = SchoolClass::query()
+            ->whereHas('homeroomTeacher.user', fn ($q) => $q->where('email', 'guru@example.com'))
+            ->first();
+
+        $class = $guruDemoClass ?? SchoolClass::query()->first();
 
         if (! $class) {
+            return;
+        }
+
+        if ($siswaDemo->student) {
+            if ($guruDemoClass && $siswaDemo->student->class_id !== $guruDemoClass->id) {
+                $siswaDemo->student->update(['class_id' => $guruDemoClass->id]);
+            }
+
             return;
         }
 
