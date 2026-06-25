@@ -6,8 +6,8 @@
     {{-- Sub-judul --}}
     <div class="sub-header-center">LAPORAN HASIL BELAJAR  SISWA</div>
 
-    {{-- Identitas 1 kolom kiri --}}
-    <table style="border: none; width: 55%; margin-bottom: 4px;">
+    {{-- Identitas 1 kolom (tabel datar — DomPDF gagal pada tabel bersarang) --}}
+    <table style="border: none; width: 100%; margin-bottom: 4px;">
         <tr>
             <td style="border: none;" class="identitas-label">Nama Siswa</td>
             <td style="border: none;" class="identitas-sep">:</td>
@@ -31,7 +31,7 @@
         <tr>
             <td style="border: none;" class="identitas-label">Tahun Pelajaran</td>
             <td style="border: none;" class="identitas-sep">:</td>
-            <td style="border: none;" class="identitas-val identitas-nowrap">{{ $academicYear->year ?? '' }}</td>
+            <td style="border: none;" class="identitas-val">{{ $academicYear->name ?? '' }}</td>
         </tr>
         <tr>
             <td style="border: none;" class="identitas-label">Sumber Pembelajaran</td>
@@ -129,12 +129,12 @@
                         {{ $ks->knowledge_score ?? '' }}
                     </td>
                     <td style="text-align: center;">{{ $ks->knowledge_predicate ?? '' }}</td>
-                    <td style="font-family:'Times New Roman',serif; font-size:8.5pt;">{{ $ks->knowledge_description ?? '' }}</td>
+                    <td style="font-family:'times new roman','DejaVu Serif',serif; font-size:8.5pt;">{{ $ks->knowledge_description ?? '' }}</td>
                     <td style="text-align: center; {{ ($ks->skill_score !== null && $ks->kkm !== null && $ks->skill_score < $ks->kkm) ? 'color:#cc0000;font-weight:bold;' : '' }}">
                         {{ $ks->skill_score ?? '' }}
                     </td>
                     <td style="text-align: center;">{{ $ks->skill_predicate ?? '' }}</td>
-                    <td style="font-family:'Times New Roman',serif; font-size:8.5pt;">{{ $ks->skill_description ?? '' }}</td>
+                    <td style="font-family:'times new roman','DejaVu Serif',serif; font-size:8.5pt;">{{ $ks->skill_description ?? '' }}</td>
                 </tr>
             @empty
                 <tr style="height: 22px;">

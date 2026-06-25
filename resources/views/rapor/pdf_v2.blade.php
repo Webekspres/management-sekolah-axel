@@ -4,35 +4,10 @@
     <meta charset="UTF-8">
     <title>Rapor Siswa</title>
     <style>
-        @font-face {
-            font-family: 'Courgette';
-            src: url('{{ public_path('fonts/Courgette-Regular.ttf') }}') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'Calibri';
-            src: url('{{ public_path('fonts/calibri.ttf') }}') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'Calibri';
-            src: url('{{ public_path('fonts/calibrib.ttf') }}') format('truetype');
-            font-weight: bold;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'Times New Roman';
-            src: url('{{ public_path('fonts/times.ttf') }}') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Calibri', sans-serif;
+            font-family: calibri, 'DejaVu Sans', sans-serif;
             font-size: 10pt;
             color: #000;
         }
@@ -54,7 +29,7 @@
             padding: 2px 4px;
             word-wrap: break-word;
             overflow: hidden;
-            font-family: 'Calibri', sans-serif;
+            font-family: calibri, 'DejaVu Sans', sans-serif;
             font-size: 9pt;
             vertical-align: middle;
         }
@@ -66,24 +41,24 @@
 
         /* ── HEADER ── */
         .header-judul {
-            font-family: 'Courgette', cursive;
+            font-family: 'times new roman', serif;
             font-size: 16pt;
             font-weight: bold;
             font-style: italic;
         }
         .header-sekolah {
-            font-family: 'Calibri', sans-serif;
+            font-family: calibri, 'DejaVu Sans', sans-serif;
             font-size: 10pt;
             font-weight: bold;
         }
         .header-npsn {
-            font-family: 'Calibri', sans-serif;
+            font-family: calibri, 'DejaVu Sans', sans-serif;
             font-size: 9pt;
         }
 
         /* ── SECTION TITLE ── */
         .section-title {
-            font-family: 'Calibri', sans-serif;
+            font-family: calibri, 'DejaVu Sans', sans-serif;
             font-weight: bold;
             font-size: 10pt;
             margin: 6px 0 3px 0;
@@ -91,23 +66,28 @@
 
         /* ── IDENTITAS ── */
         .identitas-label {
-            font-family: 'Calibri', sans-serif;
+            font-family: calibri, 'DejaVu Sans', sans-serif;
             font-size: 9pt;
-            width: 28%;
+            width: 22%;
+            vertical-align: top;
         }
-        .identitas-sep { width: 3%; }
+        .identitas-sep {
+            font-family: calibri, 'DejaVu Sans', sans-serif;
+            font-size: 9pt;
+            width: 2%;
+            vertical-align: top;
+        }
         .identitas-val {
-            font-family: 'Calibri', sans-serif;
+            font-family: calibri, 'DejaVu Sans', sans-serif;
             font-size: 9pt;
-        }
-        .identitas-nowrap {
-            white-space: nowrap;
+            width: 26%;
+            vertical-align: top;
         }
 
         /* ── SUB HEADER HAL 2 ── */
         .sub-header-center {
             text-align: center;
-            font-family: 'Calibri', sans-serif;
+            font-family: calibri, 'DejaVu Sans', sans-serif;
             font-weight: bold;
             font-size: 11pt;
             border: 1px solid #000;
@@ -118,7 +98,7 @@
         /* ── NILAI SIKAP ── */
         .sikap-no    { width: 6%; text-align: center; }
         .sikap-aspek { width: 30%; }
-        .sikap-desk  { font-family: 'Times New Roman', serif; font-size: 9pt; }
+        .sikap-desk  { font-family: 'times new roman', 'DejaVu Serif', serif; font-size: 9pt; }
 
         /* ── KEPRIBADIAN ── */
         .nilai-aktif { font-weight: bold; }
@@ -130,7 +110,7 @@
         /* ── FOOTER ── */
         .footer-date {
             text-align: center;
-            font-family: 'Calibri', sans-serif;
+            font-family: calibri, 'DejaVu Sans', sans-serif;
             font-size: 9pt;
             margin-top: 10px;
             margin-bottom: 6px;
@@ -138,7 +118,7 @@
 
         /* ── KETERANGAN PREDIKAT LABEL ── */
         .ket-label {
-            font-family: 'Times New Roman', serif;
+            font-family: 'times new roman', 'DejaVu Serif', serif;
             font-style: italic;
             font-weight: bold;
             font-size: 10pt;

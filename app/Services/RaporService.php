@@ -10,8 +10,10 @@ use App\Models\PersonalityScore;
 use App\Models\Rapor;
 use App\Models\Schedule;
 use App\Models\SchoolClass;
+use App\Models\Setting;
 use App\Models\SubjectKkm;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -403,6 +405,11 @@ class RaporService
 
             $waliKelasName = $schoolClass?->homeroomTeacher?->user?->name;
 
+            $titimangsaRaw = Setting::where('key', 'titimangsa')->value('value');
+            $titimangsaFormatted = $titimangsaRaw
+                ? 'Jakarta, '.Carbon::parse($titimangsaRaw)->locale('id')->isoFormat('D MMMM YYYY')
+                : '—';
+
             $pdf = Pdf::loadView('rapor.pdf_v2', compact(
                 'rapor',
                 'student',
@@ -419,6 +426,7 @@ class RaporService
                 'semesterMonths',
                 'monthNames',
                 'waliKelasName',
+                'titimangsaFormatted',
             ))->setPaper('a4', 'portrait');
 
             $filePath = "rapors/{$rapor->id}.pdf";
