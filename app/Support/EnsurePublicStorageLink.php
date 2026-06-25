@@ -32,22 +32,14 @@ final class EnsurePublicStorageLink
         self::removeBlockingPublicStoragePath($link, $target);
 
         if (file_exists($link)) {
-            self::logAttempt($link, $target, false, 'blocking_path_remains');
-
             return false;
         }
 
         if (! function_exists('symlink')) {
-            self::logAttempt($link, $target, false, 'symlink_unavailable');
-
             return false;
         }
 
-        $linked = self::createLink($link, $target);
-
-        self::logAttempt($link, $target, $linked, $linked ? 'symlink_created' : 'symlink_failed');
-
-        return $linked;
+        return self::createLink($link, $target);
     }
 
     private static function isValidLink(string $link, string $target): bool
@@ -141,33 +133,5 @@ final class EnsurePublicStorageLink
         } catch (Throwable) {
             return false;
         }
-    }
-
-    private static function logAttempt(string $link, string $target, bool $linked, string $outcome): void
-    {
-        // #region agent log
-        file_put_contents(
-            base_path('debug-0f345b.log'),
-            json_encode([
-                'sessionId' => '0f345b',
-                'runId' => 'post-fix',
-                'hypothesisId' => 'A',
-                'location' => 'EnsurePublicStorageLink.php:run',
-                'message' => 'Public storage link repair attempted',
-                'data' => [
-                    'outcome' => $outcome,
-                    'linked' => $linked,
-                    'symlinkFunctionExists' => function_exists('symlink'),
-                    'publicSymlinkIsLink' => is_link($link),
-                    'publicStorageIsDir' => is_dir($link) && ! is_link($link),
-                    'publicStorageExists' => file_exists($link),
-                    'resolvedLink' => file_exists($link) ? realpath($link) : null,
-                    'resolvedTarget' => realpath($target),
-                ],
-                'timestamp' => (int) (microtime(true) * 1000),
-            ], JSON_UNESCAPED_SLASHES)."\n",
-            FILE_APPEND
-        );
-        // #endregion
     }
 }
