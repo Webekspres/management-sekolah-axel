@@ -46,7 +46,9 @@ class MoneyFormat
         if (str_contains($string, ',')) {
             $string = str_replace('.', '', $string);
             $string = str_replace(',', '.', $string);
-        } else {
+        } elseif (substr_count($string, '.') > 1) {
+            $string = str_replace('.', '', $string);
+        } elseif (substr_count($string, '.') === 1 && ! preg_match('/^\d+\.\d{2}$/', $string)) {
             $string = str_replace('.', '', $string);
         }
 
