@@ -28,6 +28,19 @@ it('parses six billion in Indonesian notation', function () {
     expect(MoneyFormat::parse('6.000.000.000'))->toBe(6_000_000_000.0);
 });
 
+it('parses database decimal strings without inflating value', function () {
+    expect(MoneyFormat::parse('6000.00'))->toBe(6000.0)
+        ->and(MoneyFormat::formatForInput('6000.00'))->toBe('6.000')
+        ->and(MoneyFormat::formatForInput(6000))->toBe('6.000');
+});
+
+it('round-trips six thousand from user input through save and reload', function () {
+    $saved = MoneyFormat::parse('6.000');
+
+    expect($saved)->toBe(6000.0)
+        ->and(MoneyFormat::formatForInput((string) number_format($saved, 2, '.', '')))->toBe('6.000');
+});
+
 it('does not truncate Indonesian notation like php floatval', function () {
     expect((float) '1.500.000')->toBe(1.5)
         ->and(MoneyFormat::parse('1.500.000'))->toBe(1500000.0);
