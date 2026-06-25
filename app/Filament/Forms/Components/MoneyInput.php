@@ -7,6 +7,7 @@ use App\Support\MoneyFormat;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\StateCasts\Contracts\StateCast;
 use Filament\Schemas\Components\StateCasts\NumberStateCast;
+use Filament\Schemas\Components\StateCasts\StripCharactersStateCast;
 use Filament\Support\RawJs;
 
 class MoneyInput extends TextInput
@@ -33,7 +34,9 @@ class MoneyInput extends TextInput
     }
 
     /**
-     * Avoid NumberStateCast: floatval() breaks Indonesian thousands (e.g. "1.500.000" → 1.5).
+     * Avoid default TextInput state casts that break Indonesian money notation:
+     * - NumberStateCast: floatval("1.500.000") → 1.5
+     * - StripCharactersStateCast: "6000.00" → "600000" before formatStateUsing runs
      *
      * @return array<StateCast>
      */
@@ -43,7 +46,8 @@ class MoneyInput extends TextInput
 
         return array_values(array_filter(
             $casts,
-            fn (mixed $cast): bool => ! $cast instanceof NumberStateCast,
+            fn (mixed $cast): bool => ! $cast instanceof NumberStateCast
+                && ! $cast instanceof StripCharactersStateCast,
         ));
     }
 }
