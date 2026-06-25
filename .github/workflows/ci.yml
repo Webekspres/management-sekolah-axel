@@ -1,12 +1,20 @@
-name: deploy
+name: CI
 
 on:
-  workflow_run:
-    workflows: [tests]
-    types: [completed]
+  push:
     branches:
       - dev
+      - develop
       - main
+      - master
+      - workos
+  pull_request:
+    branches:
+      - dev
+      - develop
+      - main
+      - master
+      - workos
   workflow_dispatch:
     inputs:
       target:
@@ -17,11 +25,10 @@ on:
           - dev.portal.hstkb.sch.id
           - portal.hstkb.sch.id
 
-concurrency:
-  group: deploy-${{ github.event.workflow_run.head_branch || github.event.inputs.target }}
-  cancel-in-progress: false
 
 env:
+  CI: true
+  PEST_PROPERTY_ITERATIONS: 20
   FTP_DEPLOY_EXCLUDE: |
     **/.git*
     **/.git/**
@@ -55,19 +62,126 @@ env:
     **/composer.lock.bak
 
 jobs:
+  lint:
+    name: Lint
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: Testing
+    concurrency:
+      group: ci-checks-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+
+      - name: Install dependencies
+        run: |
+          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+          npm install
+
+      - name: Run Pint
+        run: composer lint
+
+  test:
+    name: Test
+    if: github.event_name != 'workflow_dispatch'
+    needs: lint
+    runs-on: ubuntu-latest
+    environment: Testing
+    concurrency:
+      group: ci-checks-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer:v2
+          extensions: sockets
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.composer-cache.outputs.dir }}
+            vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Run PHP tests (parallel)
+        run: ./vendor/bin/pest --parallel --testsuite=Unit,Feature --exclude-group=serial
+
+      - name: Run serial PHP tests
+        run: ./vendor/bin/pest --group=serial
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: ./vendor/bin/pest --parallel --testsuite=Browser
+
   resolve-target:
     name: Resolve deployment target
-    runs-on: ubuntu-latest
+    needs: [lint, test]
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        (github.event.workflow_run.head_branch == 'dev' ||
-          github.event.workflow_run.head_branch == 'main'))
+      always() &&
+      !cancelled() &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') &&
+          needs.lint.result == 'success' &&
+          needs.test.result == 'success'
+        )
+      )
+    runs-on: ubuntu-latest
     outputs:
       deploy_host: ${{ steps.target.outputs.deploy_host }}
       environment: ${{ steps.target.outputs.environment }}
-      checkout_ref: ${{ steps.target.outputs.checkout_ref }}
+
     steps:
       - name: Resolve target from branch or manual input
         id: target
@@ -76,9 +190,8 @@ jobs:
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             target="${{ github.event.inputs.target }}"
-            checkout_ref="${GITHUB_SHA}"
           else
-            case "${{ github.event.workflow_run.head_branch }}" in
+            case "${{ github.ref_name }}" in
               main)
                 target="portal.hstkb.sch.id"
                 ;;
@@ -90,7 +203,6 @@ jobs:
                 exit 1
                 ;;
             esac
-            checkout_ref="${{ github.event.workflow_run.head_sha }}"
           fi
 
           case "${target}" in
@@ -108,20 +220,20 @@ jobs:
 
           echo "deploy_host=${target}" >> "${GITHUB_OUTPUT}"
           echo "environment=${environment}" >> "${GITHUB_OUTPUT}"
-          echo "checkout_ref=${checkout_ref}" >> "${GITHUB_OUTPUT}"
 
   deploy:
     name: Deploy to ${{ needs.resolve-target.outputs.deploy_host }}
-    runs-on: ubuntu-latest
     needs: resolve-target
+    runs-on: ubuntu-latest
     timeout-minutes: 120
     environment: ${{ needs.resolve-target.outputs.environment }}
+    concurrency:
+      group: deploy-${{ needs.resolve-target.outputs.deploy_host }}
+      cancel-in-progress: false
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.resolve-target.outputs.checkout_ref }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
