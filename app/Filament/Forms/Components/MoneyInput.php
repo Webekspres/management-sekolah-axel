@@ -2,6 +2,7 @@
 
 namespace App\Filament\Forms\Components;
 
+use App\Support\MonetaryAmount;
 use App\Support\MoneyFormat;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\StateCasts\Contracts\StateCast;
@@ -27,7 +28,8 @@ class MoneyInput extends TextInput
             ->formatStateUsing(fn (mixed $state): ?string => MoneyFormat::formatForInput($state))
             ->dehydrateStateUsing(fn (mixed $state): ?float => MoneyFormat::parse($state))
             ->rule('numeric')
-            ->rule('min:0');
+            ->rule('min:0')
+            ->rule('max:'.MonetaryAmount::MAX);
     }
 
     /**

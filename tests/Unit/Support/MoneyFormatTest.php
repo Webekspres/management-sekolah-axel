@@ -24,6 +24,10 @@ it('parses one and a half million in Indonesian notation', function () {
     expect(MoneyFormat::parse('1.500.000'))->toBe(1500000.0);
 });
 
+it('parses six billion in Indonesian notation', function () {
+    expect(MoneyFormat::parse('6.000.000.000'))->toBe(6_000_000_000.0);
+});
+
 it('does not truncate Indonesian notation like php floatval', function () {
     expect((float) '1.500.000')->toBe(1.5)
         ->and(MoneyFormat::parse('1.500.000'))->toBe(1500000.0);

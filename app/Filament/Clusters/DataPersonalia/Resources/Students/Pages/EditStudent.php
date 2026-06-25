@@ -130,6 +130,30 @@ class EditStudent extends EditRecord
             }
 
             $record->user->update($userPayload);
+
+            // #region agent log
+            $customSpp = $data['custom_spp'] ?? null;
+            file_put_contents(
+                base_path('.cursor/debug-2ba3f4.log'),
+                json_encode([
+                    'sessionId' => '2ba3f4',
+                    'runId' => 'post-fix',
+                    'hypothesisId' => 'A',
+                    'location' => 'EditStudent.php:handleRecordUpdate',
+                    'message' => 'custom_spp before student update',
+                    'data' => [
+                        'custom_spp_raw' => $customSpp,
+                        'custom_spp_float' => $customSpp !== null ? (float) $customSpp : null,
+                        'legacy_decimal_max' => 99_999_999.99,
+                        'new_decimal_max' => 9_999_999_999_999.99,
+                        'exceeds_legacy_decimal' => $customSpp !== null && (float) $customSpp > 99_999_999.99,
+                    ],
+                    'timestamp' => (int) (microtime(true) * 1000),
+                ])."\n",
+                FILE_APPEND | LOCK_EX
+            );
+            // #endregion
+
             $record->update($data);
 
             return $record;
