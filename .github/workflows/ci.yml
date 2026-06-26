@@ -25,6 +25,8 @@ on:
           - dev.portal.hstkb.sch.id
           - portal.hstkb.sch.id
 
+permissions:
+  contents: read
 
 env:
   CI: true
