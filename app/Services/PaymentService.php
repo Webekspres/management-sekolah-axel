@@ -11,11 +11,13 @@ use App\Models\Payment;
 use App\Models\Student;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PaymentService
 {
     public function __construct(
         private PaymentGateway $paymentGateway,
+        private NotificationService $notificationService,
     ) {}
 
     public function canStudentPay(Invoice $invoice): bool
@@ -125,7 +127,18 @@ class PaymentService
 
             $this->updateInvoiceStatus($invoice, PaymentStatus::Paid);
 
-            return $payment->fresh();
+            $payment = $payment->fresh();
+
+            try {
+                $this->notificationService->createForPaymentSuccess($payment);
+            } catch (\Throwable $e) {
+                Log::error('Gagal mengirim notifikasi pembayaran sukses', [
+                    'payment_id' => $payment->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return $payment;
         });
     }
 
@@ -152,7 +165,18 @@ class PaymentService
 
             $this->updateInvoiceStatus($invoice, PaymentStatus::Failed);
 
-            return $payment->fresh();
+            $payment = $payment->fresh();
+
+            try {
+                $this->notificationService->createForPaymentFailed($payment);
+            } catch (\Throwable $e) {
+                Log::error('Gagal mengirim notifikasi pembayaran gagal', [
+                    'payment_id' => $payment->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return $payment;
         });
     }
 
@@ -181,6 +205,19 @@ class PaymentService
             ]);
 
             $this->updateInvoiceStatus($invoice, $status);
+
+            $payment = $payment->fresh();
+
+            if ($status === PaymentStatus::Paid) {
+                try {
+                    $this->notificationService->createForPaymentSuccess($payment);
+                } catch (\Throwable $e) {
+                    Log::error('Gagal mengirim notifikasi pembayaran manual sukses', [
+                        'payment_id' => $payment->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             return $payment;
         });

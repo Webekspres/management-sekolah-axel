@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Bento\BentoDashboard;
+use App\Filament\Pages\NotificationCenter;
 use App\Http\Middleware\EnsureStudentAcademicLevel;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -41,17 +42,22 @@ class StudentPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/theme.css')
             ->globalSearch(false)
             ->databaseNotifications()
-            ->databaseNotificationsPolling('15s')
+            ->databaseNotificationsPolling('3s')
             ->discoverResources(in: app_path('Filament/Student/Resources'), for: 'App\Filament\Student\Resources')
             ->discoverPages(in: app_path('Filament/Student/Pages'), for: 'App\Filament\Student\Pages')
             ->pages([
                 BentoDashboard::class,
+                NotificationCenter::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Student/Widgets'), for: 'App\Filament\Student\Widgets')
             ->widgets([])
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => Blade::render('@livewire(\'academic-level-switcher\')'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view('components.notification-poller')->render(),
             )
             ->middleware([
                 EncryptCookies::class,
