@@ -10,7 +10,6 @@ use App\Models\LessonPlanMaterial;
 use App\Models\Payment;
 use App\Models\Rapor;
 use App\Models\User;
-use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -432,10 +431,16 @@ class NotificationService
 
     private function sendDatabaseNotification(User $user, string $title, string $message): void
     {
-        Notification::make()
-            ->title($title)
-            ->body($message)
-            ->sendToDatabase($user);
+        $user->notifications()->create([
+            'id' => (string) Str::orderedUuid(),
+            'type' => 'notification',
+            'data' => [
+                'title' => $title,
+                'body' => $message,
+                'duration' => 'persistent',
+                'format' => 'filament',
+            ],
+        ]);
     }
 
     private function resolveGuruUserFromLessonPlan(LessonPlan $lessonPlan): ?User
