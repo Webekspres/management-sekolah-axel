@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\Announcement;
+use App\Models\Invoice;
 use App\Models\Kbm;
 use App\Models\LessonPlan;
 use App\Models\LessonPlanMaterial;
+use App\Models\Payment;
 use App\Models\Rapor;
 use App\Models\User;
 use Filament\Notifications\Notification;
@@ -296,6 +298,120 @@ class NotificationService
 
             $this->sendDatabaseNotification($user, $title, $message);
         }
+    }
+
+    /**
+     * Kirim notifikasi ke siswa saat pembayaran SPP berhasil.
+     */
+    public function createForPaymentSuccess(Payment $payment): void
+    {
+        $invoice = $payment->invoice;
+
+        if ($invoice === null) {
+            Log::error('Gagal membuat notifikasi Payment SUCCESS: relasi invoice tidak valid.', [
+                'payment_id' => $payment->id,
+            ]);
+
+            return;
+        }
+
+        $student = $invoice->student;
+
+        if ($student === null) {
+            Log::error('Gagal membuat notifikasi Payment SUCCESS: relasi student tidak valid.', [
+                'payment_id' => $payment->id,
+                'invoice_id' => $invoice->id,
+            ]);
+
+            return;
+        }
+
+        $user = $student->user;
+
+        if ($user === null) {
+            Log::error('Gagal membuat notifikasi Payment SUCCESS: relasi student->user tidak valid.', [
+                'payment_id' => $payment->id,
+                'student_id' => $student->id,
+            ]);
+
+            return;
+        }
+
+        $billingPeriod = $invoice->billing_period;
+        $amountFormatted = number_format((float) $invoice->amount, 0, ',', '.');
+
+        $title = 'Pembayaran SPP berhasil';
+        $message = "Periode {$billingPeriod} · Rp {$amountFormatted} telah dikonfirmasi.";
+
+        $this->sendDatabaseNotification($user, $title, $message);
+    }
+
+    /**
+     * Kirim notifikasi ke siswa saat pembayaran SPP gagal.
+     */
+    public function createForPaymentFailed(Payment $payment): void
+    {
+        $invoice = $payment->invoice;
+
+        if ($invoice === null) {
+            Log::error('Gagal membuat notifikasi Payment FAILED: relasi invoice tidak valid.', [
+                'payment_id' => $payment->id,
+            ]);
+
+            return;
+        }
+
+        $student = $invoice->student;
+
+        if ($student === null) {
+            Log::error('Gagal membuat notifikasi Payment FAILED: relasi student tidak valid.', [
+                'payment_id' => $payment->id,
+                'invoice_id' => $invoice->id,
+            ]);
+
+            return;
+        }
+
+        $user = $student->user;
+
+        if ($user === null) {
+            Log::error('Gagal membuat notifikasi Payment FAILED: relasi student->user tidak valid.', [
+                'payment_id' => $payment->id,
+                'student_id' => $student->id,
+            ]);
+
+            return;
+        }
+
+        $billingPeriod = $invoice->billing_period;
+        $paymentMethod = $payment->payment_method?->value ?? 'transfer';
+
+        $title = 'Pembayaran SPP gagal';
+        $message = "Pembayaran {$paymentMethod} untuk periode {$billingPeriod} tidak berhasil. Silakan coba lagi.";
+
+        $this->sendDatabaseNotification($user, $title, $message);
+    }
+
+    /**
+     * Kirim notifikasi ke siswa saat ada invoice SPP baru.
+     */
+    public function createForNewInvoice(Invoice $invoice): void
+    {
+        $student = $invoice->student;
+
+        if ($student === null || $student->user === null) {
+            return;
+        }
+
+        $user = $student->user;
+        $billingPeriod = $invoice->billing_period;
+        $amountFormatted = number_format((float) $invoice->amount, 0, ',', '.');
+        $dueDate = $invoice->due_date?->translatedFormat('d M Y') ?? '—';
+
+        $title = 'Tagihan SPP baru';
+        $message = "Periode {$billingPeriod} · Rp {$amountFormatted} · Jatuh tempo: {$dueDate}";
+
+        $this->sendDatabaseNotification($user, $title, $message);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 
 use App\Enums\UserRole;
 use App\Http\Controllers\DownloadImportFailureXlsxController;
+use App\Http\Controllers\NotificationPollController;
 use App\Http\Controllers\PersonaliaImportTemplateController;
 use App\Models\Rapor;
 use App\Models\User;
@@ -27,6 +28,18 @@ Route::get('/', function () {
     }
 
     return redirect()->to('/login');
+});
+
+// ──────────────────────────────────────────────
+// Notification Polling (realtime via Alpine)
+// ──────────────────────────────────────────────
+Route::middleware(['auth'])->group(function () {
+    Route::get('/notifications/poll', NotificationPollController::class)
+        ->name('notifications.poll');
+    Route::post('/notifications/{id}/read', [NotificationPollController::class, 'markAsRead'])
+        ->name('notifications.mark-as-read');
+    Route::post('/notifications/read-all', [NotificationPollController::class, 'markAllAsRead'])
+        ->name('notifications.mark-all-as-read');
 });
 
 Route::middleware(['auth'])->group(function () {

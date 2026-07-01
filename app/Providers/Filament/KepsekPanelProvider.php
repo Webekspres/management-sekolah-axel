@@ -10,6 +10,7 @@ use App\Filament\Clusters\Academic\Resources\Subjects\SubjectResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Staff\StaffResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
+use App\Filament\Pages\NotificationCenter;
 use App\Filament\Resources\Announcements\AnnouncementResource;
 use App\Filament\Widgets\KepsekOverviewStats;
 use Filament\Http\Middleware\Authenticate;
@@ -49,7 +50,7 @@ class KepsekPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/theme.css')
             ->globalSearch(false)
             ->databaseNotifications()
-            ->databaseNotificationsPolling('15s')
+            ->databaseNotificationsPolling('3s')
             ->resources([
                 AnnouncementResource::class,
                 StaffResource::class,
@@ -65,6 +66,7 @@ class KepsekPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Kepsek/Pages'), for: 'App\Filament\Kepsek\Pages')
             ->pages([
                 BentoDashboard::class,
+                NotificationCenter::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Kepsek/Widgets'), for: 'App\Filament\Kepsek\Widgets')
             ->widgets([
@@ -73,6 +75,10 @@ class KepsekPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => Blade::render('@livewire(\'academic-level-switcher\')'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view('components.notification-poller')->render(),
             )
             ->middleware([
                 EncryptCookies::class,

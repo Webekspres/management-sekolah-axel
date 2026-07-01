@@ -9,6 +9,7 @@ use App\Filament\Clusters\Academic\Resources\SchoolClasses\SchoolClassResource;
 use App\Filament\Clusters\Academic\Resources\Subjects\SubjectResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Students\StudentResource;
 use App\Filament\Clusters\DataPersonalia\Resources\Teachers\TeacherResource;
+use App\Filament\Pages\NotificationCenter;
 use App\Filament\Resources\Announcements\AnnouncementResource;
 use App\Filament\Widgets\GuruOverviewStats;
 use Filament\Http\Middleware\Authenticate;
@@ -53,7 +54,7 @@ class GuruPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/theme.css')
             ->globalSearch(false)
             ->databaseNotifications()
-            ->databaseNotificationsPolling('15s')
+            ->databaseNotificationsPolling('3s')
             ->resources([
                 AnnouncementResource::class,
                 // Resource yang bisa di-assign via Akses Sementara.
@@ -70,6 +71,7 @@ class GuruPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Guru/Pages'), for: 'App\Filament\Guru\Pages')
             ->pages([
                 BentoDashboard::class,
+                NotificationCenter::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Guru/Widgets'), for: 'App\Filament\Guru\Widgets')
             ->widgets([
@@ -78,6 +80,10 @@ class GuruPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn (): string => Blade::render('@livewire(\'academic-level-switcher\')'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view('components.notification-poller')->render(),
             )
             ->middleware([
                 EncryptCookies::class,
